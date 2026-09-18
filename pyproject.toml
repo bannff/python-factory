@@ -13,9 +13,9 @@ dependencies = [
     "croniter==6.2.4",
     "cryptography>=49.0.0",
     "fastapi>=0.128.0",
-    "mcp[cli]==2.1.1",
-    "langchain==1.3.17",
-    "langchain-aws==1.7.4",
+    "mcp[cli]==2.2.0",
+    "langchain==1.4.0",
+    "langchain-aws==1.7.6",
     "langchain-openai==1.6.2",
     "langgraph==1.2.11",
     "langgraph-checkpoint-sqlite==3.1.1",
@@ -29,7 +29,7 @@ dependencies = [
     "networkx>=3.6.1",
     "opentelemetry-api>=1.20.0",
     "opentelemetry-exporter-otlp>=1.20.0",
-    "opentelemetry-instrumentation==0.62b0",
+    "opentelemetry-instrumentation==0.65b0",
     "opentelemetry-sdk>=1.20.0",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.12.0",
@@ -47,8 +47,8 @@ dependencies = [
     "tinydb>=4.8.2",
     "typer>=0.12.0",
     "uvicorn>=0.40.0",
-    "mlx-lm==0.31.2; platform_system == 'Darwin' and platform_machine == 'arm64'",
-    "mlx==0.31.1; platform_system == 'Darwin' and platform_machine == 'arm64'",
+    "mlx-lm==0.31.3; platform_system == 'Darwin' and platform_machine == 'arm64'",
+    "mlx==0.32.2; platform_system == 'Darwin' and platform_machine == 'arm64'",
     "datasets>=4.8.4",
     "huggingface-hub>=1.3.3",
     "strands-agents-evals==1.3.0",
@@ -56,7 +56,7 @@ dependencies = [
 
 [dependency-groups]
 core-test = [
-    "authlib==1.6.12",
+    "authlib==1.8.0",
     "ddgs==9.16.0",
     "langchain-community==0.4.2",
     "langchain-experimental==0.4.2",
@@ -64,17 +64,17 @@ core-test = [
 # CAN capture/DBC dependencies exercised in their own CI lane. Exact pins keep
 # generated MF4 and parser provenance reproducible.
 can-test = [
-    "asammdf==8.8.22",
-    "cantools==42.0.3",
+    "asammdf==8.8.27",
+    "cantools==44.0.0",
 ]
 # Native Apple Silicon acceptance dependencies. Keep these aligned with the
 # strict neural passport helpers exercised by the dedicated macOS ARM lane.
 mlx-test = [
-    "chronos-forecasting==2.3.1",
-    "peft==0.19.1",
+    "chronos-forecasting==2.3.2",
+    "peft==0.21.0",
     "safetensors==0.8.0",
-    "torch==2.13.0",
-    "transformers==5.10.1",
+    "torch==2.14.0",
+    "transformers==5.17.0",
 ]
 
 # Optional heavy ML extras for the machine_learning brick's training and
@@ -86,14 +86,14 @@ ml = [
     "joblib>=1.3.0",
     "lightgbm==4.7.0",
     "scikit-learn>=1.3.0",
-    "torch==2.13.0",
+    "torch==2.14.0",
     "mlflow==3.16.0",
     "tensorboard>=2.17.0",
-    "peft==0.19.1",
+    "peft==0.21.0",
     "safetensors==0.8.0",
-    "chronos-forecasting==2.3.1",
+    "chronos-forecasting==2.3.2",
     "ncps==1.0.1",
-    "transformers==5.10.1",
+    "transformers==5.17.0",
 ]
 
 [build-system]
