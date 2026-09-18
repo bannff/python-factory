@@ -9,8 +9,11 @@ from pathlib import Path
 from typing import Any, Mapping
 
 _BRANCH_RE = re.compile(
-    r"^(?:feat|fix|chore)/(?:\d+|python-factory-[a-z0-9]+(?:\.[a-z0-9]+)*)-"
-    r"[a-z0-9][a-z0-9._-]*$"
+    r"^(?:"
+    r"(?:feat|fix|chore)/(?:\d+|python-factory-[a-z0-9]+(?:\.[a-z0-9]+)*)-"
+    r"[a-z0-9][a-z0-9._-]*"
+    r"|dependabot/[a-z0-9_]+/[A-Za-z0-9][A-Za-z0-9._/-]*"
+    r")$"
 )
 
 

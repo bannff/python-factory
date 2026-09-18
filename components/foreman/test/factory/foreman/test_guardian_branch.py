@@ -76,11 +76,24 @@ def test_detached_head_falls_back_to_ref_name(repo: tuple[Path, str]) -> None:
     assert result["branch"] == "chore/python-factory-abc-cleanup"
 
 
+def test_dependabot_branch_is_allowed(repo: tuple[Path, str]) -> None:
+    root, _ = repo
+    branch = "dependabot/uv/uv-12e367e9a9"
+    _git(root, "checkout", "-b", branch)
+    result = check_branch_naming(root, {"GITHUB_HEAD_REF": branch})
+    assert result["passed"] is True
+    assert result["branch"] == branch
+
+
 @pytest.mark.parametrize(
     "candidate",
     [
-        "HEAD", "refs/pull/1/merge", "feat/123-ok\nbad",
-        "fix/123-$(touch-pwned)", " feat/123-leading-space", "",
+        "HEAD",
+        "refs/pull/1/merge",
+        "feat/123-ok\nbad",
+        "fix/123-$(touch-pwned)",
+        " feat/123-leading-space",
+        "",
     ],
 )
 def test_detached_head_rejects_missing_or_malicious_names(
