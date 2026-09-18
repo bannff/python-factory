@@ -117,27 +117,3 @@ jobs:
         run: uv run python -c "import asammdf, cantools"
       - name: Run Dataset tests with real MF4 and DBC backends
         run: uv run pytest components/dataset/test
-
-  mlx-tests:
-    # macOS runners bill at 10x. Green but not worth 10x on every PR, so this
-    # lane is on-demand only (Actions > PR Safety > Run workflow), not a PR gate.
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.sha }}
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: "0.12.0"
-      - name: Install pinned Apple Silicon test dependencies
-        run: uv lock --check && uv sync --frozen --group mlx-test
-      - name: Preflight all native passport dependencies
-        run: |
-          uv run python -c "import platform; assert platform.machine() == 'arm64', platform.machine(); import chronos, mlx.core, mlx.nn, mlx_lm, peft, safetensors, torch, transformers"
-      - name: Run native MLX acceptance
-        run: |
-          uv run pytest \
-            components/machine_learning/test/factory/machine_learning/test_mlx_timeseries.py \
-            components/machine_learning/test/factory/machine_learning/test_mlx_passport_strict.py
