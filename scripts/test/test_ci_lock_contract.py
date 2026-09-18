@@ -91,8 +91,8 @@ def test_personal_project_is_excluded_from_uv_workspace() -> None:
 
 def test_every_frozen_install_first_checks_lock_freshness() -> None:
     workflow = CI_WORKFLOW.read_text()
-    assert workflow.count("uv sync --frozen") == 4
-    assert workflow.count("uv lock --check") == 4
+    assert workflow.count("uv sync --frozen") == 3
+    assert workflow.count("uv lock --check") == 3
     assert "uv lock --check && uv sync --frozen" in workflow
     candidate = _step_run_block(workflow, "Install candidate dependencies")
     assert candidate.index("uv lock --check") < candidate.index("uv sync --frozen")
