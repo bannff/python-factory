@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.sha }}
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v7
         with:
           version: "0.12.0"
       - name: Install core dependencies
@@ -57,7 +57,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.sha }}
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v7
         with:
           version: "0.12.0"
       - name: Install candidate dependencies
@@ -108,7 +108,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v7
         with:
           version: "0.12.0"
       - name: Install pinned CAN dependencies
