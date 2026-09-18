@@ -1,5 +1,5 @@
 "use client";
-import { jsxs as _jsxs, jsx as _jsx } from "react/jsx-runtime";
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { cn } from "../lib/utils";
