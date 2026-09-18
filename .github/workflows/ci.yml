@@ -117,3 +117,25 @@ jobs:
         run: uv run python -c "import asammdf, cantools"
       - name: Run Dataset tests with real MF4 and DBC backends
         run: uv run pytest components/dataset/test
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontends/shared-renderer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: shared-renderer — install, build, test
+        run: |
+          npm ci
+          npm run build
+          npm test
+      - name: next-dashboard — install, build, test
+        working-directory: frontends/next-dashboard
+        run: |
+          npm ci
+          npm run build
+          npm test

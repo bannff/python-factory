@@ -13,6 +13,7 @@ eggs/
 .eggs/
 lib/
 !frontends/*/lib/
+!frontends/*/src/lib/
 !projects/*/webapp/lib/
 !projects/*/lib/
 lib64/
