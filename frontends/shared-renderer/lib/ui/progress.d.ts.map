@@ -1,0 +1,1 @@
+{"version":3,"file":"progress.d.ts","sourceRoot":"","sources":["../../src/ui/progress.tsx"],"names":[],"mappings":"AAEA,OAAO,KAAK,KAAK,MAAM,OAAO,CAAC;AAG/B,MAAM,WAAW,aAAc,SAAQ,KAAK,CAAC,cAAc,CAAC,cAAc,CAAC;IACzE,KAAK,CAAC,EAAE,MAAM,CAAC;IACf,GAAG,CAAC,EAAE,MAAM,CAAC;CACd;AAED,QAAA,MAAM,QAAQ,sFAuBb,CAAC;AAGF,OAAO,EAAE,QAAQ,EAAE,CAAC"}

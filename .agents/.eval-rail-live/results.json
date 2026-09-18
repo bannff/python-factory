@@ -1,0 +1,27 @@
+{
+  "_note": "Live Bedrock smoke test of the polymorphic eval rail (all 4 riders). Run: AWS_PROFILE=companion-x AWS_REGION=us-east-1 uv run python .agents/.eval-rail-live/eval_rail_live.py",
+  "trajectory": {
+    "_rider": "langchain_trajectory (agentevals) — previously never live-tested",
+    "good": [0.75, true],
+    "bad": [0.0, false],
+    "empty_label": "abstain",
+    "empty_reason": "trajectory_accuracy requires actual_trajectory; abstained"
+  },
+  "langchain_helpfulness": {
+    "_rider": "langchain (openevals) text judge",
+    "good": 0.9,
+    "bad": 0.0
+  },
+  "strands_output": {
+    "_rider": "strands output rubric judge",
+    "score": 1.0,
+    "pass": true,
+    "reason": "The output correctly provides two valid methods for reversing a list i"
+  },
+  "reward_719": {
+    "_path": "LlmJudgeRewardSource end-to-end via evals runtime (framework=langchain)",
+    "good": 95.0,
+    "offtopic": 0.0,
+    "trivial_abstain": true
+  }
+}

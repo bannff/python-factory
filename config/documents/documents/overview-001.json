@@ -1,0 +1,10 @@
+{
+  "id": "overview-001",
+  "content": "Companion-X is an agentic development platform built on the Python Software Factory. It provides knowledge base management, agent orchestration with Strands SDK, workflow pipelines via Dagster, and Cedar-based permissions. The platform uses a Polylith architecture with 24 bricks providing 328 MCP tools.",
+  "metadata": {
+    "type": "overview",
+    "project": "companion-x"
+  },
+  "source": "project-docs",
+  "created_at": "2026-02-12T18:52:58.041124Z"
+}

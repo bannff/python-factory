@@ -1,0 +1,23 @@
+name: backend
+type: component
+namespace: factory.backend
+description: "DEPRECATED \u2014 duplicates cache, graph, and storage brick surfaces.\
+  \ See issue #239."
+mcp_enabled: false
+deprecated: true
+deprecated_reason: 'The backend brick is a thin facade that delegates to the dedicated
+  cache, graph, and storage bricks. It exposes duplicate MCP tools with less functionality
+  than the dedicated bricks. Use factory.cache, factory.graph, and factory.storage
+  directly.
+
+  '
+features:
+- backend_services
+- infrastructure
+- utilities
+pip_packages:
+- mcp[cli]==2.1.1
+- neo4j>=6.1.0
+- pydantic>=2.0.0
+- pyyaml>=6.0.0
+- redis>=7.1.0

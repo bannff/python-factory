@@ -1,0 +1,10 @@
+{
+  "id": "agent-001",
+  "content": "The agent brick provides three runtime modes: single agent execution via Strands SDK, swarm orchestration for multi-agent collaboration, and graph-based workflows for complex reasoning chains. BrainAgent is the high-level orchestrator that manages tool selection and memory.",
+  "metadata": {
+    "type": "architecture",
+    "brick": "agent"
+  },
+  "source": "brick-docs",
+  "created_at": "2026-02-12T18:53:07.177090Z"
+}

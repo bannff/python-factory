@@ -1,0 +1,61 @@
+{
+  "run_id": "juiceshop-idor-001",
+  "experiment": "exp-001",
+  "config_version": "v1",
+  "timestamp": "2026-04-03T14:30:00Z",
+  "workflow": {
+    "type": "strands_graph",
+    "graph_id": "rt-scan-idor",
+    "source": "components/agent/src/factory/agent/registry/defaults_redteam_idor.py",
+    "entry_points": ["gptoss-idor", "sonnet-idor", "nova2-idor"],
+    "max_node_executions": 10,
+    "execution_timeout": 900
+  },
+  "agents": [
+    {"node_id": "gptoss-idor", "model": "openai.gpt-oss-120b-1:0", "model_alias": "GPT_OSS"},
+    {"node_id": "sonnet-idor", "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0", "model_alias": "SONNET"},
+    {"node_id": "nova2-idor", "model": "us.amazon.nova-2-lite-v1:0", "model_alias": "NOVA2_LITE"}
+  ],
+  "target": {
+    "app": "OWASP Juice Shop",
+    "url": "http://vuln-juice-shop:3000",
+    "docker_image": "bkimminich/juice-shop:latest",
+    "docker_profile": "juiceshop",
+    "host_port": 5050,
+    "source": "https://github.com/juice-shop/juice-shop",
+    "description": "OWASP Juice Shop — intentionally insecure web app with ~100 challenges"
+  },
+  "findings": [
+    {"id": "js-001", "subtype": "horizontal", "resource": "GET /api/users/1", "severity": "CRITICAL", "cwe": "CWE-639"},
+    {"id": "js-002", "subtype": "horizontal", "resource": "GET /api/orders/1", "severity": "CRITICAL", "cwe": "CWE-639"},
+    {"id": "js-003", "subtype": "horizontal", "resource": "GET /api/baskets/1", "severity": "CRITICAL", "cwe": "CWE-639"},
+    {"id": "js-004", "subtype": "horizontal", "resource": "GET /api/feedbacks/1", "severity": "CRITICAL", "cwe": "CWE-639"},
+    {"id": "js-005", "subtype": "horizontal", "resource": "GET /api/reviews/1", "severity": "CRITICAL", "cwe": "CWE-639"},
+    {"id": "js-006", "subtype": "horizontal", "resource": "GET /api/products/1", "severity": "CRITICAL", "cwe": "CWE-639"},
+    {"id": "js-007", "subtype": "horizontal", "resource": "DELETE /api/BasketItems/9", "severity": "HIGH", "cwe": "CWE-639"},
+    {"id": "js-008", "subtype": "horizontal", "resource": "GET /api/Users/25", "severity": "CRITICAL", "cwe": "CWE-639"},
+    {"id": "js-009", "subtype": "vertical", "resource": "GET /api/Feedbacks (all)", "severity": "HIGH", "cwe": "CWE-639"},
+    {"id": "js-010", "subtype": "mass_assignment", "resource": "POST /api/Users (role=admin)", "severity": "CRITICAL", "cwe": "CWE-915"},
+    {"id": "js-011", "subtype": "enumeration", "resource": "GET /api/Users/{id} loop", "severity": "MEDIUM", "cwe": "CWE-639"},
+    {"id": "js-012", "subtype": "horizontal", "resource": "GET /rest/basket/8", "severity": "HIGH", "cwe": "CWE-639"},
+    {"id": "js-013", "subtype": "vertical", "resource": "GET /api/Users (all)", "severity": "CRITICAL", "cwe": "CWE-639"}
+  ],
+  "scoring": {
+    "note": "No GT file for Juice Shop yet — cannot compute P/R/F1. Need to create challenges/juice_shop/gt_entries.json from https://pwning.owasp-juice.shop/ challenge list.",
+    "total_findings": 13,
+    "vuln_classes_found": ["horizontal IDOR", "vertical IDOR", "mass assignment", "enumeration"],
+    "resources_tested": ["users", "orders", "baskets", "feedbacks", "reviews", "products", "basket_items"]
+  },
+  "metrics_recorded": {
+    "idor-findings-count": 13,
+    "note": "P/R/F1 metrics pending GT file creation"
+  },
+  "sources": {
+    "juice_shop_github": "https://github.com/juice-shop/juice-shop",
+    "juice_shop_challenges": "https://pwning.owasp-juice.shop/",
+    "cwe_639": "https://cwe.mitre.org/data/definitions/639.html",
+    "cwe_915": "https://cwe.mitre.org/data/definitions/915.html",
+    "graph_config_source": "components/agent/src/factory/agent/registry/defaults_redteam_idor.py",
+    "skill_source": "components/agent/src/factory/agent/skills/idor-testing/SKILL.md"
+  }
+}

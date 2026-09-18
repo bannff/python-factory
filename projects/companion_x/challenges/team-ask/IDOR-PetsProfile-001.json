@@ -1,0 +1,122 @@
+{
+  "gt_id": "IDOR-PetsProfile-001",
+  "cwe": "CWE-639",
+  "description": "An authenticated user can delete vet clinics belonging to other users by supplying an arbitrary vetId to POST /yourpets/vet/remove. The deleteVet endpoint accepts only vetId and encryptedMarketplaceId — it never checks that the requesting customer owns the vet record, so any user who knows or guesses a valid vetId can delete another user's vet clinic.",
+  "code_evidence": [
+    {
+      "package": "PetsProfileService",
+      "commit": "a4d1eae6977043a8aa95dd07fbd48381ac4e1375",
+      "file": "src/com/amazon/pets/profileservice/core/VetBusinessLogic.java",
+      "function": "deleteVet",
+      "line_start": 57,
+      "line_end": 75,
+      "description": "Deletes vet by vetId and encryptedMarketplaceId without verifying that the requesting customer owns the vet record. No customerId parameter exists; any caller with a valid vetId can delete it."
+    },
+    {
+      "package": "PetsProfileService",
+      "commit": "a4d1eae6977043a8aa95dd07fbd48381ac4e1375",
+      "file": "src/com/amazon/pets/profileservice/resource/VetsController.java",
+      "function": "deleteVet",
+      "line_start": 145,
+      "line_end": 165,
+      "description": "Controller delegates to VetBusinessLogic.deleteVet with only vetId and encryptedMarketplaceId. No customerId is accepted or forwarded for ownership validation."
+    },
+    {
+      "package": "PetsProfileServiceInterface",
+      "commit": "2d348fd238bc8b655cb89621b83b9b1516060630",
+      "file": "src/com/amazon/pets/profileservice/resource/VetsResource.java",
+      "function": "deleteVet",
+      "line_start": 94,
+      "line_end": 99,
+      "description": "Interface definition for DELETE /marketplaces/{encryptedMarketplaceId}/vets/{vetId} accepts only path params — no customerId header param for ownership verification."
+    },
+    {
+      "package": "PetsProfileWebsite",
+      "commit": "65bb9061409c44d833e29ee80416a7d26e7dbdc9",
+      "file": "src/com/amazon/pets/profile/website/controller/core/VetClinicsPageController.java",
+      "function": "removeVetClinic",
+      "line_start": 213,
+      "line_end": 226,
+      "description": "Calls petsProfileService.removeVetClinic(vetId, encryptedMarketplaceId) without passing the authenticated customer's ID, so the backend has no way to enforce ownership."
+    },
+    {
+      "package": "PetsProfileWebsite",
+      "commit": "65bb9061409c44d833e29ee80416a7d26e7dbdc9",
+      "file": "src/com/amazon/pets/profile/website/dependency/PetsProfileServiceImpl.java",
+      "function": "removeVetClinic",
+      "line_start": 491,
+      "line_end": 511,
+      "description": "Calls vetsResource.deleteVet(vetId, encryptedMarketplaceId) without customerId. The service-layer proxy omits any ownership context."
+    }
+  ],
+  "runtime_evidence": [{
+    "surface": {
+      "endpoint": "/yourpets/vet/remove",
+      "method": "POST"
+    },
+    "preconditions": [
+      "Authenticated as any Amazon customer (user A)",
+      "A vet clinic record exists belonging to a different customer (user B)",
+      "Attacker knows or can enumerate the target vetId"
+    ]
+  }],
+  "exploit_evidence": {
+    "reproduction_steps": [
+      "Log in to amazon.com as user A.",
+      "Navigate to https://www.amazon.com/yourpets/clinics.",
+      "Click 'Remove this vet clinic' on one of user A's own clinics.",
+      "Intercept the POST /yourpets/vet/remove request with a proxy.",
+      "Replace the vetId parameter value with a vetId belonging to user B.",
+      "Forward the modified request.",
+      "Observe the response: {\"success\":true,\"result\":\"VET CLINIC REMOVED SUCCESSFULLY\",\"message\":null}.",
+      "Verify that user B's vet clinic has been deleted (status set to INACTIVE)."
+    ],
+    "expected_secure_behavior": "The server should verify that the authenticated customer owns the vet record identified by vetId and return 401 Unauthorized if the customer IDs do not match.",
+    "observed_vulnerable_behavior": "The server deletes the vet clinic identified by vetId regardless of which customer is making the request, returning a success response.",
+    "impact": "Any authenticated Amazon customer can delete any other customer's vet clinic records by manipulating the vetId parameter. This is a data-destructive IDOR affecting all users of the Pets Profile vet clinics feature."
+  },
+
+  "fix_evidence": {
+    "fix_crs": ["CR-155175404", "CR-155679540", "CR-155869672"],
+    "fix_description": "Three-part fix: (1) CR-155175404 adds a customerId header param to the PetsProfileServiceInterface deleteVet definition and adds ownership validation in VetBusinessLogic.deleteVet — if customerId is provided and does not match the vet record's customerId, a 401 NotAuthorizedException is thrown. (2) CR-155679540 updates PetsProfileWebsite to pass the authenticated customer's ID when calling removeVetClinic. (3) CR-155869672 makes customerId a required field in VetsController.deleteVet, throwing BadRequestException if it is missing."
+  },
+
+  "provenance": [
+    {
+      "source": "bug_bounty",
+      "data_store": "shepherd",
+      "id": "7c8e2002-19ae-48ea-a03f-e398cf82621a"
+    }
+  ],
+
+  "zf_environment": {
+    "ZeroFrictionServices-commits": {
+      "ZeroFriction-DynamoDB": "a8fcbbbce6bd19ef16e8f773735b8b09b22c0b53",
+      "ZeroFrictionEnvironmentManager": "d5a62a38a5c1ea7e02e5329e194ad154f6e513ec",
+      "ZeroFriction-MySQL": "3b075d71642e1658d4d9903f46f662ada98685e4",
+      "ZeroFriction-Sable": "9b637233024d57abca9145cab17dbe4ba2ec14c0",
+      "ZeroFriction-Training": "ea2882958c211cb72a6d3e6dafac5d30c74cc906",
+      "ZeroFriction-WireMock": "b55d961e83ea78a57f2d5d0e20dc7fc576a4d7a5"
+    },
+    "env_id": "zf-petsprofile",
+    "deployment_command": "./deploy.sh --ppw-eventId 6262273844 --pps-eventId 6261922107 --sp-eventId 6437117197",
+    "sessions": {
+      "USER_A": {
+        "description": "First test account",
+        "cookies": "at-tacbus=Atza|test-token",
+        "is_active": true
+      },
+      "USER_B": {
+        "description": "Second test account",
+        "cookies": "at-tacbus=Atza|test-token-2",
+        "is_active": true
+      }
+    }
+  },
+
+  "metadata": {
+    "frameworks": ["Java-ARest-Server", "Horizonte"],
+    "vrp_report_ids": ["2721978"],
+    "vsrs": ["PetsProfileService/mainline@6261922107", "PetsProfileWebsite/release-5.3.1@6262273844", "ShoppingPortalDevelopment/mainline@6437117197"]
+  }
+}

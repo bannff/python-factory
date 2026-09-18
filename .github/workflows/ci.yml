@@ -1,0 +1,143 @@
+name: PR Safety
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pr-safety-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.12.0"
+      - name: Install core dependencies
+        run: uv lock --check && uv sync --frozen
+      - name: Guardian check (blocking PR ratchet)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          uv run python -c "from factory.foreman.guardian import run_all_checks; import os; r = run_all_checks(file_size_mode='ratchet', base_sha=os.environ.get('BASE_SHA')); print(r); exit(0 if r['passed'] else 1)"
+      - name: Guardian check (blocking manual strict gate)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          uv run python -c "from factory.foreman.guardian import run_all_checks; r = run_all_checks(); print(r); exit(0 if r['passed'] else 1)"
+      - name: Strict LOC debt report (PR summary only)
+        if: github.event_name == 'pull_request'
+        run: |
+          uv run python -c "from factory.foreman.guardian import check_file_sizes; print(check_file_sizes())"
+      - name: Run strict full test suite (manual)
+        if: github.event_name == 'workflow_dispatch' && always()
+        run: uv run pytest
+
+  core-tests:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      MCP_LOCAL_AUTH: "true"
+      # Deterministic test credential only; never a production or GitHub secret.
+      MCP_LOCAL_AUTH_TOKEN: "ci-local-auth-token-0123456789"
+      MCP_PERMISSIONS_CONFIG_DIR: config/mcp_permissions
+      TELEMETRY_REQUIRED: "0"
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.12.0"
+      - name: Install candidate dependencies
+        run: |
+          uv lock --check
+          uv sync --frozen
+          uv pip install --python .venv/bin/python --no-deps \
+            -r config/core-test-requirements.txt
+      - name: Prove complete core collection
+        run: |
+          uv run pytest --collect-only -q \
+            --ignore-glob='components/dataset/test/**' \
+            --ignore-glob='components/machine_learning/test/**'
+      - name: Run strict control-plane suites
+        run: |
+          uv run pytest -q \
+            components/test/test \
+            components/foreman/test \
+            components/agent/test \
+            components/blockchain/test \
+            scripts/test/test_ci_lock_contract.py
+      - name: Select changed brick tests
+        id: affected
+        run: |
+          targets=""
+          while IFS= read -r file; do
+            case "$file" in
+              components/dataset/*|components/machine_learning/*) continue ;;
+              components/*/*)
+                target="$(printf '%s' "$file" | cut -d/ -f1-2)/test" ;;
+              bases/*/*)
+                target="$(printf '%s' "$file" | cut -d/ -f1-2)/test" ;;
+              scripts/*) target="scripts/test" ;;
+              *) continue ;;
+            esac
+            if test -d "$target"; then targets="$targets $target"; fi
+          done < <(git diff --name-only "$BASE_SHA"...HEAD)
+          targets="$(printf '%s\n' $targets | sort -u | tr '\n' ' ' | xargs)"
+          echo "targets=$targets" >> "$GITHUB_OUTPUT"
+      - name: Run changed brick tests
+        if: steps.affected.outputs.targets != ''
+        run: uv run pytest -q ${{ steps.affected.outputs.targets }}
+
+  can-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.12.0"
+      - name: Install pinned CAN dependencies
+        run: uv lock --check && uv sync --frozen --group can-test
+      - name: Preflight declared CAN backends
+        run: uv run python -c "import asammdf, cantools"
+      - name: Run Dataset tests with real MF4 and DBC backends
+        run: uv run pytest components/dataset/test
+
+  mlx-tests:
+    # macOS runners bill at 10x. Green but not worth 10x on every PR, so this
+    # lane is on-demand only (Actions > PR Safety > Run workflow), not a PR gate.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.12.0"
+      - name: Install pinned Apple Silicon test dependencies
+        run: uv lock --check && uv sync --frozen --group mlx-test
+      - name: Preflight all native passport dependencies
+        run: |
+          uv run python -c "import platform; assert platform.machine() == 'arm64', platform.machine(); import chronos, mlx.core, mlx.nn, mlx_lm, peft, safetensors, torch, transformers"
+      - name: Run native MLX acceptance
+        run: |
+          uv run pytest \
+            components/machine_learning/test/factory/machine_learning/test_mlx_timeseries.py \
+            components/machine_learning/test/factory/machine_learning/test_mlx_passport_strict.py

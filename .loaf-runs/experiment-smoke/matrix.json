@@ -1,0 +1,443 @@
+{
+  "cells": [
+    {
+      "cell_id": "ef16df6b026b7b5a",
+      "eval_results": [
+        {
+          "data": {
+            "agent": {},
+            "avg_score": 1.0,
+            "case_results": [
+              {
+                "passed": true,
+                "reason": "11 nodes, 219ms, 0 tokens",
+                "score": 1.0
+              }
+            ],
+            "case_scores": [
+              1.0
+            ],
+            "content_hash": "sha256:b03250c6fc97c1df179fb6705590dd8b13dae881a261470bdbf8b36c6e992302",
+            "duration_ms": 0.0,
+            "evaluators_used": [
+              "loop_metrics"
+            ],
+            "experiment_name": "loaf-loop-metrics",
+            "failed_cases": 0,
+            "pass_rate": 1.0,
+            "passed_cases": 1,
+            "record_kind": "evaluation_run",
+            "run_id": "case-ff901c3b-47db-481c-b37e-70fc42a3c260@loop-metrics",
+            "schema_version": 2,
+            "source": "loaf_pattern_intel",
+            "summary": {
+              "execution_time_ms": 219,
+              "input_tokens": 0,
+              "model_latency_ms": 0,
+              "node_count": 11,
+              "output_tokens": 0,
+              "per_node_ms": {
+                "draft_rule": 1,
+                "gather_evidence": 1,
+                "mutate_rule": 1,
+                "record": 2,
+                "score_sufficiency": 1,
+                "submit_scan": 5,
+                "triage_findings": 52,
+                "verdict": 0
+              },
+              "total_tokens": 0
+            },
+            "terminal_state": "completed",
+            "timestamp": "",
+            "total_cases": 1,
+            "verdict": "PASS"
+          },
+          "id": "eval-v2-case-ff901c3b-47db-481c-b37e-70fc42a3c260@loop-metrics"
+        },
+        {
+          "data": {
+            "agent": {},
+            "avg_score": 1.0,
+            "case_results": [
+              {
+                "passed": true,
+                "reason": "r2: clears the bar: 2/126 sampled FPs (1.6%), coverage complete",
+                "score": 1.0
+              }
+            ],
+            "case_scores": [
+              1.0
+            ],
+            "content_hash": "sha256:a77736a637bca1281f1db57f5df861828ee8764cda4eb94aed5821204ff86e8b",
+            "duration_ms": 0.0,
+            "evaluators_used": [
+              "dirt_quality_bar"
+            ],
+            "experiment_name": "loaf-dirt-quality-bar",
+            "failed_cases": 0,
+            "pass_rate": 1.0,
+            "passed_cases": 1,
+            "record_kind": "evaluation_run",
+            "run_id": "case-ff901c3b-47db-481c-b37e-70fc42a3c260@r2",
+            "schema_version": 2,
+            "source": "loaf_pattern_intel",
+            "summary": {},
+            "terminal_state": "completed",
+            "timestamp": "",
+            "total_cases": 1,
+            "verdict": "PASS"
+          },
+          "id": "eval-v2-case-ff901c3b-47db-481c-b37e-70fc42a3c260@r2"
+        },
+        {
+          "data": {
+            "agent": {},
+            "avg_score": 0.0,
+            "case_results": [
+              {
+                "passed": false,
+                "reason": "r1: FP upper bound 7.7% exceeds 7% bar (7/128 sampled)",
+                "score": 0.0
+              }
+            ],
+            "case_scores": [
+              0.0
+            ],
+            "content_hash": "sha256:66129b66ae33aa9c79977108fb590a73fb389051c78beaa95bc74bd347a63be0",
+            "duration_ms": 0.0,
+            "evaluators_used": [
+              "dirt_quality_bar"
+            ],
+            "experiment_name": "loaf-dirt-quality-bar",
+            "failed_cases": 1,
+            "pass_rate": 0.0,
+            "passed_cases": 0,
+            "record_kind": "evaluation_run",
+            "run_id": "case-ff901c3b-47db-481c-b37e-70fc42a3c260@r1",
+            "schema_version": 2,
+            "source": "loaf_pattern_intel",
+            "summary": {},
+            "terminal_state": "completed",
+            "timestamp": "",
+            "total_cases": 1,
+            "verdict": "FAIL"
+          },
+          "id": "eval-v2-case-ff901c3b-47db-481c-b37e-70fc42a3c260@r1"
+        }
+      ],
+      "issue_id": "ff901c3b-47db-481c-b37e-70fc42a3c260",
+      "mock_config": {
+        "fp_ratio": 0.05,
+        "seed": 0
+      },
+      "model_config": {
+        "draft_model_id": "",
+        "mutate_model_id": "",
+        "region": "",
+        "triage_model_id": ""
+      },
+      "outcome": {
+        "assessment_id": "asmt-case-ff901c3b-47db-481c-b37e-70fc42a3c260-r2",
+        "assessment_locator": "loaf_technical_assessments/asmt-case-ff901c3b-47db-481c-b37e-70fc42a3c260-r2",
+        "case_id": "case-ff901c3b-47db-481c-b37e-70fc42a3c260",
+        "case_locator": "loaf_prevention_cases/case-ff901c3b-47db-481c-b37e-70fc42a3c260",
+        "drafting": "skipped_no_model",
+        "execution_order": [
+          "gather_evidence",
+          "score_sufficiency",
+          "draft_rule",
+          "submit_scan",
+          "triage_findings",
+          "mutate_rule",
+          "draft_rule",
+          "submit_scan",
+          "triage_findings",
+          "verdict",
+          "record"
+        ],
+        "graph_status": "completed",
+        "issue_id": "ff901c3b-47db-481c-b37e-70fc42a3c260",
+        "missed_criteria": [],
+        "model_steps": [],
+        "models_invoked": [],
+        "policy_id": "loaf-d-verdict-policy-v0",
+        "rationale": "All five rubric criteria are satisfied and DiRT job loaf-case-ff901c3b-47db-481c-b37e-70fc42a3c260-packages_1k-r2-a1 clears the owning team's bar: 2/126 sampled false positives (1.6% vs 7%) over 234 findings in 206 packages at scope packages_1k, scan failure rate 4.0%, branches pinned. Triage method: deterministic_metadata_heuristic \u2014 the owning team additionally requires a second SAST engineer to triage independently before deployment.",
+        "recommended_solution_route": "scanner_rule_needed",
+        "revisions": 2,
+        "satisfied_criteria": [
+          "fixtures_and_invariant",
+          "scoped_rule_and_language_set",
+          "corpus_results_with_fp_review",
+          "exception_or_optout_path",
+          "owner_rollout_and_measure"
+        ],
+        "technical_verdict": "supported_static_rule",
+        "trace": [
+          "gather_evidence: snapshot snap-case-ff901c3b-47db-481c-b37e-70fc42a3c260-pre recorded; family='sql-string-concat', pair=yes, 2 provenance links",
+          "score_sufficiency: gating passed; satisfied=['fixtures_and_invariant', 'scoped_rule_and_language_set', 'exception_or_optout_path', 'owner_rollout_and_measure']; missed=['corpus_results_with_fp_review']",
+          "draft_rule: revision 1 drafted for java with no guards, claiming 1 escape(s)",
+          "submit_scan: r1 job loaf-case-ff901c3b-47db-481c-b37e-70fc42a3c260-packages_1k-r1-a1 reached complete (attempt 1, branches pinned)",
+          "triage_findings: r1: 241 findings over 5 pages, 7/128 sampled FPs (5.5%), recall 1/1, scan failures 4.0%; mutation requested",
+          "mutate_rule: r1 diagnosed as over_matching (fp 5.5% vs bar 7%) by deterministic; next revision guards=['PreparedStatement']",
+          "draft_rule: revision 2 drafted for java with guards ['PreparedStatement'], claiming 1 escape(s)",
+          "submit_scan: r2 job loaf-case-ff901c3b-47db-481c-b37e-70fc42a3c260-packages_1k-r2-a1 reached complete (attempt 1, branches pinned)",
+          "triage_findings: r2: 234 findings over 5 pages, 2/126 sampled FPs (1.6%), recall 1/1, scan failures 4.0%; proceeding to verdict",
+          "verdict: r2 \u2192 supported_static_rule / scanner_rule_needed",
+          "record: assessment asmt-case-ff901c3b-47db-481c-b37e-70fc42a3c260-r2 recorded: supported_static_rule / scanner_rule_needed"
+        ]
+      },
+      "work_dir": "/Users/wdaniero/workplace/python-factory/.loaf-runs/experiment-smoke/cells/ef16df6b026b7b5a",
+      "workflow_variant": "graph"
+    },
+    {
+      "cell_id": "1eda30bc2d6fe67a",
+      "eval_results": [
+        {
+          "data": {
+            "agent": {},
+            "avg_score": 1.0,
+            "case_results": [
+              {
+                "passed": true,
+                "reason": "7 nodes, 150ms, 0 tokens",
+                "score": 1.0
+              }
+            ],
+            "case_scores": [
+              1.0
+            ],
+            "content_hash": "sha256:32bd9e40c45a08fffaed8e9b2ceda4666beee9e26a6ec2d6d27a40a5d8e4f4a2",
+            "duration_ms": 0.0,
+            "evaluators_used": [
+              "loop_metrics"
+            ],
+            "experiment_name": "loaf-loop-metrics",
+            "failed_cases": 0,
+            "pass_rate": 1.0,
+            "passed_cases": 1,
+            "record_kind": "evaluation_run",
+            "run_id": "case-2b06d246-24ad-4bd9-8f18-67911813c7b9@loop-metrics",
+            "schema_version": 2,
+            "source": "loaf_pattern_intel",
+            "summary": {
+              "execution_time_ms": 150,
+              "input_tokens": 0,
+              "model_latency_ms": 0,
+              "node_count": 7,
+              "output_tokens": 0,
+              "per_node_ms": {
+                "draft_rule": 1,
+                "gather_evidence": 1,
+                "record": 2,
+                "score_sufficiency": 0,
+                "submit_scan": 6,
+                "triage_findings": 125,
+                "verdict": 1
+              },
+              "total_tokens": 0
+            },
+            "terminal_state": "completed",
+            "timestamp": "",
+            "total_cases": 1,
+            "verdict": "PASS"
+          },
+          "id": "eval-v2-case-2b06d246-24ad-4bd9-8f18-67911813c7b9@loop-metrics"
+        },
+        {
+          "data": {
+            "agent": {},
+            "avg_score": 1.0,
+            "case_results": [
+              {
+                "passed": true,
+                "reason": "r1: clears the bar: 4/128 sampled FPs (3.1%), coverage complete",
+                "score": 1.0
+              }
+            ],
+            "case_scores": [
+              1.0
+            ],
+            "content_hash": "sha256:5d98d70c4bbdeee19c4cb82d8561727105e9bf98b392c79d7baa1c786a0a9d40",
+            "duration_ms": 0.0,
+            "evaluators_used": [
+              "dirt_quality_bar"
+            ],
+            "experiment_name": "loaf-dirt-quality-bar",
+            "failed_cases": 0,
+            "pass_rate": 1.0,
+            "passed_cases": 1,
+            "record_kind": "evaluation_run",
+            "run_id": "case-2b06d246-24ad-4bd9-8f18-67911813c7b9@r1",
+            "schema_version": 2,
+            "source": "loaf_pattern_intel",
+            "summary": {},
+            "terminal_state": "completed",
+            "timestamp": "",
+            "total_cases": 1,
+            "verdict": "PASS"
+          },
+          "id": "eval-v2-case-2b06d246-24ad-4bd9-8f18-67911813c7b9@r1"
+        }
+      ],
+      "issue_id": "2b06d246-24ad-4bd9-8f18-67911813c7b9",
+      "mock_config": {
+        "fp_ratio": 0.05,
+        "seed": 0
+      },
+      "model_config": {
+        "draft_model_id": "",
+        "mutate_model_id": "",
+        "region": "",
+        "triage_model_id": ""
+      },
+      "outcome": {
+        "assessment_id": "asmt-case-2b06d246-24ad-4bd9-8f18-67911813c7b9-r1",
+        "assessment_locator": "loaf_technical_assessments/asmt-case-2b06d246-24ad-4bd9-8f18-67911813c7b9-r1",
+        "case_id": "case-2b06d246-24ad-4bd9-8f18-67911813c7b9",
+        "case_locator": "loaf_prevention_cases/case-2b06d246-24ad-4bd9-8f18-67911813c7b9",
+        "drafting": "skipped_no_model",
+        "execution_order": [
+          "gather_evidence",
+          "score_sufficiency",
+          "draft_rule",
+          "submit_scan",
+          "triage_findings",
+          "verdict",
+          "record"
+        ],
+        "graph_status": "completed",
+        "issue_id": "2b06d246-24ad-4bd9-8f18-67911813c7b9",
+        "missed_criteria": [],
+        "model_steps": [],
+        "models_invoked": [],
+        "policy_id": "loaf-d-verdict-policy-v0",
+        "rationale": "All five rubric criteria are satisfied and DiRT job loaf-case-2b06d246-24ad-4bd9-8f18-67911813c7b9-packages_1k-r1-a1 clears the owning team's bar: 4/128 sampled false positives (3.1% vs 7%) over 241 findings in 203 packages at scope packages_1k, scan failure rate 4.0%, branches pinned. Triage method: deterministic_metadata_heuristic \u2014 the owning team additionally requires a second SAST engineer to triage independently before deployment.",
+        "recommended_solution_route": "scanner_rule_needed",
+        "revisions": 1,
+        "satisfied_criteria": [
+          "fixtures_and_invariant",
+          "scoped_rule_and_language_set",
+          "corpus_results_with_fp_review",
+          "exception_or_optout_path",
+          "owner_rollout_and_measure"
+        ],
+        "technical_verdict": "supported_static_rule",
+        "trace": [
+          "gather_evidence: snapshot snap-case-2b06d246-24ad-4bd9-8f18-67911813c7b9-pre recorded; family='sql-string-concat', pair=yes, 3 provenance links",
+          "score_sufficiency: gating passed; satisfied=['fixtures_and_invariant', 'scoped_rule_and_language_set', 'exception_or_optout_path', 'owner_rollout_and_measure']; missed=['corpus_results_with_fp_review']",
+          "draft_rule: revision 1 drafted for typescript with no guards, claiming 1 escape(s)",
+          "submit_scan: r1 job loaf-case-2b06d246-24ad-4bd9-8f18-67911813c7b9-packages_1k-r1-a1 reached complete (attempt 1, branches pinned)",
+          "triage_findings: r1: 241 findings over 5 pages, 4/128 sampled FPs (3.1%), recall 1/1, scan failures 4.0%; proceeding to verdict",
+          "verdict: r1 \u2192 supported_static_rule / scanner_rule_needed",
+          "record: assessment asmt-case-2b06d246-24ad-4bd9-8f18-67911813c7b9-r1 recorded: supported_static_rule / scanner_rule_needed"
+        ]
+      },
+      "work_dir": "/Users/wdaniero/workplace/python-factory/.loaf-runs/experiment-smoke/cells/1eda30bc2d6fe67a",
+      "workflow_variant": "graph"
+    },
+    {
+      "cell_id": "ee7918a3c3d17568",
+      "eval_results": [
+        {
+          "data": {
+            "agent": {},
+            "avg_score": 1.0,
+            "case_results": [
+              {
+                "passed": true,
+                "reason": "4 nodes, 9ms, 0 tokens",
+                "score": 1.0
+              }
+            ],
+            "case_scores": [
+              1.0
+            ],
+            "content_hash": "sha256:c7304db597c8ce0c51d5da581b3a2b69038de87343a51cc8ba6f91d103fbb2c8",
+            "duration_ms": 0.0,
+            "evaluators_used": [
+              "loop_metrics"
+            ],
+            "experiment_name": "loaf-loop-metrics",
+            "failed_cases": 0,
+            "pass_rate": 1.0,
+            "passed_cases": 1,
+            "record_kind": "evaluation_run",
+            "run_id": "case-946ac319-78f8-4af7-8b2e-ee39cfd385c1@loop-metrics",
+            "schema_version": 2,
+            "source": "loaf_pattern_intel",
+            "summary": {
+              "execution_time_ms": 9,
+              "input_tokens": 0,
+              "model_latency_ms": 0,
+              "node_count": 4,
+              "output_tokens": 0,
+              "per_node_ms": {
+                "decline": 0,
+                "gather_evidence": 1,
+                "record": 2,
+                "score_sufficiency": 0
+              },
+              "total_tokens": 0
+            },
+            "terminal_state": "completed",
+            "timestamp": "",
+            "total_cases": 1,
+            "verdict": "PASS"
+          },
+          "id": "eval-v2-case-946ac319-78f8-4af7-8b2e-ee39cfd385c1@loop-metrics"
+        }
+      ],
+      "issue_id": "946ac319-78f8-4af7-8b2e-ee39cfd385c1",
+      "mock_config": {
+        "fp_ratio": 0.05,
+        "seed": 0
+      },
+      "model_config": {
+        "draft_model_id": "",
+        "mutate_model_id": "",
+        "region": "",
+        "triage_model_id": ""
+      },
+      "outcome": {
+        "assessment_id": "asmt-case-946ac319-78f8-4af7-8b2e-ee39cfd385c1-r0",
+        "assessment_locator": "loaf_technical_assessments/asmt-case-946ac319-78f8-4af7-8b2e-ee39cfd385c1-r0",
+        "case_id": "case-946ac319-78f8-4af7-8b2e-ee39cfd385c1",
+        "case_locator": "loaf_prevention_cases/case-946ac319-78f8-4af7-8b2e-ee39cfd385c1",
+        "drafting": "skipped_no_model",
+        "execution_order": [
+          "gather_evidence",
+          "score_sufficiency",
+          "decline",
+          "record"
+        ],
+        "graph_status": "completed",
+        "issue_id": "946ac319-78f8-4af7-8b2e-ee39cfd385c1",
+        "missed_criteria": [
+          "fixtures_and_invariant",
+          "scoped_rule_and_language_set",
+          "corpus_results_with_fp_review",
+          "exception_or_optout_path",
+          "owner_rollout_and_measure"
+        ],
+        "model_steps": [],
+        "models_invoked": [],
+        "policy_id": "loaf-d-verdict-policy-v0",
+        "rationale": "Declined at the gating criteria: the stored evidence does not establish a vulnerable/fixed pair with a written invariant, so the security boundary must be retrieved and validated before any control is chosen.",
+        "recommended_solution_route": "scoping_ingestion",
+        "revisions": 0,
+        "satisfied_criteria": [],
+        "technical_verdict": "needs_more_evidence",
+        "trace": [
+          "gather_evidence: snapshot snap-case-946ac319-78f8-4af7-8b2e-ee39cfd385c1-pre recorded; family='log-verbose-in-prod', pair=no, 1 provenance links",
+          "score_sufficiency: gating FAILED; satisfied=[]; missed=['fixtures_and_invariant', 'scoped_rule_and_language_set', 'corpus_results_with_fp_review', 'exception_or_optout_path', 'owner_rollout_and_measure']",
+          "decline: needs_more_evidence / scoping_ingestion; no rule proposed",
+          "record: assessment asmt-case-946ac319-78f8-4af7-8b2e-ee39cfd385c1-r0 recorded: needs_more_evidence / scoping_ingestion"
+        ]
+      },
+      "work_dir": "/Users/wdaniero/workplace/python-factory/.loaf-runs/experiment-smoke/cells/ee7918a3c3d17568",
+      "workflow_variant": "graph"
+    }
+  ],
+  "schema_version": "loaf_experiment_matrix/v1"
+}

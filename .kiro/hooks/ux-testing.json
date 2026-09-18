@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "UX Testing",
+      "description": "After agent execution that touched view files, visually test brick views using Playwright.",
+      "trigger": "Stop",
+      "action": {
+        "type": "agent",
+        "prompt": "If no mcp/views.py or mcp/views_tabs.py files were changed, skip silently.\n\nIf view files changed:\n1. `uv pip install -e .` then use Playwright to screenshot each changed view\n2. Evaluate: visual balance, hierarchy, readability, flow, consistency, polish\n3. List specific suggestions. Do NOT make changes."
+      },
+      "enabled": false
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+name: builder
+type: component
+namespace: factory.builder
+description: "Internal builder tooling access \u2014 read code repos, search packages,\
+  \ inspect pipelines via builder-mcp proxy"
+mcp_enabled: true
+features:
+- code_package_read
+- code_search
+- pipeline_inspection
+- internal_website_read
+- native_mcp_v2_typed_pydantic_contracts
+adapters:
+- mock
+- midway
+- mcp_proxy
+mcp_tools:
+- builder_get_capabilities
+- builder_health_check
+- builder_describe_config_schema
+- builder_read_url
+- builder_search_code
+- builder_get_pipeline
+- builder_read_package_file
+- builder_list_package_files
+pip_packages:
+- mcp[cli]==2.1.1
+- pydantic==2.13.0
+- httpx>=0.27.0

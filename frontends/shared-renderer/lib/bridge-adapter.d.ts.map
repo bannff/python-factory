@@ -1,0 +1,1 @@
+{"version":3,"file":"bridge-adapter.d.ts","sourceRoot":"","sources":["../src/bridge-adapter.ts"],"names":[],"mappings":"AAAA;;;;;;;;;;;;;GAaG;AACH,MAAM,WAAW,aAAa;IAC5B,QAAQ,CAAC,IAAI,EAAE,MAAM,EAAE,IAAI,EAAE,MAAM,CAAC,MAAM,EAAE,OAAO,CAAC,GAAG,OAAO,CAAC,OAAO,CAAC,CAAC;CACzE"}

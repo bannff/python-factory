@@ -1,0 +1,33 @@
+{
+  "run_id": "audit-idor-001",
+  "experiment": "exp-001",
+  "config_version": "v1",
+  "timestamp": "2026-04-01T00:30:00Z",
+  "note": "This run tested DynamoDB directly, not through HTTP API. Findings are infra-layer IDOR, not app-layer. No GT comparison possible — PetsProfileService GT is for the Java REST API which was not deployed.",
+  "workflow": {
+    "type": "strands_graph",
+    "graph_id": "rt-scan-idor",
+    "source": "components/agent/src/factory/agent/registry/defaults_redteam_idor.py",
+    "entry_points": ["gptoss-idor", "sonnet-idor", "nova2-idor"]
+  },
+  "target": {
+    "app": "PetsProfileService",
+    "type": "localstack_dynamodb",
+    "url": "http://localstack:4566",
+    "description": "PetsProfileService infra deployed to LocalStack via CFN. DynamoDB tables (PetsProfile, Users, AuditLog) with Lambda functions. No API Gateway — agents tested DynamoDB directly."
+  },
+  "findings_count": 9,
+  "findings_summary": [
+    {"resource": "PetsProfile", "subtypes": ["horizontal read", "horizontal write", "horizontal delete", "enumeration"], "severity": "CRITICAL/HIGH"},
+    {"resource": "Users", "subtypes": ["horizontal read", "horizontal write (email change)", "enumeration"], "severity": "CRITICAL/HIGH"},
+    {"resource": "AuditLog", "subtypes": ["horizontal read", "enumeration"], "severity": "HIGH"}
+  ],
+  "scoring": {
+    "note": "No GT scoring — PetsProfileService GT (CR-155679540) is for REST API /yourpets/vet/remove, not DynamoDB direct access. These findings are valid infra-layer IDOR but not comparable to the bug bounty GT.",
+    "gt_total": "N/A",
+    "recall": "N/A"
+  },
+  "sources": {
+    "gt_reference": "Bug Bounty: [IDOR] Unauthorized User Can Delete Vet Clinics — POST /yourpets/vet/remove (CR-155679540, CR-155869672, CR-155175404)"
+  }
+}

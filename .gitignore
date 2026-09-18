@@ -1,0 +1,221 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.hypothesis/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+!frontends/*/lib/
+!projects/*/webapp/lib/
+!projects/*/lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# uv
+.uv/
+
+# Polylith
+bricks/
+.poly/
+
+# Local scratch
+repl_state/
+.object_store/
+.storage/
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.agents/.repo-graph/
+
+# Legacy reference copies (for project recreation)
+legacy/
+
+# Infrastructure / Secrets
+.env
+.env.*
+!.env.example
+!.env.local.example
+logs/
+*.log
+postgres_data/
+neo4j_data/
+chroma_data/
+chroma_memory/
+seaweed_data/
+
+# IDEs
+.kiro/settings/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Editor tooling caches
+.clj-kondo/
+.lsp/
+
+# VS Code extensions
+*.vsix
+
+# OS
+.DS_Store
+.sesskey
+Thumbs.db
+
+# Runtime data
+config/data/
+projects/*/config/
+**/runs/
+**/kb_store.json
+*.sqlite
+*.db
+.dataset_store/
+.dataset_jobs/
+!Thumbs.db
+
+# CDK (infrastructure moved to art-platform repo)
+cdk.out/
+
+# Bedrock AgentCore CLI artifacts (local paths, account-specific)
+.bedrock_agentcore.yaml
+.bedrock_agentcore/
+
+# Personal projects (not shared with team)
+projects/circuitron/
+
+# Security issues (Shepherd findings — tracked externally)
+.agents/.issues/
+
+# .beads/ Rules (consolidated)
+.beads/dolt/
+.beads/dolt-access.lock
+.beads/bd.sock
+.beads/bd.sock.startlock
+.beads/sync-state.json
+.beads/last-touched
+.beads/.exclusive-lock
+.beads/daemon.*
+.beads/interactions.jsonl
+.beads/push-state.json
+.beads/*.lock
+.beads/.beads-credential-key
+.beads/.local_version
+.beads/redirect
+.beads/.sync.lock
+.beads/export-state/
+.beads/ephemeral.sqlite3*
+.beads/dolt-server.*
+.beads/*.corrupt.backup/
+.beads/backup/
+
+# Next Dashboard Rules (consolidated)
+frontends/next-dashboard/node_modules/
+frontends/next-dashboard/.pnp
+frontends/next-dashboard/.pnp.*
+frontends/next-dashboard/.yarn/*
+!frontends/next-dashboard/.yarn/patches
+!frontends/next-dashboard/.yarn/plugins
+!frontends/next-dashboard/.yarn/releases
+!frontends/next-dashboard/.yarn/versions
+frontends/next-dashboard/.next/
+frontends/next-dashboard/out/
+frontends/next-dashboard/build
+frontends/next-dashboard/*.pem
+frontends/next-dashboard/*.log*
+frontends/next-dashboard/.vercel
+frontends/next-dashboard/*.tsbuildinfo
+frontends/next-dashboard/next-env.d.ts
+
+# Companion-X runtime data
+projects/companion_x/data/
+projects/companion_x/.code-cache/
+
+node_modules/
+
+# Dolt database files (added by bd init)
+.dolt/
+
+# Migration docs
+migration-docs/
+
+# ML model weights — never commit large binaries to git
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.gguf
+*.ggml
+adapters/*.safetensors
+
+# Experiment data (raw results, journals, caches)
+**/experiments/
+
+# ChromaDB local persistence (container-free memory adapter)
+chroma_memory/
+
+# External test target apps cloned for dynamic analysis
+WebGoat/
+mcp-servers/context7/
+
+# Local QA / debug scratchpad — screenshots, scripts, bd description drafts
+.qa-tmp/
+.bd-bug-desc.txt
+
+# Playwright install side-effect (node_modules-style) and run artifacts
+.agents/.pw-install/
+frontends/*/test-results/
+playwright-report/
+
+# Local probes / scratch (any session)
+.tmp_*.py
+**/.scratch/
+**/.tmp/
+frontends/next-dashboard/test_agent_delta.mjs
+
+# Personal team-onboarding notes (not for this repo / not shared with team)
+.kiro/loaf/
+.kiro/steering/personal/
+
+# Generated LOAF report artifacts
+/projects/loaf_pattern_intel/reports/
+
+# Generated agent review output and accidental mock-path artifacts
+/semantic-review/
+/MagicMock/
+
+# Opencode plugin runtime — regeneratable vector index + ambient receipts
+.opencode/index/
+.opencode/codebase-index.json
+.ocx/
+
+# Companion-X local telemetry runtime (never version runtime evidence)
+projects/companion_x/telemetry/provenance.sqlite3
+projects/companion_x/.telemetry-live-verify/
+
+# Companion-X KiroCrew port: agent worktrees, vite cache, stray root screenshots from loop evidence
+.worktrees/
+.vite/
+.playwright-mcp/
+/*.png

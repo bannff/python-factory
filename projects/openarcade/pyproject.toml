@@ -1,0 +1,68 @@
+[build-system]
+requires = ["hatchling", "hatch-polylith-bricks"]
+build-backend = "hatchling.build"
+
+[project]
+name = "openarcade"
+version = "0.1.0"
+description = "A beautiful agent-native UI for retro and arcade games — Flet frontend over python-factory bricks"
+requires-python = ">=3.11"
+
+dependencies = [
+    "flet>=0.85.3",
+    "flet-desktop>=0.85.3",  # native desktop window runtime (must match flet version)
+    "flet-video>=0.85.3",  # video player extension for attract-mode snap loops
+    "flet-web>=0.85.3",  # web-mode server runtime for run_web.sh visual self-verification (must match flet version)
+    "pydantic>=2.0.0",
+    "structlog>=25.1.0",
+    "typer>=0.12.0",
+    # Transitive: factory.ui.runtime.__init__ -> config.py imports yaml.
+    # Required to import any factory.ui.runtime.* (incl. models/flet_adapter).
+    "pyyaml>=6.0",
+    "keyring>=25.0.0",  # OS keychain (macOS Keychain / Windows Credential Manager / Linux Secret Service)
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+mcp = [
+    "mcp[cli]==2.1.1",
+]
+assistant = [
+    "langchain==1.3.17",
+    "langchain-aws==1.7.4",
+    "langgraph==1.2.11",
+]
+dev = [
+    "playwright>=1.61.0",  # headless arm64 Chromium for the self-verify screenshot loop (tools/shoot.py); run `python -m playwright install chromium` after install
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["factory"]
+
+[tool.hatch.build]
+dev-mode-dirs = [
+    "../../bases/openarcade/src",
+    "../../components/ui/src",
+    "../../components/evals/src",
+    "../../components/launch/src",
+    "../../components/library/src",
+    "../../components/arcade_config/src",
+    "../../components/state/src",
+    "../../components/curator/src",
+    "../../projects/openarcade",
+]
+
+[tool.hatch.build.hooks.polylith-bricks]
+
+[tool.polylith.bricks]
+    "../../bases/openarcade/src/factory/openarcade" = "factory/openarcade"
+    "../../components/ui/src/factory/ui" = "factory/ui"
+    "../../components/evals/src/factory/evals" = "factory/evals"
+    "../../components/launch/src/factory/launch" = "factory/launch"
+    "../../components/library/src/factory/library" = "factory/library"
+    "../../components/arcade_config/src/factory/arcade_config" = "factory/arcade_config"
+    "../../components/state/src/factory/state" = "factory/state"
+    "../../components/curator/src/factory/curator" = "factory/curator"

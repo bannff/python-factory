@@ -1,0 +1,10 @@
+{
+  "id": "workflow-001",
+  "content": "The workflow brick uses Dagster for pipeline orchestration. It supports asset-based pipelines, sensors for event-driven triggers, and integrates with the telemetry brick for observability. Workflows can be defined declaratively via YAML or programmatically via the MCP authoring tools.",
+  "metadata": {
+    "type": "architecture",
+    "brick": "workflow"
+  },
+  "source": "brick-docs",
+  "created_at": "2026-02-12T18:53:14.691621Z"
+}

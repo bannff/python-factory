@@ -1,0 +1,62 @@
+{
+  "experiment_id": "exp-001",
+  "config_version": "v1",
+  "name": "IDOR Red Team Baseline \u2014 HTTP API Testing",
+  "created_at": "2026-04-03T09:00:00Z",
+  "description": "First experiment with HTTP-focused IDOR prompt and skill. 3 parallel agents (GPT OSS, Sonnet, Nova 2 Lite) against VAmPI.",
+  "targets": [
+    "vampi",
+    "idor_warehouse"
+  ],
+  "workflow": {
+    "graph_id": "rt-scan-idor",
+    "source": "components/agent/src/factory/agent/registry/defaults_redteam_idor.py"
+  },
+  "agent_config": {
+    "models": [
+      "openai.gpt-oss-120b-1:0",
+      "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "us.amazon.nova-2-lite-v1:0"
+    ],
+    "prompt_version": "v2-http-focused",
+    "prompt_source": "defaults_redteam_idor.py::_IDOR_PROMPT",
+    "skills": [
+      "idor-testing",
+      "pentest-ops",
+      "sandbox-ops"
+    ],
+    "entry_points": [
+      "gptoss-idor",
+      "sonnet-idor",
+      "nova2-idor"
+    ],
+    "max_node_executions": 10,
+    "execution_timeout": 900,
+    "node_timeout": 300
+  },
+  "change_log": [
+    "Initial HTTP-focused prompt (replaced DynamoDB-focused v1)",
+    "Added API discovery step",
+    "Added systematic endpoint+method testing",
+    "Added HTTP API IDOR section to idor-testing skill",
+    "Fixed entry_points for parallel execution"
+  ],
+  "runs": [
+    "vampi-idor-004",
+    "warehouse-idor-001"
+  ],
+  "results_summary": {
+    "vampi": {
+      "recall": 0.83,
+      "precision": 0.71,
+      "f1": 0.77,
+      "gt_matched": "5/6"
+    },
+    "idor_warehouse": {
+      "recall": 1.0,
+      "precision": 1.0,
+      "f1": 1.0,
+      "gt_matched": "3/3"
+    }
+  }
+}

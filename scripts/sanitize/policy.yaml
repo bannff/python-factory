@@ -1,0 +1,527 @@
+# Sanitization policy for the public python-software-factory mirror.
+#
+# ############################################################################
+# #  THIS FILE MUST NEVER BE PUBLISHED.                                      #
+# #  It enumerates internal identifiers. Publishing it repeats the mistake   #
+# #  of .SANITIZATION_MANIFEST.md, which handed readers a map of exactly     #
+# #  what to hunt for. The `delete_paths` tier below deletes this directory  #
+# #  from the output tree, and `forbid` fails the build if it survives.      #
+# ############################################################################
+#
+# Tiers, applied in order:
+#   1. delete_paths    -- whole trees / exact files removed
+#   2. replace_files   -- ship a clean hand-authored replacement for a path
+#   3. patches         -- explicit anchored find/replace; FAILS LOUD if the
+#                         anchor is missing, so the policy cannot silently rot
+#                         as the private tree evolves
+#   4. rename_symbols  -- identifier-level rename, token-aware (never touches
+#                         string literals or comments)
+#   5. scrub_prose     -- word-boundary whole-token replacement, restricted to
+#                         prose file types
+#
+# Then: regenerate BRICKS_INDEX, strip pyproject brick maps, and run verify.
+#
+# HARD RULE learned from the 2026-05 pass: no rule may match a bare substring.
+# That pass deleted every literal ".com", which corrupted 200 code sites
+# (re.compile -> repile, view.components -> viewponents, st.composite ->
+# stposite, agent.graph.completed -> agent.graphpleted) and left the mirror
+# unable to even collect tests. Every pattern here is anchored.
+
+version: 4
+generated_for: github.com/bannff/python-software-factory
+
+# ---------------------------------------------------------------------------
+# TIER 1 -- path deletions
+# ---------------------------------------------------------------------------
+delete_paths:
+  # --- sanitizer implementation and policy never ship in the mirror ---
+  - scripts/sanitize/
+  - scripts/sanitize_public.py
+  - scripts/agentcore-ops.py
+  - scripts/deploy-agentcore.sh
+
+  # --- generated artifacts and machine/private deployment configuration ---
+  - frontends/shared-renderer/tsconfig.tsbuildinfo
+  - projects/companion_x/docker-compose.yml
+  - .agents/steering/can-failure-prediction.md
+
+  # --- workspace tooling / internal context ---
+  - .kiro/
+  - .beads/
+  - .vscode/
+
+  # --- excluded bricks: internal-only ---
+  - components/veritas/
+  - components/sipp/
+  - components/gated_garden/
+  - components/builder/
+  # --- excluded brick: deprecated, not private (duplicates cache/graph/storage) ---
+  - components/backend/
+
+  # --- excluded sub-projects (companion_x is the only one published) ---
+  - projects/veritas_standalone/
+  - projects/circuitron/
+
+  # --- REAL VULNERABILITY FINDINGS against named internal services.
+  #     Highest-severity content in the tree. Never publish. ---
+  - projects/companion_x/challenges/team-ask/
+  - projects/companion_x/experiments/
+  - projects/companion_x/runs/
+  - projects/companion_x/.code-cache/
+
+  # --- internal graph contents (~27 MB of Neo4j + a-mem dumps) ---
+  - backups/
+
+  # --- internal-recon / service-mock feature excision (Option A).
+  #     These are not name leaks -- the file CONTENT is the sensitive part:
+  #     live Veritas Cypher schema, and a detection manual enumerating
+  #     internal integration code signatures. Not sanitizable by renaming. ---
+  - components/agent/src/factory/agent/registry/defaults_recon_graph.py
+  - components/agent/src/factory/agent/registry/defaults_recon_graph_only.py
+  - components/agent/src/factory/agent/registry/defaults_recon_hybrid.py
+  - components/agent/src/factory/agent/registry/defaults_redteam_meta_graph.py
+  - components/agent/src/factory/agent/registry/defaults_redteam_setup.py
+  - components/agent/src/factory/agent/registry/defaults_redteam_swarms.py
+  - components/agent/src/factory/agent/registry/redteam_code_discovery_addenda.py
+  - components/agent/src/factory/agent/registry/redteam_sandbox_resources.py
+  - components/agent/src/factory/agent/registry/redteam_service_mocks.py
+
+  # --- skills scoped to internal recon ---
+  - .agents/skills/builder-recon/
+  - .agents/skills/veritas-recon/
+  - components/agent/src/factory/agent/skills/veritas-recon/
+  - components/agent/src/factory/agent/skills/compx-platform/
+
+  # --- metrics ingestion queried the excluded sipp + veritas bricks ---
+  - components/metrics/src/factory/metrics/mcp/ingestion.py
+  - components/metrics/test/factory/metrics/test_ingestion.py
+  - components/metrics/test/factory/metrics/test_ingestion_properties.py
+
+  # --- tests bound to the excised surface (whole file, no salvageable part) ---
+  - components/agent/test/factory/agent/test_factories_recon.py
+  - components/agent/test/factory/agent/test_factories_recon_edge_properties.py
+  - components/agent/test/factory/agent/test_sandbox_label_consistency.py
+  - components/agent/test/factory/agent/test_factories_sandbox_setup_qa.py
+  - components/agent/test/factory/agent/test_graph_workflow_configs.py
+  - components/agent/test/factory/agent/test_redteam_pipeline_meta.py
+  - components/agent/test/factory/agent/test_no_cypher_in_registry.py
+  - components/agent/src/factory/agent/scripts/smoke_test_node.py
+  - bases/api/test/factory/api/test_aws_profile_promotion.py
+
+  # NOTE: .vscode/ and projects/circuitron/ exist in the private working tree
+  # but are UNTRACKED, so git archive already excludes them. They stay listed
+  # as defence in case they are ever committed; the "already gone?" drift
+  # warning for them is expected and benign.
+
+  # --- seeded KB store holding real internal documents (Signal Landscape,
+  #     internal risk data, internal ticket refs). Local dev data, referenced
+  #     by no code. Delete rather than scrub. ---
+  - config/kb_store.json
+
+  # --- recipes that document workflows against the excluded bricks
+  #     end to end; nothing publishable survives a scrub ---
+  - .agents/recipes/security-ops.md
+  - .agents/recipes/metrics-monitoring.md
+
+  # Delete rather than inventing a public identity for private fleet doctrine.
+  - .agents/steering/relativix-fleet-intelligence.md
+
+delete_exact:
+  # tracked despite being in .gitignore:84 -- gitignore does not untrack
+  - .sesskey
+
+# ---------------------------------------------------------------------------
+# TIER 2 -- clean replacement files
+# Content lives under scripts/sanitize/replacements/<same repo path>.
+# ---------------------------------------------------------------------------
+replace_files:
+  - components/agent/src/factory/agent/registry/redteam_playbooks.py
+  - .SANITIZATION_MANIFEST.md
+
+# ---------------------------------------------------------------------------
+# TIER 3 -- anchored patches. Missing anchor = hard failure.
+# ---------------------------------------------------------------------------
+patches:
+  - path: components/agent/src/factory/agent/registry/defaults.py
+    edits:
+      - old: "from .defaults_recon_graph import RECON_GRAPHS\n"
+        new: ""
+      - old: "from .defaults_recon_graph_only import RECON_GRAPH_ONLY\n"
+        new: ""
+      - old: "from .defaults_recon_hybrid import RECON_HYBRID_GRAPH, RECON_HYBRID_SWARMS\n"
+        new: ""
+      - old: "from .defaults_redteam_meta_graph import REDTEAM_PIPELINE_GRAPHS, REDTEAM_PIPELINE_SWARMS\n"
+        new: ""
+      - old: "from .defaults_redteam_setup import SETUP_SWARMS\n"
+        new: ""
+      - old: "    PENTEST_SWARMS + AWS_PENTEST_SWARMS + REDTEAM_SWARMS + SETUP_SWARMS\n"
+        new: "    PENTEST_SWARMS + AWS_PENTEST_SWARMS + REDTEAM_SWARMS\n"
+      - old: "    + DAST_IDOR_HYBRID_SWARMS + RECON_HYBRID_SWARMS\n"
+        new: "    + DAST_IDOR_HYBRID_SWARMS\n"
+      - old: "    SAST_HYBRID_GRAPH, DAST_IDOR_HYBRID_GRAPH, RECON_GRAPH_ONLY,\n    RECON_HYBRID_GRAPH, SANDBOX_GRAPH_ONLY, SANDBOX_HYBRID_GRAPH,\n"
+        new: "    SAST_HYBRID_GRAPH, DAST_IDOR_HYBRID_GRAPH,\n    SANDBOX_GRAPH_ONLY, SANDBOX_HYBRID_GRAPH,\n"
+      - old: "    REDTEAM_GRAPHS + RECON_GRAPHS + SANDBOX_GRAPHS + REDTEAM_PIPELINE_GRAPHS\n"
+        new: "    REDTEAM_GRAPHS + SANDBOX_GRAPHS\n"
+      - old: "    SECURITY_SWARMS + REDTEAM_PIPELINE_SWARMS + EXPERIMENT_SWARMS\n"
+        new: "    SECURITY_SWARMS + EXPERIMENT_SWARMS\n"
+
+  - path: components/agent/src/factory/agent/registry/defaults_redteam_graph.py
+    edits:
+      - old: "from .defaults_redteam_swarms import RT_FOCUSED_SWARMS\n"
+        new: ""
+      - old: "REDTEAM_SWARMS: list[dict] = RT_FOCUSED_SWARMS"
+        new: "REDTEAM_SWARMS: list[dict] = []"
+
+  - path: components/agent/src/factory/agent/registry/factories.py
+    edits:
+      - old: "    if name == \"recon\":\n        from .defaults_recon_graph import build_recon_tasks\n        # ctx ignored — recon factory is a pure constant\n        return lambda _ctx: build_recon_tasks()\n"
+        new: ""
+
+  - path: components/metrics/src/factory/metrics/mcp/__init__.py
+    edits:
+      - old: "from . import deterministic, deterministic_stats, operational, authoring, resources, prompts, lifecycle, seed"
+        new: "from . import deterministic, deterministic_stats, operational, authoring, resources, prompts, lifecycle, seed  # noqa: F401"
+
+  # portfolio ingestion is deleted with ingestion.py; drop its tool name,
+  # its dashboard tab and its action form so nothing dangles
+  - path: components/metrics/src/factory/metrics/core.py
+    edits:
+      - old: "        \"metrics_ingest_portfolio\",\n"
+        new: ""
+
+  - path: components/metrics/src/factory/metrics/mcp/views_tabs.py
+    edits:
+      # whole "portfolio" tab dict, whitespace-tolerant
+      - mode: regex
+        old: '\n {16}\{\n {20}"id": "portfolio",.*?\n {16}\},\n'
+        new: "\n"
+
+  - path: components/metrics/src/factory/metrics/mcp/views_actions.py
+    edits:
+      - old: "        _ingest_portfolio(), _run_lifecycle(),"
+        new: "        _run_lifecycle(),"
+      # whole _ingest_portfolio() factory
+      - mode: regex
+        old: 'def _ingest_portfolio\(\) -> dict\[str, Any\]:.*?\n\s*\}\n\n\n'
+        new: ""
+
+  # Inventory/table rows describing bricks that do not exist in the mirror.
+  # Renaming these was NOT enough: a scrubbed row still documents a phantom
+  # brick (and leaked "6B+ node AWS resource graph"). Drop the rows outright.
+  - path: .agents/steering/brick-inventory.md
+    edits:
+      - mode: delete_lines
+        old: '^\| *(~~)?(veritas|sipp|builder|gated_garden|backend)(~~)? *\|'
+        min_matches: 4
+
+  # PROMPT_CASES is the canonical shared fixture -- test_wave1_1_role_invariants
+  # and test_prompt_properties both load it by file path, so pruning the
+  # deleted-module rows here fixes all three files at once.
+  - path: components/agent/test/factory/agent/test_default_prompts_skills.py
+    edits:
+      - mode: delete_lines
+        old: '^_(RH|RGO) = _M \+ "defaults_recon_(hybrid|graph_only)"$'
+        min_matches: 2
+      - mode: delete_lines
+        old: '^ *\("_\w+", _(RH|RGO), '
+        min_matches: 5
+      - mode: regex
+        old: '\n *\(_M \+ "defaults_redteam_swarms", "RECON_SWARM",.*?"SETUP_SANDBOX_SWARM",\n[^\n]*\n'
+        new: "\n"
+
+  # the three contiguous recon-variant cases (schema/prompts/hybrid)
+  - path: components/agent/test/factory/agent/test_experiment_configs.py
+    edits:
+      - mode: regex
+        old: 'def test_recon_graph_schema\(\).*?(?=\ndef test_sandbox_graph_schema)'
+        new: ""
+      # completeness audit: drop the recon variants from the expected sets
+      - mode: delete_lines
+        old: '^ *"rt-recon-hybrid-team-a", "rt-recon-hybrid-team-b",$'
+      - old: "        \"rt-sast-scan-hybrid\", \"rt-scan-idor-hybrid\",\n        \"rt-recon-graph\", \"rt-recon-hybrid\",\n"
+        new: "        \"rt-sast-scan-hybrid\", \"rt-scan-idor-hybrid\",\n"
+
+  # registration-coverage audit: the excised registrations are no longer
+  # reachable, so they must come out of the expected-ID set
+  - path: components/agent/test/factory/agent/test_skills_field_population.py
+    edits:
+      - old: "    \"rt-scan-idor\", \"rt-scan-idor-hybrid\", \"rt-recon-graph\",\n    \"rt-recon-hybrid\", \"rt-sast-scan-hybrid\", \"rt-sandbox-setup-graph\",\n"
+        new: "    \"rt-scan-idor\", \"rt-scan-idor-hybrid\",\n    \"rt-sast-scan-hybrid\", \"rt-sandbox-setup-graph\",\n"
+      - old: "    \"rt-sast-scan\", \"recon-app\", \"sandbox-setup\", \"sast\", \"dast\",\n"
+        new: "    \"rt-sast-scan\", \"sandbox-setup\", \"sast\", \"dast\",\n"
+      - old: "    \"rt-sast-scan-swarm\", \"rt-scan-idor-swarm-v2\", \"rt-scan-vulns\",\n    \"rt-prove-vulns\", \"rt-recon\", \"rt-pull-artifacts\", \"rt-setup-sandbox\",\n"
+        new: "    \"rt-sast-scan-swarm\", \"rt-scan-idor-swarm-v2\",\n"
+
+  # generic role-invariant tests survive; the two bound to the deleted
+  # internal-recon SKILL.md are removed along with its path constant
+  - path: components/agent/test/factory/agent/test_wave1_1_role_invariants.py
+    edits:
+      - mode: delete_lines
+        old: '^_VERITAS_SKILL = '
+      - mode: regex
+        old: 'def test_veritas_recon_skill_covers_account_scoped_step2b\(\):.*?STEP 3 of the deleted addenda taught this\."\n    \)\n\n\n'
+        new: ""
+      - mode: delete_lines
+        old: 'scoped Veritas STEP 2b\) lives in the runtime SKILL\.md that'
+
+  # generic launch-validator tests survive; only the one case bound to a
+  # deleted swarm is removed
+  - path: components/agent/test/factory/agent/test_launch_validator.py
+    edits:
+      - old: "from factory.agent.registry.defaults_redteam_swarms import RECON_SWARM\n"
+        new: ""
+      - mode: regex
+        old: 'def test_static_only_swarm_resolves_clean\(\) -> None:.*?\n\n\n'
+        new: ""
+
+  # excluded bricks removed from the chat agent's tool-prefix allowlist
+  - path: components/agent/src/factory/agent/runtime/companion/tools.py
+    edits:
+      - old: "    \"veritas\",        # Veritas security knowledge graph\n    \"sipp\",           # SIPP security data lake catalog\n"
+        new: ""
+
+  # Code and structured contracts are changed only through file-scoped,
+  # anchored patches. regex_all still fails when its declared anchor vanishes.
+  - path: .gitignore
+    edits:
+      - {mode: regex_all, old: 'art-platform', new: 'deployment repository'}
+
+  - path: components/sandbox/src/factory/sandbox/runtime/models.py
+    edits:
+      - {mode: regex_all, old: '\bCloudAuth\b', new: 'OAuth provider', min_matches: 2}
+      - {mode: regex_all, old: '\bOdin\b', new: 'credential store', min_matches: 1}
+      - {mode: regex_all, old: '\bCoral\b', new: 'RPC framework', min_matches: 1}
+      - {mode: regex_all, old: '\bTurtle\b', new: 'credential file', min_matches: 1}
+
+  - path: components/sandbox/src/factory/sandbox/runtime/manifest.py
+    edits:
+      - {old: '  # Brazil package name', new: '  # build-system package name'}
+
+  - path: components/sandbox/src/factory/sandbox/runtime/cfn_defaults.py
+    edits:
+      - {mode: regex_all, old: '\bVeritas\b', new: 'external graph', min_matches: 4}
+      - {mode: regex_all, old: '\bveritas\b', new: 'external graph', min_matches: 1}
+
+  - path: components/sandbox/src/factory/sandbox/mcp/operational.py
+    edits:
+      - {mode: regex_all, old: '\bCloudAuth\b', new: 'OAuth provider', min_matches: 1}
+      - {mode: regex_all, old: '\bOdin\b', new: 'credential store', min_matches: 1}
+      - {mode: regex_all, old: '\bCoral\b', new: 'RPC framework', min_matches: 1}
+      - {mode: regex_all, old: '\bTurtle\b', new: 'credential file', min_matches: 1}
+      - {mode: regex_all, old: '\bVeritas\b', new: 'external graph', min_matches: 2}
+
+  - path: components/sandbox/src/factory/sandbox/mcp/cfn_tools.py
+    edits:
+      - {mode: regex_all, old: '\bveritas\b', new: 'graph', min_matches: 1}
+
+  - path: components/sandbox/src/factory/sandbox/runtime/adapters/localstack_adapter.py
+    edits:
+      - {mode: regex_all, old: '\bCloudAuth\b', new: 'OAuth provider', min_matches: 2}
+
+  - path: components/agent/src/factory/agent/plugins/steering.py
+    edits:
+      - {mode: regex_all, old: '\bVeritas\b', new: 'the graph', min_matches: 3}
+      - {mode: regex_all, old: '\bquery_veritas\b', new: 'graph_query', min_matches: 1}
+
+  - path: components/agent/src/factory/agent/plugins/multiagent_metrics.py
+    edits:
+      - {mode: regex_all, old: '\bautosec\b', new: 'security', min_matches: 3}
+
+  - path: components/agent/src/factory/agent/runtime/swarm_tools.py
+    edits:
+      - {old: '# Veritas', new: '# External graph'}
+
+  - path: components/agent/src/factory/agent/registry/defaults_standalone.py
+    edits:
+      - {mode: regex_all, old: '\bVeritas\b', new: 'graph tools', min_matches: 2}
+
+  - path: components/agent/src/factory/agent/runtime/companion/prompt.py
+    edits:
+      - {old: 'explore Veritas', new: 'explore application graphs'}
+
+  - path: components/agent/test/factory/agent/test_strands_mcp_chat_loopback.py
+    edits:
+      - mode: regex
+        old: '"permissions", "veritas",\s*"sipp", "agent"'
+        new: '"permissions", "agent"'
+
+  - path: components/graph/src/factory/graph/mcp/docs_taxonomy.py
+    edits:
+      - {mode: regex_all, old: '\bVeritas\b', new: 'an external graph', min_matches: 3}
+
+  - path: components/metrics/src/factory/metrics/mcp/seed.py
+    edits:
+      - {mode: regex_all, old: '\bAutoSec\b', new: 'security', min_matches: 2}
+      - {mode: regex_all, old: '\bautosec\b', new: 'security', min_matches: 20}
+      - {mode: regex_all, old: '\bveritas\b', new: 'graph', min_matches: 2}
+      - {mode: regex_all, old: '\bquery_veritas\b', new: 'graph_query', min_matches: 2}
+      - {mode: regex_all, old: '\bsipp_run_query\b', new: 'security_list_findings_for_run', min_matches: 3}
+
+  - path: components/metrics/test/factory/metrics/test_taxonomy_properties.py
+    edits:
+      - {mode: regex_all, old: '\bautosec\b', new: 'security', min_matches: 2}
+
+  - path: bases/mcp_server/src/factory/mcp_server/runtime/progressive.py
+    edits:
+      - {mode: regex_all, old: '\bveritas\b', new: 'graph', min_matches: 2}
+
+  - path: bases/mcp_server/test/factory/mcp_server/test_aggregator_primitives.py
+    edits:
+      - {mode: regex_all, old: '\bveritas\b', new: 'graph', min_matches: 3}
+
+  - path: bases/mcp_server/test/factory/mcp_server/test_progressive.py
+    edits:
+      - {mode: regex_all, old: '\bveritas\b', new: 'graph', min_matches: 4}
+
+  - path: bases/api/src/factory/api/main.py
+    edits:
+      - {old: '``art-support``', new: 'a developer shell profile'}
+
+  - path: frontends/shared-renderer/src/renderers/renderers-item-list-icons.ts
+    edits:
+      - {old: '  veritas: Shield,', new: '  security_graph: Shield,'}
+
+  - path: frontends/shared-renderer/lib/renderers/renderers-item-list-icons.js
+    edits:
+      - {old: '    veritas: Shield,', new: '    security_graph: Shield,'}
+
+# ---------------------------------------------------------------------------
+# TIER 4 -- identifier renames (Python NAME tokens only)
+# ---------------------------------------------------------------------------
+rename_symbols:
+  _AUTOSEC_DEFAULTS: _SECURITY_DEFAULTS
+
+# ---------------------------------------------------------------------------
+# TIER 5 -- prose scrubs. Word-boundary, whole-token only.
+# Replacements must be plausible public terms. A REDACTED_* sentinel in the
+# OUTPUT is itself a verify failure (see forbid: placeholder_sentinel) --
+# that is how `REDACTED_PLATFORM` shipped into published prose last time.
+# ---------------------------------------------------------------------------
+scrub_prose:
+  # Prose only. Source code and structured contracts require explicit
+  # replacements, anchored patches, or deletion so semantics cannot drift.
+  extensions: [".md", ".txt"]
+  filenames: []
+  terms:
+    # internal program / system names -> neutral equivalents
+    - {from: "AutoSec",        to: "portfolio security"}
+    - {from: "autosec",        to: "portfolio-security"}
+    - {from: "Midway",         to: "SSO"}
+    - {from: "midway",         to: "sso"}
+    - {from: "mwinit",         to: "sso-login"}
+    - {from: "Brazil",         to: "the internal build system"}
+    - {from: "CloudAuth",      to: "OAuthProvider"}
+    - {from: "cloudauth",      to: "oauth_provider"}
+    - {from: "Odin",           to: "CredentialStore"}
+    - {from: "Turtle",         to: "CredentialFile"}
+    - {from: "Coral",          to: "RpcFramework"}
+    - {from: "Veritas",        to: "the security graph"}
+    - {from: "veritas",        to: "security-graph"}
+    - {from: "SIPP",           to: "the findings store"}
+    - {from: "Sipp",           to: "Findings-store"}
+    - {from: "sipp",           to: "findings-store"}
+    - {from: "VERITAS",        to: "SECURITY GRAPH"}
+    - {from: "gated_garden",   to: "policy-gate"}
+    - {from: "PetsProfileService", to: "ExampleService"}
+    - {from: "PetsProfileWebsite", to: "ExampleWebsite"}
+    - {from: "PetsProfile",    to: "ExampleService"}
+    - {from: "SupplierShipmentAddress", to: "ExampleAddressService"}
+    - {from: "PenPal",         to: "code-review-bot"}
+    - {from: "penpal",         to: "code-review-bot"}
+    - {from: "Taskei",         to: "the issue tracker"}
+    - {from: "conduit",        to: "identity-provider"}
+    - {from: "IibsAdminAccess", to: "AdminRole"}
+    - {from: "art-support",    to: "support-account"}
+    - {from: "art-agents",     to: "agents-account"}
+    - {from: "art-ml",         to: "ml-account"}
+    - {from: "art-platform",   to: "platform-infra"}
+    # ART program framing -> neutral
+    - {from: "ART platform",   to: "the deployment platform"}
+    - {from: "ART multi-account", to: "multi-account"}
+  # regex scrubs -- must be fully anchored, never bare substrings
+  regex_terms:
+    # Digit lookarounds, NOT \b. These IDs appear inside URL-encoded ARNs
+    # ("...%3A647239283265") where the preceding char is a digit, so \b
+    # never matches and the value survives. Found 2026-08 by manual grep
+    # after fail-closed verify passed -- see the matching `forbid` rule.
+    - {pattern: '(?<![0-9])420536192516(?![0-9])',  to: "123456789012"}
+    - {pattern: '(?<![0-9])854929212007(?![0-9])',  to: "123456789012"}
+    - {pattern: '(?<![0-9])647239283265(?![0-9])',  to: "123456789012"}
+    - {pattern: 'code\.amazon\.com', to: "the internal code browser"}
+    - {pattern: 'pipelines\.amazon\.com', to: "the internal pipeline console"}
+    - {pattern: 'odin\.amazon\.com', to: "the internal credential store"}
+    - {pattern: '\bbuilder_list_package_files\b', to: "repo_list_files"}
+    - {pattern: '\bbuilder_read_package_file\b',  to: "repo_read_file"}
+    - {pattern: '\bquery_veritas\b',  to: "graph_query"}
+    - {pattern: '\bsipp_run_query\b', to: "security_list_findings_for_run"}
+    - {pattern: '[\w.]+@amazon\.com', to: "dev@example.com"}
+    # console URL naming the internal CodeCommit repo
+    - {pattern: 'https://us-east-1\.console\.aws\.amazon(\.com)?/codesuite/codecommit/repositories/[\w-]+/browse',
+       to: "https://github.com/bannff/python-software-factory"}
+
+# ---------------------------------------------------------------------------
+# FAIL-CLOSED VERIFY -- any hit in the OUTPUT tree fails the build.
+# This is the step the 2026-05 pass lacked.
+# ---------------------------------------------------------------------------
+forbid:
+  # Digit lookarounds, NOT \b -- \b fails inside URL-encoded ARNs.
+  - {name: account_id,       pattern: '(?<![0-9])(420536192516|854929212007|647239283265)(?![0-9])'}
+  # any 12-digit run that is not a known placeholder, as a catch-all for
+  # account IDs we have not enumerated
+  - {name: unknown_account_id, pattern: '(?<![0-9])(?!123456789012|000000000000|999999999999)[0-9]{12}(?![0-9])'}
+  - {name: midway,           pattern: '(?i)\bmidway\b|\bmwinit\b'}
+  - {name: internal_host,    pattern: '(?i)(code|pipelines|odin|tiny|w|issues|quip)[-.]amazon(\.com)?\b'}
+  - {name: internal_email,   pattern: '@amazon\.com'}
+  - {name: brazil,           pattern: '\bBrazil\b'}
+  - {name: autosec,          pattern: '(?i)\bautosec\b'}
+  - {name: aws_profile,      pattern: '\bart-(support|agents|ml|platform)\b'}
+  - {name: auth_provider,    pattern: '\bIibsAdminAccess\b'}
+  - {name: internal_service, pattern: '\b(CloudAuth|AAASecurityDaemon|register_with_aaa|OdinLocalRetriever|odin-get|CoralModule|turtleCredentialsPath)\b'}
+  - {name: internal_program, pattern: '\b(VMR|LOAF|Taskei)\b'}
+  - {name: excluded_brick,   pattern: '(?i)\b(veritas|sipp|gated_garden)\b'}
+  - {name: internal_appsec,  pattern: '\b(PetsProfile\w*|SupplierShipmentAddress|penpal_report)\b'}
+  # the sentinel-leak guard: placeholders must never reach published prose
+  - {name: placeholder_sentinel, pattern: '\bREDACTED_[A-Z_]+\b'}
+  # the 2026-05 corruption signature -- proves no bare-substring rule ran
+  - {name: com_scrub_damage, pattern: '\b(repile|stposite|viewponents|graphpleted|infoponents|selfponents)\b|from ponents import'}
+  # residue the rename tier can MASK: a scrubbed sentence still describing an
+  # internal system. These phrases survive a name swap, so match the prose.
+  - {name: internal_scale_claim, pattern: '6B\+ node|6 ?billion[- ]node'}
+  - {name: internal_tooling_desc, pattern: 'Internal builder tooling|read code repos, search packages'}
+  - {name: internal_cred_path,   pattern: '~/\.(midway|sso)/cookie|/root/\.(midway|sso)/cookie'}
+  # policy must not have survived into the output
+  - {name: policy_leak,      pattern: 'scripts/sanitize/policy\.yaml'}
+
+# Documented exceptions. Each needs a reason; verify prints them so they
+# stay visible rather than becoming invisible permanent carve-outs.
+allow_exceptions:
+  - path: components/ui/src/factory/ui/runtime/adapters/htmx_renderers_health.py
+    pattern: '133146708735'
+    reason: >
+      Substring of the 15-digit CPython id() value 133146708735736 in a
+      docstring about stripping Python object IDs from dict keys. Not an
+      AWS account ID. Verified 2026-08.
+  - path: frontends/next-dashboard/lib/timeline-sessions.ts
+    pattern: '978307200000'
+    reason: Epoch-milliseconds boundary for year 2001 in a comment.
+  - path: docs/can_bus_datasets_catalog.md
+    pattern: '(?i)\bautosec\b'
+    reason: >
+      Refers to the public AutoSec academic CAN-bus dataset corpus, not the
+      internal program. Confirm the surrounding prose stays dataset-scoped.
+
+# ---------------------------------------------------------------------------
+# STRUCTURAL VERIFY
+# ---------------------------------------------------------------------------
+structural:
+  expected_components: 37
+  expected_bases: 4
+  # bricks removed from both pyproject brick maps and dev-mode-dirs
+  strip_brick_maps: [veritas, sipp, gated_garden, builder, backend]
+  pyproject_files:
+    - pyproject.toml
+    - projects/companion_x/pyproject.toml
+  require_brick_yaml: true
+  require_no_dangling_index: true
+  require_compileall: true
+  require_pytest_collect: true
