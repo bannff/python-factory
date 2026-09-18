@@ -74,7 +74,7 @@ mlx-test = [
     "peft==0.19.1",
     "safetensors==0.8.0",
     "torch==2.13.0",
-    "transformers==5.5.4",
+    "transformers==5.10.1",
 ]
 
 # Optional heavy ML extras for the machine_learning brick's training and
@@ -93,7 +93,7 @@ ml = [
     "safetensors==0.8.0",
     "chronos-forecasting==2.3.1",
     "ncps==1.0.1",
-    "transformers==5.5.4",
+    "transformers==5.10.1",
 ]
 
 [build-system]
