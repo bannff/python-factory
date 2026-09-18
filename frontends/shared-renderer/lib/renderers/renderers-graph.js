@@ -1,5 +1,5 @@
 "use client";
-import { jsxs as _jsxs, jsx as _jsx } from "react/jsx-runtime";
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React, { useState, useCallback, useRef, useEffect, Suspense } from "react";
 import { useGraphData } from "../lib/use-graph-data";
 // React.lazy replaces next/dynamic(..., { ssr: false }). GraphViewer only

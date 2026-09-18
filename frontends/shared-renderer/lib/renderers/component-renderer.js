@@ -1,5 +1,5 @@
 "use client";
-import { jsx as _jsx, Fragment as _Fragment } from "react/jsx-runtime";
+import { Fragment as _Fragment, jsx as _jsx } from "react/jsx-runtime";
 import { useCallback } from "react";
 import { FallbackComponent, getRenderer, normalizeComponentName } from "./component-map";
 import { AnimationWrapper } from "./animation-wrapper";

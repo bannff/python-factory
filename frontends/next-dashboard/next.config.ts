@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 import { buildSecurityHeaders } from "./lib/security/csp";
 
 const SPA_VIEWS = ["graph", "timeline", "findings", "evals", "metrics", "ml"];
@@ -13,6 +14,8 @@ const SPA_VIEWS = ["graph", "timeline", "findings", "evals", "metrics", "ml"];
  */
 const nextConfig: NextConfig = {
   output: "standalone",
+  transpilePackages: ["@companion-x/shared-renderer"],
+  turbopack: { root: path.resolve(process.cwd(), "../..") },
   async redirects() {
     return SPA_VIEWS.map((v) => ({
       source: `/${v}`,

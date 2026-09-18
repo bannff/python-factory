@@ -57,11 +57,7 @@ export function ButtonRenderer({ node }) {
     }, [ref, confirming, dispatch]);
     const verb = label ?? ref?.label ?? "Button";
     const shown = action_error ?? error;
-    const button = (
-    // className stays on the control itself so brick-supplied layout (e.g.
-    // `w-full`) still applies. `props.style` is handled one level up by
-    // ComponentRenderer's wrapper — pinned by renderers-style-passthrough.
-    _jsx(Button, { variant: confirming ? "destructive" : variant, size: size, disabled: disabled || pending || !ref, onClick: handleClick, className: className, "aria-busy": pending || undefined, children: pending ? "Working…" : confirming ? `Confirm: ${verb}` : verb }));
+    const button = (_jsx(Button, { variant: confirming ? "destructive" : variant, size: size, disabled: disabled || pending || !ref, onClick: handleClick, className: className, "aria-busy": pending || undefined, children: pending ? "Working…" : confirming ? `Confirm: ${verb}` : verb }));
     if (!shown)
         return button;
     return (_jsxs("div", { className: "space-y-1", children: [button, _jsx("div", { role: "alert", className: "rounded-md border border-destructive/50 p-2 text-xs text-destructive", children: shown })] }));
