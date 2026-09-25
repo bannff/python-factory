@@ -96,3 +96,27 @@ def test_authoring_nested_dto_dump_keeps_flat_tool_kwargs() -> None:
     assert result.ok is True
     assert result.data.ok is False
     assert result.data.error == "authoring_disabled"
+
+
+def test_get_views_payload_validates_and_uses_string_intent_map_keys() -> None:
+    """Regression: bool intent_map keys made ViewsOutput reject the whole payload (#40)."""
+    from factory.metrics.mcp.contracts.deterministic import ViewsOutput
+
+    result = _tools()["metrics_get_views"].fn()
+    assert result.ok is True
+
+    # Re-validate the dumped payload so a non-JSON-safe key type fails here, not at boot.
+    payload = ViewsOutput.model_validate(result.data.model_dump())
+    assert payload.views, "metrics_get_views must produce at least one view"
+
+    intent_maps = [
+        tab["alert_props"]["intent_map"]
+        for view in payload.views
+        for component in view.components
+        for tab in component.get("props", {}).get("detail", {}).get("tabs", [])
+        if "alert_props" in tab and "intent_map" in tab["alert_props"]
+    ]
+    assert intent_maps, "expected an alert tab with an intent_map"
+    for intent_map in intent_maps:
+        assert intent_map == {"true": "warning", "false": "success"}
+        assert all(isinstance(key, str) for key in intent_map)
