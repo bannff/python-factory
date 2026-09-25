@@ -7,6 +7,9 @@ vi.mock("@copilotkit/react-core/v2", () => ({
   useHumanInTheLoop: vi.fn(),
   useRenderTool: vi.fn(),
 }));
+// `<FrontendTools>` mounts OperationsNavigationTools, which calls useRouter();
+// a bare render has no app-router context (same mock as operations-navigation.test.tsx).
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 import { FrontendTools } from "@/lib/copilotkit/frontend-tools";
 import { WorkbenchProvider, useWorkbenchContext } from "@/lib/workbench-context";

@@ -16,7 +16,7 @@
     "@companion-x/shared-renderer": "file:../shared-renderer",
     "@copilotkit/react-core": "1.73.0",
     "@copilotkit/runtime": "1.73.0",
-    "@mcp-ui/client": "7.1.1",
+    "@mcp-ui/client": "5.6.2",
     "@modelcontextprotocol/client": "2.0.0",
     "@radix-ui/react-alert-dialog": "^1.1.4",
     "@radix-ui/react-collapsible": "^1.1.2",
