@@ -10,21 +10,27 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from factory.api.runtime.bridge import register_bridge_routes
 from factory.api.runtime.side_chat_wiring import register_side_chat
 
-# Skipped: this drives the ENTIRE /api/health route with only the aggregator and
-# the Bedrock client mocked, and the remaining collaborators push its runtime past
-# 150s (the route itself is fast in production — the live API answers
-# /api/health in ~140ms — so this is harness cost, not a product defect).
-# Making it hermetic is tracked in issue #48; the projection it asserts
-# (`side_chat` on the health payload) stays covered by test_bridge.py in the
-# meantime. Do not re-enable without stubbing the route's other collaborators.
-pytestmark = pytest.mark.skip(reason="harness bootstrap cost >150s; see issue #48")
+
+def _mock_aggregator() -> MagicMock:
+    """Aggregator double whose health/capabilities payloads are serializable.
+
+    A bare ``MagicMock`` wedges this route: ``make_serializable`` calls
+    ``obj.model_dump()`` on anything exposing that attribute
+    (``components/mcp_utils/src/factory/mcp_utils/serialization.py:32``), a
+    MagicMock exposes everything, so serialization recurses until
+    ``RecursionError``. Same shape as ``test_bridge._make_mock_aggregator``.
+    """
+    agg = MagicMock()
+    agg.get_all_tool_names.return_value = ["kb_search"]
+    agg.get_aggregated_health.return_value = {"status": "healthy"}
+    agg.get_aggregated_capabilities.return_value = {}
+    return agg
 
 
 def _health() -> dict:
@@ -34,7 +40,7 @@ def _health() -> dict:
         "factory.api.runtime.views.ensure_views_registered",
     ), patch(
         "factory.api.runtime.bridge._get_aggregator",
-        return_value=MagicMock(get_all_tool_names=lambda: ["kb_search"]),
+        return_value=_mock_aggregator(),
     ), patch(
         # The planner is built during registration, and a real Bedrock client
         # would need live AWS credentials.
