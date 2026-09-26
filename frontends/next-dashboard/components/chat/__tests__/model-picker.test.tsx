@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ProviderGroup } from "@/lib/model-catalog";
 
 const mocks = vi.hoisted(() => ({
   core: { properties: {} as Record<string, unknown>, setProperties: vi.fn() },
@@ -8,7 +9,7 @@ const mocks = vi.hoisted(() => ({
     groups: [
       { provider: "bedrock", models: [{ model_id: "anthropic.claude", provider: "bedrock", model: "claude" }] },
       { provider: "openrouter", models: [{ model_id: "openrouter/x/y", provider: "openrouter", model: "x/y" }] },
-    ],
+    ] as ProviderGroup[],
     models: [], loading: false, error: null as string | null, refresh: vi.fn(),
   },
   preferences: { plainDiffs: false, hiddenModels: [] as string[], revision: 0 },

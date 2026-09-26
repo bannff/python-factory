@@ -19,9 +19,12 @@
   body {
     @apply bg-background text-foreground;
   }
-  /* Display → Density. Tailwind v4 derives every p-*/gap-*/m-*/h-* utility
-     from --spacing, so one root override tightens the whole UI uniformly.
-     Applied by DisplayPreferenceSync from the durable owner preference. */
+  /* Display → Density. Tailwind v4 derives padding, gap, margin, and height
+     utilities from --spacing, so one root override tightens the whole UI
+     uniformly. Applied by DisplayPreferenceSync from the durable owner
+     preference. (Utility prefixes stay out of this comment on purpose: a
+     literal star followed by a slash would terminate it early and break the
+     Tailwind PostCSS parse.) */
   html[data-density="compact"] {
     --spacing: 0.2rem;
   }

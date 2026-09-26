@@ -4,7 +4,8 @@ import { GraphToolbar } from "../graph-toolbar";
 
 const BASE_PROPS = {
   query: "", searchMode: "type" as const, activePreset: null, loading: false,
-  broadControlsDisabled: false, runsSelector: <div />, activity: {},
+  broadControlsDisabled: false, runsSelector: <div />,
+  activity: { runs: false, agents: false, invocations: false },
   onQueryChange: vi.fn(), onToggleSearchMode: vi.fn(), onSearch: vi.fn(),
   onLoadPreset: vi.fn(), onFit: vi.fn(), onReset: vi.fn(),
   stats: null, visibleNodes: 0, visibleLinks: 0,

@@ -190,7 +190,7 @@ describe("call_brick_tool envelope regression", () => {
     const { callTool, ApiError } = await import("@/lib/api");
     const failure = await callTool("graph_get_stats", {}).catch((err: unknown) => err);
     expect(failure).toBeInstanceOf(ApiError);
-    expect((failure as ApiError).status).toBe(502);
+    expect((failure as InstanceType<typeof ApiError>).status).toBe(502);
   });
 
   it("maps an inner transport ok:false envelope to ApiError 502", async () => {
@@ -208,7 +208,7 @@ describe("call_brick_tool envelope regression", () => {
     const { callTool, ApiError } = await import("@/lib/api");
     const failure = await callTool("graph_get_stats", {}).catch((err: unknown) => err);
     expect(failure).toBeInstanceOf(ApiError);
-    expect((failure as ApiError).status).toBe(502);
+    expect((failure as InstanceType<typeof ApiError>).status).toBe(502);
   });
 
   it("maps an unrecognizable envelope to ApiError 502", async () => {
@@ -222,6 +222,6 @@ describe("call_brick_tool envelope regression", () => {
     const { callTool, ApiError } = await import("@/lib/api");
     const failure = await callTool("graph_get_stats", {}).catch((err: unknown) => err);
     expect(failure).toBeInstanceOf(ApiError);
-    expect((failure as ApiError).status).toBe(502);
+    expect((failure as InstanceType<typeof ApiError>).status).toBe(502);
   });
 });

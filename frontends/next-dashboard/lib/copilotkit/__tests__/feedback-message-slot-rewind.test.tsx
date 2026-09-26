@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { Observable } from "rxjs";
 import { CopilotKitProvider } from "@copilotkit/react-core/v2";
 import { AbstractAgent, type BaseEvent, type RunAgentInput } from "@ag-ui/client";
+import type { AssistantMessage } from "@ag-ui/core";
 import { makeAssistantMessageSlot } from "../feedback-message-slot";
 
 const MESSAGE = { id: "msg-1", role: "assistant" as const, content: "Hello there" };
@@ -14,7 +15,7 @@ class IdleAgent extends AbstractAgent {
   }
 }
 
-function renderSlot(onRewind?: (m: typeof MESSAGE) => void) {
+function renderSlot(onRewind?: (m: AssistantMessage) => void) {
   const Slot = makeAssistantMessageSlot({ onRewind });
   return render(
     <CopilotKitProvider selfManagedAgents={{ default: new IdleAgent() }}>

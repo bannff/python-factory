@@ -162,7 +162,10 @@ export function InspectorAttachWorkaround() {
 
     const sweep = () => {
       const elems = document.querySelectorAll(INSPECTOR_TAG);
-      elems.forEach((el) => ensureAttached(el as InspectorElement, seen));
+      // `WebInspectorElement` (the SDK's declared element type) and
+      // `InspectorElement` differ only by a private field, so TS refuses the
+      // direct cast; the custom element is the same node either way.
+      elems.forEach((el) => ensureAttached(el as unknown as InspectorElement, seen));
     };
 
     // Initial pass — the inspector may already be in the DOM by the

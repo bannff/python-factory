@@ -272,7 +272,9 @@ export function CopilotChatSidebar({ onToggle, activeView, width, onResize }: Co
               />
             ),
           }}
-          input={InputSlot}
+          // Same SDK slot-typing gap as messageView above: the runtime
+          // accepts a wrapper FC, the type wants `typeof CopilotChatInput`.
+          input={InputSlot as never}
         />
       </div>
       {panelOpen && (

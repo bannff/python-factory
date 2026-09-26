@@ -27,7 +27,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 FROM node:20-alpine AS runner
-WORKDIR /app
+WORKDIR /app/next-dashboard
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -35,7 +35,9 @@ RUN addgroup --system --gid 1001 nodejs \
  && adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/next-dashboard/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/next-dashboard/.next/standalone ./
+# `turbopack.root` (= `outputFileTracingRoot`) is /app here, so the emitted
+# entrypoint is standalone/next-dashboard/server.js, not standalone/server.js.
+COPY --from=builder --chown=nextjs:nodejs /app/next-dashboard/.next/standalone/next-dashboard ./
 COPY --from=builder --chown=nextjs:nodejs /app/next-dashboard/.next/static ./.next/static
 
 USER nextjs
