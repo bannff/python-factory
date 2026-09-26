@@ -9,6 +9,17 @@ from .openai_compat_policy import configured_profile_names
 from .openrouter_catalog import ModelPricing, openrouter_models, openrouter_pricing
 
 
+#: The variable that selects the deployment's chat model. Every ambient
+#: consumer (the catalog below, side-chat planning) must resolve THIS, so no
+#: consumer hand-maintains a default that can diverge from what chat uses.
+CONFIGURED_CHAT_MODEL_ENV = "COMPANION_X_CHAT_MODEL"
+
+
+def configured_chat_model_id() -> str:
+    """Return the configured chat model selector ("" when unset)."""
+    return os.getenv(CONFIGURED_CHAT_MODEL_ENV, "").strip()
+
+
 @dataclass(frozen=True, slots=True)
 class ChatModelDescriptor:
     """Non-secret model choice suitable for MCP and frontend projection."""
@@ -31,7 +42,7 @@ def list_chat_models(*, refresh: bool = False) -> tuple[ChatModelDescriptor, ...
     hosted endpoint).
     """
     candidates: list[str] = []
-    default = os.getenv("COMPANION_X_CHAT_MODEL", "").strip()
+    default = configured_chat_model_id()
     if default:
         candidates.append(default)
     openrouter_active = _openrouter_configured(default)
@@ -69,4 +80,9 @@ def _openrouter_configured(default: str) -> bool:
     return default == "openrouter" or default.startswith("openrouter/")
 
 
-__all__ = ["ChatModelDescriptor", "list_chat_models"]
+__all__ = [
+    "CONFIGURED_CHAT_MODEL_ENV",
+    "ChatModelDescriptor",
+    "configured_chat_model_id",
+    "list_chat_models",
+]

@@ -30,7 +30,15 @@ def resolve_chat_profile(model_id: str) -> ChatProfile:
     if not candidate:
         raise ValueError("model id is required")
     if candidate == "openrouter":
-        return _openrouter_profile(os.getenv("OPENROUTER_MODEL", ""))
+        # The bare selector means "whatever OPENROUTER_MODEL names" — so a
+        # missing model must name that variable, not just report a blank id.
+        model = os.getenv("OPENROUTER_MODEL", "").strip()
+        if not model:
+            raise ValueError(
+                "OPENROUTER_MODEL is required when the chat model selector "
+                "is 'openrouter'",
+            )
+        return _openrouter_profile(model)
     if candidate.startswith(_OPENROUTER_PREFIX):
         return _openrouter_profile(candidate.removeprefix(_OPENROUTER_PREFIX))
     if candidate.startswith(_OLLAMA_PREFIX):
