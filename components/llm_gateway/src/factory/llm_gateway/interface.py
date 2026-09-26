@@ -13,7 +13,12 @@ from .runtime.ports import (
 )
 from .runtime.runtime import LLMRuntime, get_runtime, reset_runtime
 from .runtime.chat_profile import ChatProfile, resolve_chat_profile
-from .runtime.chat_catalog import ChatModelDescriptor, list_chat_models
+from .runtime.chat_catalog import (
+    CONFIGURED_CHAT_MODEL_ENV,
+    ChatModelDescriptor,
+    configured_chat_model_id,
+    list_chat_models,
+)
 from .runtime.openrouter_catalog import ModelPricing
 
 __all__ = [
@@ -28,6 +33,8 @@ __all__ = [
     "ChatProfile",
     "ChatModelDescriptor",
     "ModelPricing",
+    "CONFIGURED_CHAT_MODEL_ENV",
+    "configured_chat_model_id",
     "resolve_chat_profile",
     "list_chat_models",
     # Runtime

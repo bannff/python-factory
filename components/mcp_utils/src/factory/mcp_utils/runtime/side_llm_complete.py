@@ -29,19 +29,25 @@ def build_mcp_utils_complete(model_id: str) -> Callable[[str], str]:
 
 
 def _build_model(profile: Any) -> Any:
-    if profile.provider == "openrouter":
+    if profile.provider in ("openrouter", "openai-compat"):
+        # Both are OpenAI-shaped endpoints; the profile never carries the
+        # secret itself, only the name of the variable holding it.
         api_key = os.getenv(profile.api_key_env or "", "").strip()
         if not api_key:
-            raise ValueError("OPENROUTER_API_KEY is required for OpenRouter chat")
+            raise ValueError(
+                f"{profile.api_key_env} is required for {profile.provider} chat",
+            )
         from langchain_openai import ChatOpenAI
         return ChatOpenAI(
             model=profile.model, base_url=profile.base_url, api_key=api_key,
             default_headers=profile.default_headers, max_retries=profile.max_retries,
-            timeout=profile.timeout_seconds,
         )
     if profile.provider == "bedrock":
         from langchain_aws import ChatBedrockConverse
-        return ChatBedrockConverse(model=profile.model, region_name=profile.region)
+        # ChatProfile carries no region (it is not per-model config), so read
+        # it from the environment exactly as session's twin does.
+        region = os.getenv("AWS_REGION", os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
+        return ChatBedrockConverse(model=profile.model, region_name=region)
     if profile.provider == "ollama":
         from langchain_ollama import ChatOllama
         return ChatOllama(model=profile.model, base_url=profile.base_url)

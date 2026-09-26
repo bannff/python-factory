@@ -142,6 +142,10 @@ def register_bridge_routes(app) -> None:
         ``scripts/companion-x-ui.sh`` health-check against this exact path.
         """
         timeline = _timeline_capabilities()
+        # Side-chat planner state (issue #41): the wiring never fails boot, so
+        # a degraded side panel must be visible here, not just in the log line.
+        from .side_chat_wiring import side_chat_status
+        side_chat = side_chat_status()
         agg = _get_aggregator()
         if agg:
             all_tools = agg.get_all_tool_names()
@@ -159,6 +163,7 @@ def register_bridge_routes(app) -> None:
                 "mcp_health": make_serializable(health),
                 "capabilities": make_serializable(caps),
                 "timeline": timeline,
+                "side_chat": side_chat,
             })
         # Fallback to flat tool map
         tools = _get_tools()
@@ -175,6 +180,7 @@ def register_bridge_routes(app) -> None:
             "mcp_health": health,
             "capabilities": caps,
             "timeline": timeline,
+            "side_chat": side_chat,
         })
 
     app.routes.extend([

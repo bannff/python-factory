@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from factory.llm_gateway.interface import resolve_chat_profile
+from factory.llm_gateway.interface import configured_chat_model_id, resolve_chat_profile
 
 
 def test_openrouter_profile_preserves_vendor_model(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -107,5 +107,17 @@ def test_openrouter_provider_requires_configured_model(
 ) -> None:
     monkeypatch.delenv("OPENROUTER_MODEL", raising=False)
 
-    with pytest.raises(ValueError, match="model"):
+    with pytest.raises(ValueError, match="OPENROUTER_MODEL"):
         resolve_chat_profile("openrouter")
+
+
+def test_configured_chat_model_id_reads_the_chat_model_variable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The one read of the deployment's chat model selector, so ambient
+    consumers (side-chat planning) cannot hand-maintain a divergent default."""
+    monkeypatch.setenv("COMPANION_X_CHAT_MODEL", "  us.anthropic.claude-sonnet-4-6  ")
+    assert configured_chat_model_id() == "us.anthropic.claude-sonnet-4-6"
+
+    monkeypatch.delenv("COMPANION_X_CHAT_MODEL", raising=False)
+    assert configured_chat_model_id() == ""
