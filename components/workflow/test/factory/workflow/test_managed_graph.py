@@ -48,7 +48,7 @@ class GraphInvoker:
         }}
 
 
-def runtime(tmp_path: Path, invoker: GraphInvoker) -> WorkflowRuntime:
+def runtime(tmp_path: Path, invoker: GraphInvoker, engine_id: str = "strands_graph") -> WorkflowRuntime:
     config = tmp_path / "config"
     config.mkdir()
     storage = SqliteWorkflowStorage(config / "state.db")
@@ -63,9 +63,9 @@ def runtime(tmp_path: Path, invoker: GraphInvoker) -> WorkflowRuntime:
         executor=create_executor(),
         tool_invoker=invoker,
         execution_engines=ExecutionEngineRegistry([ExecutionEngineSpec(
-            engine_id="strands_graph",
-            invoke_target={"brick_name": "agent", "tool_name": "execute_strands_graph_attempt"},
-            cancel_target={"brick_name": "agent", "tool_name": "cancel_strands_graph_attempt"},
+            engine_id=engine_id,
+            invoke_target={"brick_name": "agent", "tool_name": f"execute_{engine_id}_attempt"},
+            cancel_target={"brick_name": "agent", "tool_name": f"cancel_{engine_id}_attempt"},
             outcome=TaskOutcomePolicy(
                 success={"pointer": "/status", "equals": "completed"},
                 retryable={"pointer": "/retryable", "equals": True},

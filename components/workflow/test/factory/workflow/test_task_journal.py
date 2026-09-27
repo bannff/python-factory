@@ -15,13 +15,14 @@ from factory.workflow.runtime.storage.sqlite import SqliteWorkflowStorage
 from factory.workflow.runtime.task_ids import workflow_run_id
 
 
-def _workflow(payload=None, max_attempts=2):
+def _workflow(payload=None, max_attempts=2, **updates):
     return WorkflowDefinition(
         id="wf", name="Workflow", version=1,
         steps=[StepDefinition(
             id="task", kind="task", task_mode="named_mcp", task_type="work",
             tool_target=ToolTarget(brick_name="demo", tool_name="work"),
             task_payload=payload or {}, max_attempts=max_attempts, lease_seconds=1,
+            **updates,
         )],
     )
 
@@ -126,6 +127,17 @@ def test_workflow_version_conflict_is_loud_and_snapshot_exact(tmp_path: Path) ->
     changed = _workflow({"value": "changed"})
     with pytest.raises(ValueError, match="workflow-version conflict"):
         storage.persist_workflow_version(changed)
+
+
+def test_artifact_bound_snapshot_keeps_continuation_vocabulary(tmp_path: Path) -> None:
+    storage = _storage(tmp_path / "protected-snapshot.db")
+    workflow = _workflow({"artifact": {"artifact_ref": "pc_v1_abc", "fingerprint": "a" * 64}},
+        max_continuations=2, task_outcome={
+            "success": {"pointer": "/status", "equals": "ok"},
+            "continuation": {"pointer": "/status", "equals": "partial"},
+            "retryable": {"pointer": "/retryable", "equals": True}, "error_pointer": "/error"})
+    version = storage.persist_workflow_version(workflow)
+    assert storage.load_workflow_version(version) == workflow
 
 
 def test_workflow_snapshot_tamper_is_rejected(tmp_path: Path) -> None:

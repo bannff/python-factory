@@ -7,8 +7,9 @@ from pathlib import Path
 
 import pytest
 from factory.mcp_utils.interface import (ExecutionBinding, ServiceOnlyAccessError,
-    begin_service_invocation, end_service_invocation, mint_internal_invocation_claims,
-    reset_internal_invocation_claims, set_internal_invocation_claims)
+    acquire_service_entry, begin_service_invocation, end_service_invocation,
+    mint_internal_invocation_claims, reset_internal_invocation_claims,
+    set_internal_invocation_claims)
 from factory.workflow.mcp.contracts.operational import AppendExecutionEventInput
 from factory.workflow.mcp.execution import register
 from factory.workflow.runtime.canonical import canonical_json, canonical_loads
@@ -88,7 +89,9 @@ async def _protected_append(mcp, values):
     token = set_internal_invocation_claims(mint_internal_invocation_claims(caller="agent", audience="workflow", target_tool=name, binding=binding, target=tool)); state = None
     try:
         state = begin_service_invocation(tool, audience="workflow", target_tool=name, arguments=values)
-        return await mcp.call_tool(name, values)
+        return await mcp.call_tool(name, {
+            **values, "_service_entry_authorization": acquire_service_entry(tool.fn),
+        })
     finally:
         end_service_invocation(state); reset_internal_invocation_claims(token)
 

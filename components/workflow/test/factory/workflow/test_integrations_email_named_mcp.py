@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import sqlite3
+from contextlib import suppress
 from pathlib import Path
 
 import pytest
@@ -191,6 +192,8 @@ def test_frozen_workflow_uses_hidden_materializer_once_without_copying_content(
     persisted += _sqlite_text(tmp_path / "protected.db") + json.dumps(final, default=str)
     persisted += durable
     for path in (*tmp_path.rglob("*.db-wal"), *tmp_path.rglob("*.db-shm")):
-        persisted += path.read_text(errors="ignore")
+        # -wal/-shm vanish after the glob: SQLite unlinks them on last close.
+        with suppress(FileNotFoundError):
+            persisted += path.read_text(errors="ignore")
     for canary in canaries:
         assert canary not in persisted
