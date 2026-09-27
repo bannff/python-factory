@@ -377,13 +377,13 @@ patches:
     edits:
       - {old: '``art-support``', new: 'a developer shell profile'}
 
+  # The renderer's compiled sibling (lib/renderers/renderers-item-list-icons.js)
+  # is not tracked any more - `lib/` is `tsc -b` output, built by consumers - so
+  # there is nothing to patch there. This source entry covers the regenerated
+  # output, and a patch entry whose target is absent fails the whole tier.
   - path: frontends/shared-renderer/src/renderers/renderers-item-list-icons.ts
     edits:
       - {old: '  veritas: Shield,', new: '  security_graph: Shield,'}
-
-  - path: frontends/shared-renderer/lib/renderers/renderers-item-list-icons.js
-    edits:
-      - {old: '    veritas: Shield,', new: '    security_graph: Shield,'}
 
 # ---------------------------------------------------------------------------
 # TIER 4 -- identifier renames (Python NAME tokens only)
