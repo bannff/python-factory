@@ -37,6 +37,14 @@ delete_paths:
   # --- sanitizer implementation and policy never ship in the mirror ---
   - scripts/sanitize/
   - scripts/sanitize_public.py
+  # their tests exercise deleted tooling (and import the deleted package, which
+  # structural verify flags as a dangling import); the drift checker is
+  # sanitizer-only too, and it names the private policy path
+  - scripts/test/test_sanitize_cli.py
+  - scripts/test/test_sanitize_engine.py
+  - scripts/test/test_sanitize_verify.py
+  - scripts/test/test_sanitize_policy_drift.py
+  - scripts/test/conftest.py
   - scripts/agentcore-ops.py
   - scripts/deploy-agentcore.sh
 
@@ -108,10 +116,20 @@ delete_paths:
   - components/agent/src/factory/agent/scripts/smoke_test_node.py
   - bases/api/test/factory/api/test_aws_profile_promotion.py
 
-  # NOTE: .vscode/ and projects/circuitron/ exist in the private working tree
-  # but are UNTRACKED, so git archive already excludes them. They stay listed
-  # as defence in case they are ever committed; the "already gone?" drift
-  # warning for them is expected and benign.
+  # NOTE: some targets below are no longer tracked -- either never tracked in
+  # the private tree, or removed upstream. `git archive` already excludes
+  # them; they stay listed as defence in depth in case they are ever committed
+  # again. Every such no-op is declared in `expected_absent` below, so the
+  # runtime report can tell an expected no-op apart from real policy rot.
+  #
+  # ROOT-CAUSE CLASS (issue #59): the sanitizer builds its tree with
+  # `git archive` (scripts/sanitize_public.py:export_head), i.e. TRACKED FILES
+  # ONLY. Every entry in this policy -- delete_paths, replace_files, patches,
+  # allow_exceptions, structural.pyproject_files -- may therefore reference a
+  # tracked path only. Gitignored, compiled and generated files are invisible
+  # to it: a patch target in `lib/` output or a delete target in a build
+  # directory silently rots. `scripts/test/test_sanitize_policy_drift.py`
+  # asserts this for every entry.
 
   # --- seeded KB store holding real internal documents (Signal Landscape,
   #     internal risk data, internal ticket refs). Local dev data, referenced
@@ -129,6 +147,29 @@ delete_paths:
 delete_exact:
   # tracked despite being in .gitignore:84 -- gitignore does not untrack
   - .sesskey
+
+# delete_paths entries that are legitimately no longer tracked: `git archive`
+# never contains them, so their deletion is an expected no-op rather than a
+# sign the policy rotted. Anything NOT declared here that disappears from the
+# tracked tree is real drift and is reported as an error (and fails
+# scripts/test/test_sanitize_policy_drift.py).
+expected_absent:
+  # never tracked: local tooling state, build output, disposable caches
+  - {path: .vscode/, reason: editor state, untracked in the private tree}
+  - {path: .kiro/, reason: local Kiro steering state, untracked}
+  - {path: projects/circuitron/, reason: personal project, untracked}
+  - {path: projects/companion_x/.code-cache/, reason: disposable code cache, untracked}
+  - {path: frontends/shared-renderer/tsconfig.tsbuildinfo, reason: tsc incremental build output, never tracked}
+  # removed from the private tree: excluded bricks keep their delete entry as
+  # defence in depth in case they are ever committed again
+  - {path: components/veritas/, reason: excluded brick, already removed}
+  - {path: components/sipp/, reason: excluded brick, already removed}
+  - {path: components/gated_garden/, reason: excluded brick, already removed}
+  - {path: projects/veritas_standalone/, reason: excluded sub-project, already removed}
+  - {path: .agents/skills/veritas-recon/, reason: internal-recon skill, already removed}
+  - {path: components/metrics/test/factory/metrics/test_ingestion_properties.py, reason: bound to the deleted metrics ingestion module}
+  - {path: components/agent/test/factory/agent/test_no_cypher_in_registry.py, reason: bound to the deleted recon registry}
+  - {path: components/agent/src/factory/agent/scripts/smoke_test_node.py, reason: internal graph smoke script, already removed}
 
 # ---------------------------------------------------------------------------
 # TIER 2 -- clean replacement files
@@ -177,10 +218,23 @@ patches:
       - old: "    if name == \"recon\":\n        from .defaults_recon_graph import build_recon_tasks\n        # ctx ignored — recon factory is a pure constant\n        return lambda _ctx: build_recon_tasks()\n"
         new: ""
 
+  # This package re-exports its submodules for their registration side effects.
+  # Tier 1 deletes metrics/mcp/ingestion.py, so the package must not import it
+  # (the import would raise at runtime and verify.find_deleted_imports would
+  # flag the dangling module). Same fix is applied to the server module below.
   - path: components/metrics/src/factory/metrics/mcp/__init__.py
     edits:
-      - old: "from . import deterministic, deterministic_stats, operational, authoring, resources, prompts, lifecycle, seed"
-        new: "from . import deterministic, deterministic_stats, operational, authoring, resources, prompts, lifecycle, seed  # noqa: F401"
+      - old: "from . import authoring, deterministic, deterministic_stats, ingestion, operational, prompts, resources, seed"
+        new: "from . import authoring, deterministic, deterministic_stats, operational, prompts, resources, seed  # noqa: F401"
+      - old: '"deterministic_stats", "ingestion", "operational"'
+        new: '"deterministic_stats", "operational"'
+
+  - path: components/metrics/src/factory/metrics/server.py
+    edits:
+      - old: "from .mcp import authoring, deterministic, deterministic_stats, ingestion, operational, prompts, resources, seed"
+        new: "from .mcp import authoring, deterministic, deterministic_stats, operational, prompts, resources, seed"
+      - old: "    ingestion.register(registry, runtime)\n"
+        new: ""
 
   # portfolio ingestion is deleted with ingestion.py; drop its tool name,
   # its dashboard tab and its action form so nothing dangles
@@ -198,12 +252,13 @@ patches:
 
   - path: components/metrics/src/factory/metrics/mcp/views_actions.py
     edits:
-      - old: "        _ingest_portfolio(), _run_lifecycle(),"
-        new: "        _run_lifecycle(),"
-      # whole _ingest_portfolio() factory
+      - old: "        _record_metric(), _define_metric(), _detect_drift(),\n        _ingest_portfolio(),\n"
+        new: "        _record_metric(), _define_metric(), _detect_drift(),\n"
+      # whole _ingest_portfolio() factory -- it is the last function in the
+      # file, so the block ends at a single "    }\n" with no trailing blank line
       - mode: regex
-        old: 'def _ingest_portfolio\(\) -> dict\[str, Any\]:.*?\n\s*\}\n\n\n'
-        new: ""
+        old: '\n\ndef _ingest_portfolio\(\) -> dict\[str, Any\]:.*?\n    \}\n'
+        new: "\n"
 
   # Inventory/table rows describing bricks that do not exist in the mirror.
   # Renaming these was NOT enough: a scrubbed row still documents a phantom
@@ -213,21 +268,6 @@ patches:
       - mode: delete_lines
         old: '^\| *(~~)?(veritas|sipp|builder|gated_garden|backend)(~~)? *\|'
         min_matches: 4
-
-  # PROMPT_CASES is the canonical shared fixture -- test_wave1_1_role_invariants
-  # and test_prompt_properties both load it by file path, so pruning the
-  # deleted-module rows here fixes all three files at once.
-  - path: components/agent/test/factory/agent/test_default_prompts_skills.py
-    edits:
-      - mode: delete_lines
-        old: '^_(RH|RGO) = _M \+ "defaults_recon_(hybrid|graph_only)"$'
-        min_matches: 2
-      - mode: delete_lines
-        old: '^ *\("_\w+", _(RH|RGO), '
-        min_matches: 5
-      - mode: regex
-        old: '\n *\(_M \+ "defaults_redteam_swarms", "RECON_SWARM",.*?"SETUP_SANDBOX_SWARM",\n[^\n]*\n'
-        new: "\n"
 
   # the three contiguous recon-variant cases (schema/prompts/hybrid)
   - path: components/agent/test/factory/agent/test_experiment_configs.py
@@ -252,18 +292,6 @@ patches:
       - old: "    \"rt-sast-scan-swarm\", \"rt-scan-idor-swarm-v2\", \"rt-scan-vulns\",\n    \"rt-prove-vulns\", \"rt-recon\", \"rt-pull-artifacts\", \"rt-setup-sandbox\",\n"
         new: "    \"rt-sast-scan-swarm\", \"rt-scan-idor-swarm-v2\",\n"
 
-  # generic role-invariant tests survive; the two bound to the deleted
-  # internal-recon SKILL.md are removed along with its path constant
-  - path: components/agent/test/factory/agent/test_wave1_1_role_invariants.py
-    edits:
-      - mode: delete_lines
-        old: '^_VERITAS_SKILL = '
-      - mode: regex
-        old: 'def test_veritas_recon_skill_covers_account_scoped_step2b\(\):.*?STEP 3 of the deleted addenda taught this\."\n    \)\n\n\n'
-        new: ""
-      - mode: delete_lines
-        old: 'scoped Veritas STEP 2b\) lives in the runtime SKILL\.md that'
-
   # generic launch-validator tests survive; only the one case bound to a
   # deleted swarm is removed
   - path: components/agent/test/factory/agent/test_launch_validator.py
@@ -285,13 +313,20 @@ patches:
   - path: .gitignore
     edits:
       - {mode: regex_all, old: 'art-platform', new: 'deployment repository'}
+      # internal program name in a comment and in the ignore path it describes
+      - {old: 'LOAF report artifacts', new: 'report artifacts'}
+      - {old: 'loaf_pattern_intel', new: 'report_pattern_intel'}
 
   - path: components/sandbox/src/factory/sandbox/runtime/models.py
     edits:
-      - {mode: regex_all, old: '\bCloudAuth\b', new: 'OAuth provider', min_matches: 2}
-      - {mode: regex_all, old: '\bOdin\b', new: 'credential store', min_matches: 1}
-      - {mode: regex_all, old: '\bCoral\b', new: 'RPC framework', min_matches: 1}
-      - {mode: regex_all, old: '\bTurtle\b', new: 'credential file', min_matches: 1}
+      # boundary-less stems: the same names are class identifiers here
+      # (CloudAuthMockConfig), which \b can never match. Field names
+      # (odin/cloudauth/coral/turtle/aaa) are deliberately left alone -- they
+      # are the wire keys conversions.py round-trips into this model.
+      - {mode: regex_all, old: 'CloudAuth', new: 'OAuthProvider', min_matches: 5}
+      - {mode: regex_all, old: 'Odin', new: 'CredentialStore', min_matches: 5}
+      - {mode: regex_all, old: 'Coral', new: 'RpcFramework', min_matches: 5}
+      - {mode: regex_all, old: 'Turtle', new: 'CredentialFile', min_matches: 5}
 
   - path: components/sandbox/src/factory/sandbox/runtime/manifest.py
     edits:
@@ -302,26 +337,23 @@ patches:
       - {mode: regex_all, old: '\bVeritas\b', new: 'external graph', min_matches: 4}
       - {mode: regex_all, old: '\bveritas\b', new: 'external graph', min_matches: 1}
 
-  - path: components/sandbox/src/factory/sandbox/mcp/operational.py
+  # The sandbox mock-config DTOs moved out of operational.py (now typed
+  # lifecycle tools: sandbox.provision/status/terminate) into nested_models.py.
+  # Names are embedded inside class identifiers (SandboxCloudAuthMockConfig),
+  # where \bCloudAuth\b never fires, so match the distinctive stems instead.
+  # ONLY the class identifiers are renamed: conversions.to_runtime_service_mocks
+  # round-trips this DTO through model_dump() into runtime/models.ServiceMockConfig,
+  # whose FIELD names (odin/cloudauth/coral/turtle/aaa) must keep matching.
+  - path: components/sandbox/src/factory/sandbox/mcp/nested_models.py
     edits:
-      - {mode: regex_all, old: '\bCloudAuth\b', new: 'OAuth provider', min_matches: 1}
-      - {mode: regex_all, old: '\bOdin\b', new: 'credential store', min_matches: 1}
-      - {mode: regex_all, old: '\bCoral\b', new: 'RPC framework', min_matches: 1}
-      - {mode: regex_all, old: '\bTurtle\b', new: 'credential file', min_matches: 1}
-      - {mode: regex_all, old: '\bVeritas\b', new: 'external graph', min_matches: 2}
-
-  - path: components/sandbox/src/factory/sandbox/mcp/cfn_tools.py
-    edits:
-      - {mode: regex_all, old: '\bveritas\b', new: 'graph', min_matches: 1}
+      - {mode: regex_all, old: 'CloudAuth', new: 'OAuthProvider', min_matches: 4}
+      - {mode: regex_all, old: 'Odin', new: 'CredentialStore', min_matches: 4}
+      - {mode: regex_all, old: 'Coral', new: 'RpcFramework', min_matches: 4}
+      - {mode: regex_all, old: 'Turtle', new: 'CredentialFile', min_matches: 4}
 
   - path: components/sandbox/src/factory/sandbox/runtime/adapters/localstack_adapter.py
     edits:
       - {mode: regex_all, old: '\bCloudAuth\b', new: 'OAuth provider', min_matches: 2}
-
-  - path: components/agent/src/factory/agent/plugins/steering.py
-    edits:
-      - {mode: regex_all, old: '\bVeritas\b', new: 'the graph', min_matches: 3}
-      - {mode: regex_all, old: '\bquery_veritas\b', new: 'graph_query', min_matches: 1}
 
   - path: components/agent/src/factory/agent/plugins/multiagent_metrics.py
     edits:
@@ -330,6 +362,9 @@ patches:
   - path: components/agent/src/factory/agent/runtime/swarm_tools.py
     edits:
       - {old: '# Veritas', new: '# External graph'}
+      # boundary-less `veritas` in the strengthened forbid rule catches this;
+      # graph_query is the policy's own rename for the query_veritas tool
+      - {old: '"query_veritas"', new: '"graph_query"'}
 
   - path: components/agent/src/factory/agent/registry/defaults_standalone.py
     edits:
@@ -339,15 +374,13 @@ patches:
     edits:
       - {old: 'explore Veritas', new: 'explore application graphs'}
 
-  - path: components/agent/test/factory/agent/test_strands_mcp_chat_loopback.py
-    edits:
-      - mode: regex
-        old: '"permissions", "veritas",\s*"sipp", "agent"'
-        new: '"permissions", "agent"'
-
   - path: components/graph/src/factory/graph/mcp/docs_taxonomy.py
     edits:
       - {mode: regex_all, old: '\bVeritas\b', new: 'an external graph', min_matches: 3}
+      # lowercase schema-property names; the strengthened boundary-less forbid
+      # rule catches these, and the same rename is used in metrics seed.py
+      - {mode: regex_all, old: 'veritas_app_name', new: 'graph_app_name', min_matches: 2}
+      - {mode: regex_all, old: 'veritas_query', new: 'graph_query', min_matches: 2}
 
   - path: components/metrics/src/factory/metrics/mcp/seed.py
     edits:
@@ -360,18 +393,15 @@ patches:
   - path: components/metrics/test/factory/metrics/test_taxonomy_properties.py
     edits:
       - {mode: regex_all, old: '\bautosec\b', new: 'security', min_matches: 2}
-
-  - path: bases/mcp_server/src/factory/mcp_server/runtime/progressive.py
-    edits:
-      - {mode: regex_all, old: '\bveritas\b', new: 'graph', min_matches: 2}
+      # internal tool names in the hypothesis sample list; both are mapped by
+      # scrub_prose (query_veritas->graph_query, sipp_run_query->...) but that
+      # tier is prose-only, so the boundary-less forbid rule catches this line
+      - old: '    [None, "query_veritas", "sipp_run_query", "metrics_detect_drift"],'
+        new: '    [None, "graph_query", "security_list_findings_for_run", "metrics_detect_drift"],'
 
   - path: bases/mcp_server/test/factory/mcp_server/test_aggregator_primitives.py
     edits:
       - {mode: regex_all, old: '\bveritas\b', new: 'graph', min_matches: 3}
-
-  - path: bases/mcp_server/test/factory/mcp_server/test_progressive.py
-    edits:
-      - {mode: regex_all, old: '\bveritas\b', new: 'graph', min_matches: 4}
 
   - path: bases/api/src/factory/api/main.py
     edits:
@@ -384,6 +414,88 @@ patches:
   - path: frontends/shared-renderer/src/renderers/renderers-item-list-icons.ts
     edits:
       - {old: '  veritas: Shield,', new: '  security_graph: Shield,'}
+
+  # -------------------------------------------------------------------------
+  # Residue found only once the whole tier ran (issue #59). Each of these was
+  # an internal name in a file that the `forbid` tier flags, so --dry-run
+  # could not complete until they were renamed too.
+  # -------------------------------------------------------------------------
+
+  # `Veritas` renamed exactly as in runtime/cfn_defaults.py above
+  - path: components/sandbox/src/factory/sandbox/mcp/deterministic_extended.py
+    edits:
+      - {mode: regex_all, old: '\bVeritas\b', new: 'external graph', min_matches: 1}
+
+  - path: components/sandbox/src/factory/sandbox/mcp/extended_models.py
+    edits:
+      - {mode: regex_all, old: '\bVeritas\b', new: 'external graph', min_matches: 1}
+
+  # Local variable named after the internal auth cookie; it holds the identity
+  # subject, so name it after that instead.
+  - path: components/auth/src/factory/auth/runtime/adapters/aws.py
+    edits:
+      - {mode: regex_all, old: '\bmidway\b', new: 'identity_user_id', min_matches: 2}
+
+  # components/http_client/BRICK.yaml still carries the pre-rename brick name
+  # `http`, so the regenerated BRICKS_INDEX.yaml names a directory that does
+  # not exist (structural verify: bricks_index_no_dangling).
+  - path: components/http_client/BRICK.yaml
+    edits:
+      - {old: "name: http\n", new: "name: http_client\n"}
+
+  # -------------------------------------------------------------------------
+  # Dead portfolio-ingestion surface left behind when ingestion.py (Tier 1)
+  # was deleted. The test exercises the removed metrics_ingest_portfolio tool
+  # and monkeypatches the deleted module; the DTOs below are referenced by
+  # nothing else (git grep). The strengthened boundary-less forbid rules catch
+  # the embedded `veritas` in each.
+  # -------------------------------------------------------------------------
+
+  - path: components/metrics/test/factory/metrics/test_typed_mcp_contract.py
+    edits:
+      - mode: regex
+        old: 'def test_drift_and_partial_portfolio_results_remain_successful_envelopes\(monkeypatch\) -> None:.*?\n\n\n'
+        new: ""
+
+  - path: components/metrics/src/factory/metrics/mcp/contracts/operational.py
+    edits:
+      # PortfolioInput (include_sipp / include_veritas)
+      - mode: regex
+        old: 'class PortfolioInput\(_Strict\):.*?(?=\nclass SeedDefaultsInput)'
+        new: ""
+      # SourceMetricsOutput + PortfolioOutput (sipp_metrics / veritas_metrics)
+      - mode: regex
+        old: 'class SourceMetricsOutput\(_Strict\):.*?(?=\nclass SeedDefaultsOutput)'
+        new: ""
+
+  # -------------------------------------------------------------------------
+  # Frontend renderers for the deleted veritas brick's `veritas_check` tool.
+  # JS/TS is never touched by rename_symbols (Python tokens only) nor by
+  # scrub_prose (prose extensions only), so these are explicit patches. The
+  # strengthened boundary-less forbid rule caught them; no frontend test
+  # references any of these identifiers.
+  # -------------------------------------------------------------------------
+
+  - path: frontends/next-dashboard/README.md
+    edits:
+      - {mode: regex_all, old: 'veritas_', new: 'security_', min_matches: 1}
+
+  - path: frontends/next-dashboard/lib/copilotkit/tool-renderer-cards.tsx
+    edits:
+      - {mode: regex_all, old: 'Veritas', new: 'Security', min_matches: 3}
+
+  - path: frontends/next-dashboard/lib/copilotkit/tool-renderer-hooks.tsx
+    edits:
+      - {mode: regex_all, old: 'Veritas', new: 'Security', min_matches: 5}
+      - {mode: regex_all, old: 'veritas_', new: 'security_', min_matches: 3}
+
+  - path: frontends/next-dashboard/lib/copilotkit/tool-renderers.tsx
+    edits:
+      - {mode: regex_all, old: 'Veritas', new: 'Security', min_matches: 2}
+
+  - path: frontends/next-dashboard/lib/copilotkit/tool-friendly-names.ts
+    edits:
+      - {mode: regex_all, old: 'veritas_', new: 'security_', min_matches: 3}
 
 # ---------------------------------------------------------------------------
 # TIER 4 -- identifier renames (Python NAME tokens only)
@@ -464,21 +576,37 @@ scrub_prose:
 # This is the step the 2026-05 pass lacked.
 # ---------------------------------------------------------------------------
 forbid:
+  # ANCHOR DISCIPLINE (learned from the nested_models.py leak): `\b` is WRONG
+  # for an internal token that can be embedded inside a CamelCase/snake_case
+  # identifier. `\bCloudAuth\b` never fires on `SandboxCloudAuthMockConfig`,
+  # and `\bveritas\b` never fires on `VeritasReconSkill` or `query_veritas`,
+  # so a prefixed variant publishes silently. Match those tokens
+  # boundary-LESS. Keep `\b` only where the token is an English word or a
+  # substring of one (midway, brazil, loaf, art-, autosec->"autosecurity",
+  # sipp->"sipping") or where the surrounding text is a URL-encoded ARN
+  # (hence the digit lookarounds rather than \b below).
   # Digit lookarounds, NOT \b -- \b fails inside URL-encoded ARNs.
   - {name: account_id,       pattern: '(?<![0-9])(420536192516|854929212007|647239283265)(?![0-9])'}
   # any 12-digit run that is not a known placeholder, as a catch-all for
   # account IDs we have not enumerated
   - {name: unknown_account_id, pattern: '(?<![0-9])(?!123456789012|000000000000|999999999999)[0-9]{12}(?![0-9])'}
-  - {name: midway,           pattern: '(?i)\bmidway\b|\bmwinit\b'}
+  - {name: midway,           pattern: '(?i)\bmidway\b|mwinit'}
   - {name: internal_host,    pattern: '(?i)(code|pipelines|odin|tiny|w|issues|quip)[-.]amazon(\.com)?\b'}
   - {name: internal_email,   pattern: '@amazon\.com'}
   - {name: brazil,           pattern: '\bBrazil\b'}
   - {name: autosec,          pattern: '(?i)\bautosec\b'}
   - {name: aws_profile,      pattern: '\bart-(support|agents|ml|platform)\b'}
   - {name: auth_provider,    pattern: '\bIibsAdminAccess\b'}
-  - {name: internal_service, pattern: '\b(CloudAuth|AAASecurityDaemon|register_with_aaa|OdinLocalRetriever|odin-get|CoralModule|turtleCredentialsPath)\b'}
+  # Bare Odin/Coral/Turtle are English words and are NOT forbidden; their
+  # unambiguous COMPOUND identifiers are, so `SandboxOdinMockConfig` cannot
+  # ship the name just because it is prefixed.
+  - {name: internal_service, pattern: '(CloudAuth|OdinMockConfig|CoralMockConfig|TurtleMockConfig|AAASecurityDaemon|register_with_aaa|OdinLocalRetriever|odin-get|CoralModule|turtleCredentialsPath)'}
+  # NOT strengthened: bare \b here is deliberate. VMR/Taskei/LOAF must stay
+  # word-anchored (boundary-less VMR matches inside base64 integrity hashes --
+  # observed in frontends/next-dashboard/package-lock.json), and
+  # IibsAdminAccess/PetsProfile* are left as they are pending their own pass.
   - {name: internal_program, pattern: '\b(VMR|LOAF|Taskei)\b'}
-  - {name: excluded_brick,   pattern: '(?i)\b(veritas|sipp|gated_garden)\b'}
+  - {name: excluded_brick,   pattern: '(?i)(veritas|gated_garden|\bsipp\b)'}
   - {name: internal_appsec,  pattern: '\b(PetsProfile\w*|SupplierShipmentAddress|penpal_report)\b'}
   # the sentinel-leak guard: placeholders must never reach published prose
   - {name: placeholder_sentinel, pattern: '\bREDACTED_[A-Z_]+\b'}
@@ -514,8 +642,11 @@ allow_exceptions:
 # STRUCTURAL VERIFY
 # ---------------------------------------------------------------------------
 structural:
-  expected_components: 37
-  expected_bases: 4
+  # Counted on the post-transform tree. A mismatch means either a new public
+  # brick (bump these) or a brick that should be internal (add it to
+  # delete_paths + strip_brick_maps instead -- do NOT bump).
+  expected_components: 48
+  expected_bases: 5
   # bricks removed from both pyproject brick maps and dev-mode-dirs
   strip_brick_maps: [veritas, sipp, gated_garden, builder, backend]
   pyproject_files:

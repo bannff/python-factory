@@ -69,6 +69,23 @@ def test_python_identifier_rename_preserves_strings_comments_and_js(tmp_path: Pa
     assert report.renamed == {"sample.py": 2}
 
 
+def test_missing_delete_target_is_drift_unless_declared_expected_absent(
+    tmp_path: Path,
+) -> None:
+    tree = tmp_path / "tree"
+    tree.mkdir()
+    report = engine.Report()
+    engine.delete_paths(
+        tree,
+        {"delete_paths": ["gone/", "known-gone/"],
+         "expected_absent": [{"path": "known-gone/"}]},
+        report,
+    )
+    assert report.deleted == []
+    assert report.absent == ["known-gone/"]
+    assert report.errors == ["delete_paths: missing (already gone?) gone/"]
+
+
 def test_anchored_patch_failure_is_loud(tmp_path: Path) -> None:
     tree = tmp_path / "tree"
     tree.mkdir()
