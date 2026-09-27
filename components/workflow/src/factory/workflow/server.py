@@ -5,6 +5,7 @@ This module is the public MCP surface. It must not contain domain logic.
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,30 @@ from factory.workflow.mcp import (
     register_views,
 )
 
+logger = logging.getLogger(__name__)
+
+
+def _config_dir() -> Path:
+    """Resolve the configured workflow config directory."""
+    return Path(os.environ.get("WORKFLOW_CONFIG_DIR", "./config"))
+
+
+def _config_provenance() -> dict[str, Any]:
+    """Report whether the runtime is built from a real deployment settings.yaml."""
+    config_dir = _config_dir().resolve()
+    settings_path = config_dir / "settings.yaml"
+    if settings_path.exists():
+        return {"configured": True, "config_dir": str(config_dir)}
+    return {
+        "configured": False,
+        "config_dir": str(config_dir),
+        "missing": str(settings_path),
+        "reason": (
+            "WORKFLOW_CONFIG_DIR has no settings.yaml: running on default Settings "
+            "with an empty execution-engine registry"
+        ),
+    }
+
 
 def get_runtime() -> WorkflowRuntime:
     """Create a default WorkflowRuntime from environment / defaults."""
@@ -31,12 +56,19 @@ def get_runtime() -> WorkflowRuntime:
     from factory.workflow.runtime.storage.sqlite import SqliteWorkflowStorage
     from factory.workflow.runtime.execution.adapters import create_executor
 
-    config_dir = Path(os.environ.get("WORKFLOW_CONFIG_DIR", "./config"))
+    config_dir = _config_dir()
     try:
         return WorkflowRuntime.from_config_dir(config_dir)
     except Exception as exc:
         if "Missing settings.yaml" not in str(exc):
             raise
+        logger.warning(
+            "WORKFLOW_CONFIG_DIR=%s has no settings.yaml (expected %s): starting "
+            "degraded on default Settings with an empty execution-engine registry; "
+            "point WORKFLOW_CONFIG_DIR at the directory holding this deployment's "
+            "settings.yaml.",
+            config_dir.resolve(), (config_dir / "settings.yaml").resolve(),
+        )
         settings = Settings()
         db_path = config_dir / "data" / "workflow.db"
         db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -90,12 +122,16 @@ def create_mcp_server(runtime: WorkflowRuntime | None = None) -> Any:
 
 def get_capabilities() -> dict[str, Any]:
     """Delegate capability reporting to the configured runtime."""
-    return get_runtime().get_capabilities()
+    capabilities = get_runtime().get_capabilities()
+    capabilities["config"] = _config_provenance()
+    return capabilities
 
 
 def health_check() -> dict[str, Any]:
     """Report actual configured storage, executor, and durable readiness."""
-    return get_runtime().health_check()
+    health = get_runtime().health_check()
+    health["config"] = _config_provenance()
+    return health
 
 
 def describe_config_schema() -> dict[str, Any]:
