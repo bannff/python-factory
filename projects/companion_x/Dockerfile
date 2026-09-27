@@ -26,7 +26,8 @@ RUN pip install --no-cache-dir uv==0.12.0 hatchling hatch-polylith-bricks
 COPY pyproject.toml uv.lock /build/
 # The root lock validates the full `projects/*` workspace, so retain all
 # workspace manifests here while still deferring every project's source copy.
-COPY projects/circuitron/pyproject.toml /build/projects/circuitron/pyproject.toml
+# `projects/circuitron` is NOT a workspace member (root pyproject.toml
+# [tool.uv.workspace].exclude, no uv.lock references) — do not COPY it.
 COPY projects/companion_x/pyproject.toml /build/projects/companion_x/pyproject.toml
 COPY projects/openarcade/pyproject.toml /build/projects/openarcade/pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -66,8 +67,11 @@ COPY BRICKS_INDEX.yaml /app/BRICKS_INDEX.yaml
 COPY projects/companion_x/pyproject.toml /app/pyproject.toml
 COPY projects/companion_x/entrypoint.sh /app/entrypoint.sh
 COPY projects/companion_x/main.py /app/main.py
-COPY projects/companion_x/config/backends/ /app/config/backends/
-COPY projects/companion_x/config/metrics/ /app/config/metrics/
+# Do not COPY config/backends/ or config/metrics/: neither is tracked in the
+# repo. The bricks create them on first runtime access (auth seeds
+# config/backends/memory.yaml, metrics creates config/metrics/).
+# NOTE: config/settings.yaml is untracked too (projects/*/config/ is
+# gitignored), so the build context must supply it; issue #34 tracks that.
 COPY projects/companion_x/config/settings.yaml /app/config/settings.yaml
 COPY projects/companion_x/telemetry/exporters/ /app/telemetry/exporters/
 COPY projects/companion_x/telemetry/settings.yaml /app/telemetry/settings.yaml
