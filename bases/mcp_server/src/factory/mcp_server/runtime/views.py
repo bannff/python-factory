@@ -40,6 +40,12 @@ def ensure_views_registered(agg) -> dict[str, dict[str, Any]]:
                 continue
             try:
                 result = agg.invoke_tool(tool_name)
+                if isinstance(result, dict) and result.get("error"):
+                    logger.warning(
+                        "View payload from %s was rejected: %s",
+                        tool_name, result["error"],
+                    )
+                    continue
                 if not isinstance(result, list):
                     continue
                 for vdef in result:
