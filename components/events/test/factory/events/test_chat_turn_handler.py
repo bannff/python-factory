@@ -69,6 +69,7 @@ def test_chat_turn_emits_reward_when_source_signals() -> None:
 
 def test_chat_turn_skips_when_all_sources_abstain() -> None:
     published: list[tuple[str, dict]] = []
+    set_service("tool_invoker_for_caller", _capture_learning_signal(published))
 
     def invoker(tool: str, **kwargs):
         if tool == "events_query_events":
