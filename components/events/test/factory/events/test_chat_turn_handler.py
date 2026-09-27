@@ -4,7 +4,15 @@ from __future__ import annotations
 
 from factory.events.runtime.chat_turn_handler import handle_chat_turn_reward
 from factory.events.runtime.models import Event
-from factory.mcp_utils.interface import ToolResult
+from factory.mcp_utils.interface import ToolResult, set_service
+
+
+def _capture_learning_signal(published):
+    """Caller-bound service fake so protected signals reach ``published``."""
+    return lambda caller: lambda target, **call: (
+        published.append((call["arguments"]["event_type"], call["arguments"]["payload"])),
+        {"ok": True},
+    )[1]
 
 
 def _event(output="A detailed, helpful answer that is well above the gate.",
@@ -25,6 +33,7 @@ def _event(output="A detailed, helpful answer that is well above the gate.",
 
 def test_chat_turn_emits_reward_when_source_signals() -> None:
     published: list[tuple[str, dict]] = []
+    set_service("tool_invoker_for_caller", _capture_learning_signal(published))
 
     def invoker(tool: str, **kwargs):
         if tool == "events_query_events":
@@ -60,6 +69,7 @@ def test_chat_turn_emits_reward_when_source_signals() -> None:
 
 def test_chat_turn_skips_when_all_sources_abstain() -> None:
     published: list[tuple[str, dict]] = []
+    set_service("tool_invoker_for_caller", _capture_learning_signal(published))
 
     def invoker(tool: str, **kwargs):
         if tool == "events_query_events":

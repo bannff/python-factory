@@ -8,14 +8,23 @@ from __future__ import annotations
 
 from factory.events.runtime.telemetry_handler import handle_telemetry_reward
 from factory.events.runtime.models import Event
-from factory.mcp_utils.interface import ToolResult
+from factory.mcp_utils.interface import ToolResult, set_service
 from factory.learning.runtime.registry import RewardSourceRegistry
 from factory.learning.runtime.runtime import LearningRuntime
 from factory.learning.runtime.adapters.gt_findings import GtFindingsRewardSource
 from factory.learning.runtime.adapters.telemetry import TelemetryRewardSource
 
 
+def _capture_learning_signal(published):
+    """Caller-bound service fake so protected signals reach ``published``."""
+    return lambda caller: lambda target, **call: (
+        published.append((call["arguments"]["event_type"], call["arguments"]["payload"])),
+        {"ok": True},
+    )[1]
+
+
 def _invoker(published: list):
+    set_service("tool_invoker_for_caller", _capture_learning_signal(published))
     reg = RewardSourceRegistry()
     reg.register_builtin(GtFindingsRewardSource())
     reg.register_builtin(TelemetryRewardSource())

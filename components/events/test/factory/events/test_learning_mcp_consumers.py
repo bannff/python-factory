@@ -16,7 +16,15 @@ from factory.memory.mcp.contracts.base import MemoryData
 from factory.memory.mcp.contracts.deterministic import MemoryGetOutput
 from factory.memory.mcp.contracts.operational import MemoryStoreOutput
 from factory.metrics.mcp.contracts.operational import DriftOutput, RecordOutput
-from factory.mcp_utils.interface import ToolResult
+from factory.mcp_utils.interface import ToolResult, set_service
+
+
+def _capture_learning_signal(published):
+    """Caller-bound service fake so protected signals reach ``published``."""
+    return lambda caller: lambda target, **call: (
+        published.append(call["arguments"]["payload"]),
+        {"ok": True},
+    )[1]
 
 
 def _wire(result: ToolResult) -> dict:
@@ -51,6 +59,7 @@ def test_memory_learning_reads_serialized_store_success() -> None:
         relevance_score=1.0, created_at="2026-01-01T00:00:00Z",
     )
     published: list[dict] = []
+    set_service("tool_invoker_for_caller", _capture_learning_signal(published))
 
     def invoke(name: str, **kwargs):
         if name == "events_query_events":
