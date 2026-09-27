@@ -2,10 +2,16 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Prepare the local file dependency before npm executes its prepare hook.
+# Install the renderer's own dependencies first so the layer survives source
+# edits.
 COPY shared-renderer/package.json shared-renderer/package-lock.json ./shared-renderer/
 RUN --mount=type=cache,target=/root/.npm npm ci --prefix ./shared-renderer --ignore-scripts
 COPY shared-renderer ./shared-renderer
+# The renderer's `lib/` is `tsc -b` output that is not committed (see
+# .gitignore). Build it here from the sources just copied rather than leaving
+# the image's renderer to depend on npm happening to run the linked package's
+# `prepare` script during the dashboard install below.
+RUN npm run build --prefix ./shared-renderer
 COPY next-dashboard/package.json next-dashboard/package-lock.json ./next-dashboard/
 WORKDIR /app/next-dashboard
 RUN --mount=type=cache,target=/root/.npm npm ci --ignore-scripts

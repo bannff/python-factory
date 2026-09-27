@@ -11,8 +11,14 @@ dist/
 downloads/
 eggs/
 .eggs/
+# `lib/` matches a directory named `lib` at any depth, so frontend source trees
+# that legitimately live under `lib/` (or `src/lib/`) are re-included by name.
+# `frontends/shared-renderer/lib/` is deliberately absent: it is `tsc -b` output
+# (`npm run build`), rebuilt by `npm ci`'s prepare hook and by the Docker build,
+# never committed.
 lib/
-!frontends/*/lib/
+!frontends/next-dashboard/lib/
+!frontends/*/src/lib/
 !projects/*/webapp/lib/
 !projects/*/lib/
 lib64/
@@ -48,6 +54,7 @@ repl_state/
 .pytest_cache/
 .ruff_cache/
 .agents/.repo-graph/
+*.tsbuildinfo
 
 # Legacy reference copies (for project recreation)
 legacy/
