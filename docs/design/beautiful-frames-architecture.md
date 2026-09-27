@@ -656,7 +656,7 @@ in the per-metric `detail` panel:
             "render_as": "alert",
             "alert_props": {
                 "intent_field": "drifted",
-                "intent_map": {True: "warning", False: "success"},
+                "intent_map": {"true": "warning", "false": "success"},
             },
         },
     ],
@@ -667,6 +667,12 @@ in the per-metric `detail` panel:
     ],
 }
 ```
+
+`colors` and `intent_map` key on the *serialized* field value, and both the
+strict output model and the renderer's `Record<string, string>` lookup see the
+lowercased string form. Keys must therefore be lowercase strings
+(`{"true": "warning"}`), never Python bools — a `True` key serializes to
+`"True"`, which matches neither the model's schema nor the lookup.
 
 The `detail.tabs` array declares per-item tabs. When the user expands a metric
 and clicks the "Trend" tab, the `DetailPanelRenderer` calls
