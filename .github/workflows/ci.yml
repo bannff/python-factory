@@ -3,7 +3,28 @@ name: PR Safety
 on:
   pull_request:
     branches: [main]
+  # Merges land on main through auto-merge as soon as a PR's own CI is green,
+  # but a PR's merge ref is built when its head last changed, so two
+  # individually-green PRs can still be semantically incompatible. Nothing ran
+  # after a merge, so such a breakage sat on main unnoticed (#56/#57 sat red
+  # for days for a related reason). The `post-merge` job below is that smoke.
+  push:
+    branches: [main]
   workflow_dispatch:
+
+env:
+  # Single source of truth for the always-run control-plane suites: the
+  # pre-merge lane (`core-tests`) and the post-merge smoke share it, so a suite
+  # added here cannot be forgotten in one of them.
+  CORE_SUITES: >-
+    components/test/test
+    components/foreman/test
+    components/agent/test
+    components/blockchain/test
+    components/events/test
+    components/workflow/test
+    scripts/test/test_ci_lock_contract.py
+    scripts/test/test_sanitize_policy_drift.py
 
 concurrency:
   group: pr-safety-${{ github.event.pull_request.number || github.ref }}
@@ -63,7 +84,6 @@ jobs:
       MCP_LOCAL_AUTH_TOKEN: "ci-local-auth-token-0123456789"
       MCP_PERMISSIONS_CONFIG_DIR: config/mcp_permissions
       TELEMETRY_REQUIRED: "0"
-      BASE_SHA: ${{ github.event.pull_request.base.sha }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -85,20 +105,13 @@ jobs:
             --ignore-glob='components/dataset/test/**' \
             --ignore-glob='components/machine_learning/test/**'
       - name: Run strict control-plane suites
-        # The two brick suites below are listed on purpose (#56, #57): they
-        # were only reachable through the diff-driven selector, so `main` sat
-        # red on them for days and every PR touching those bricks inherited the
-        # red as if it were its own. Running them on every PR is the guard.
+        # The two brick suites included via CORE_SUITES are listed on purpose
+        # (#56, #57): they were only reachable through the diff-driven selector,
+        # so `main` sat red on them for days and every PR touching those bricks
+        # inherited the red as if it were its own. Running them on every PR is
+        # the guard; the selector skips them so they are not run twice.
         run: |
-          uv run pytest -q \
-            components/test/test \
-            components/foreman/test \
-            components/agent/test \
-            components/blockchain/test \
-            components/events/test \
-            components/workflow/test \
-            scripts/test/test_ci_lock_contract.py \
-            scripts/test/test_sanitize_policy_drift.py
+          uv run pytest -q $CORE_SUITES
       - name: Select changed brick tests
         id: affected
         run: |
@@ -115,7 +128,11 @@ jobs:
           targets=""
           while IFS= read -r file; do
             case "$file" in
+              # dataset/machine_learning have their own job; events/workflow run
+              # unconditionally in the strict lane above, so selecting them here
+              # would run each suite twice in the same job (#60 review).
               components/dataset/*|components/machine_learning/*) continue ;;
+              components/events/*|components/workflow/*) continue ;;
               components/*/*)
                 target="$(printf '%s' "$file" | cut -d/ -f1-2)/test" ;;
               bases/*/*)
@@ -132,7 +149,39 @@ jobs:
         if: steps.affected.outputs.targets != ''
         run: uv run pytest -q ${{ steps.affected.outputs.targets }}
 
+  post-merge:
+    # Post-merge smoke for `main` (see the `push` trigger comment): the strict
+    # control-plane suites only, no selector — a push has no PR merge ref. The
+    # sanitizer gate and the frontend/CAN lanes are covered elsewhere: `checks`
+    # is ungated and runs on push as well, while the two heavier jobs are
+    # PR-scoped because main only moves through PRs.
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      MCP_LOCAL_AUTH: "true"
+      MCP_LOCAL_AUTH_TOKEN: "ci-local-auth-token-0123456789"
+      MCP_PERMISSIONS_CONFIG_DIR: config/mcp_permissions
+      TELEMETRY_REQUIRED: "0"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.12.0"
+      - name: Install candidate dependencies
+        run: |
+          uv lock --check
+          uv sync --frozen
+          uv pip install --python .venv/bin/python --no-deps \
+            -r config/core-test-requirements.txt
+      - name: Run strict control-plane suites
+        run: uv run pytest -q $CORE_SUITES
+
   can-tests:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -150,6 +199,7 @@ jobs:
         run: uv run pytest components/dataset/test
 
   frontend-tests:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
