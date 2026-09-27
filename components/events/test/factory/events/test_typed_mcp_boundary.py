@@ -58,8 +58,8 @@ def test_envelopes_preserve_normal_negative_semantics_and_json_safety(tmp_path) 
 
 
 def test_views_boolean_color_keys_serialize_lowercase(tmp_path) -> None:
-    """Regression: bool colour keys shipped as 'True'/'False' so the renderer's
-    lowercased ``Record<string, string>`` lookup always missed (#46)."""
+    """Regression: bool colour keys shipped as 'True'/'False', but the renderer's
+    ``Record<string, string>`` lookup is case-exact, so it always missed (#46)."""
     mcp = create_mcp_server(EventsRuntime(tmp_path))
     views = asyncio.run(mcp.get_tool("events_get_views")).fn
     result = views()
@@ -73,6 +73,6 @@ def test_views_boolean_color_keys_serialize_lowercase(tmp_path) -> None:
         if component["id"] == "events-subscriptions"
     )
     assert colors == {"true": "emerald", "false": "gray"}
-    # The renderer lowercases the raw field value before looking it up.
+    # The lookup is case-exact; booleans serialize as the lowercase strings.
     assert str(True).lower() in colors
     assert str(False).lower() in colors

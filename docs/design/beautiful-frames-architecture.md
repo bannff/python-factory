@@ -668,11 +668,11 @@ in the per-metric `detail` panel:
 }
 ```
 
-`colors` and `intent_map` key on the *serialized* field value, and both the
-strict output model and the renderer's `Record<string, string>` lookup see the
-lowercased string form. Keys must therefore be lowercase strings
-(`{"true": "warning"}`), never Python bools — a `True` key serializes to
-`"True"`, which matches neither the model's schema nor the lookup.
+`colors` and `intent_map` keys must match the serialized field value exactly:
+the strict output model only accepts string keys, and the renderer's
+`Record<string, string>` lookup is case-exact. Booleans therefore arrive as the
+lowercase strings `"true"`/`"false"` — a Python `True` key serializes to
+`"True"` and matches neither.
 
 The `detail.tabs` array declares per-item tabs. When the user expands a metric
 and clicks the "Trend" tab, the `DetailPanelRenderer` calls
