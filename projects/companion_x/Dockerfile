@@ -70,9 +70,10 @@ COPY projects/companion_x/main.py /app/main.py
 # Do not COPY config/backends/ or config/metrics/: neither is tracked in the
 # repo. The bricks create them on first runtime access (auth seeds
 # config/backends/memory.yaml, metrics creates config/metrics/).
-# NOTE: config/settings.yaml is untracked too (projects/*/config/ is
-# gitignored), so the build context must supply it; issue #34 tracks that.
-COPY projects/companion_x/config/settings.yaml /app/config/settings.yaml
+# config/settings.yaml is untracked deployment state (projects/*/config/ is
+# gitignored, issue #34), so only the tracked template ships; entrypoint.sh
+# seeds the live file from it at start when absent.
+COPY projects/companion_x/config/settings.yaml.example /app/config/settings.yaml.example
 COPY projects/companion_x/telemetry/exporters/ /app/telemetry/exporters/
 COPY projects/companion_x/telemetry/settings.yaml /app/telemetry/settings.yaml
 RUN chmod +x /app/entrypoint.sh

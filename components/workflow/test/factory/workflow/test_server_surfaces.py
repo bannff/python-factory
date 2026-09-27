@@ -2,7 +2,10 @@
 import logging
 from unittest.mock import MagicMock
 
+import pytest
+
 from factory.workflow import server
+from factory.workflow.runtime.operations import WorkflowError
 
 
 def test_module_surfaces_delegate_without_false_backend_claims(monkeypatch):
@@ -26,37 +29,86 @@ def test_module_surfaces_delegate_without_false_backend_claims(monkeypatch):
     runtime.health_check.assert_called_once_with()
 
 
-def test_missing_settings_yaml_logs_actionable_warning_and_still_starts(
-    monkeypatch, tmp_path, caplog,
+def test_explicit_config_dir_without_settings_yaml_fails_fast(monkeypatch, tmp_path):
+    """An operator-asserted config dir must never degrade into an empty registry.
+
+    Starting anyway would surface much later as ``unknown execution engine:
+    <id>`` from an unrelated code path (issue #34), so boot is fail-closed and
+    the message names the env var, the missing path and the shipped template.
+    """
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    template = config_dir / "settings.yaml.example"
+    template.write_text("service:\n  name: template\n")
+    monkeypatch.setenv("WORKFLOW_CONFIG_DIR", str(config_dir))
+
+    with pytest.raises(WorkflowError) as excinfo:
+        server.get_runtime()
+
+    message = str(excinfo.value)
+    assert "WORKFLOW_CONFIG_DIR" in message
+    assert str(config_dir) in message
+    assert str((config_dir / "settings.yaml").resolve()) in message
+    assert str(template.resolve()) in message
+
+
+def test_fail_fast_message_names_the_template_when_it_is_not_beside_the_config(
+    monkeypatch, tmp_path,
 ):
-    """A bad WORKFLOW_CONFIG_DIR must be visible, not a healthy empty server."""
     config_dir = tmp_path / "config"
     monkeypatch.setenv("WORKFLOW_CONFIG_DIR", str(config_dir))
+
+    with pytest.raises(WorkflowError) as excinfo:
+        server.get_runtime()
+
+    assert "settings.yaml.example" in str(excinfo.value)
+
+
+def test_explicit_config_dir_provenance_reports_fail_closed(monkeypatch, tmp_path):
+    """The provenance surface must describe the actual boot behaviour."""
+    config_dir = tmp_path / "config"
+    monkeypatch.setenv("WORKFLOW_CONFIG_DIR", str(config_dir))
+
+    provenance = server._config_provenance()
+
+    assert provenance["configured"] is False
+    assert provenance["missing"] == str((config_dir / "settings.yaml").resolve())
+    assert "fail-closed" in provenance["reason"]
+    assert "empty execution-engine registry" in provenance["reason"]
+
+
+def test_unset_config_dir_logs_actionable_warning_and_starts_degraded(
+    monkeypatch, tmp_path, caplog,
+):
+    """The library default (./config) may legitimately be absent — still loud."""
+    monkeypatch.delenv("WORKFLOW_CONFIG_DIR", raising=False)
+    monkeypatch.chdir(tmp_path)
+    expected_missing = str((tmp_path / "config" / "settings.yaml").resolve())
 
     with caplog.at_level(logging.WARNING):
         runtime = server.get_runtime()
 
     assert runtime.executor.backend_name == "local"
     assert runtime.storage.health_check()["ok"] is True
+    assert runtime.execution_engines.capabilities() == []
     warnings = [
         record.getMessage()
         for record in caplog.records
         if record.levelno == logging.WARNING
     ]
-    assert warnings, "missing settings.yaml must warn instead of passing silently"
     assert any(
-        "WORKFLOW_CONFIG_DIR" in message
-        and str((config_dir / "settings.yaml").resolve()) in message
+        "WORKFLOW_CONFIG_DIR is unset" in message and expected_missing in message
         for message in warnings
     ), warnings
+    assert any("settings.yaml.example" in message for message in warnings), warnings
 
 
 def test_unconfigured_config_dir_is_reported_in_module_surfaces(
     monkeypatch, tmp_path, caplog,
 ):
-    config_dir = tmp_path / "config"
-    monkeypatch.setenv("WORKFLOW_CONFIG_DIR", str(config_dir))
-    expected_missing = str((config_dir / "settings.yaml").resolve())
+    monkeypatch.delenv("WORKFLOW_CONFIG_DIR", raising=False)
+    monkeypatch.chdir(tmp_path)
+    expected_missing = str((tmp_path / "config" / "settings.yaml").resolve())
 
     with caplog.at_level(logging.WARNING):
         health = server.health_check()
@@ -66,3 +118,4 @@ def test_unconfigured_config_dir_is_reported_in_module_surfaces(
     assert health["config"]["missing"] == expected_missing
     assert capabilities["config"]["configured"] is False
     assert capabilities["config"]["missing"] == expected_missing
+    assert "empty execution-engine registry" in health["config"]["reason"]

@@ -39,49 +39,88 @@ def _config_provenance() -> dict[str, Any]:
     settings_path = config_dir / "settings.yaml"
     if settings_path.exists():
         return {"configured": True, "config_dir": str(config_dir)}
+    if os.environ.get("WORKFLOW_CONFIG_DIR") is not None:
+        reason = (
+            "WORKFLOW_CONFIG_DIR is set but has no settings.yaml: workflow boot "
+            "is fail-closed rather than starting with an empty execution-engine "
+            "registry"
+        )
+    else:
+        reason = (
+            "WORKFLOW_CONFIG_DIR is unset and ./config has no settings.yaml: "
+            "running on default Settings with an empty execution-engine registry"
+        )
     return {
         "configured": False,
         "config_dir": str(config_dir),
         "missing": str(settings_path),
-        "reason": (
-            "WORKFLOW_CONFIG_DIR has no settings.yaml: running on default Settings "
-            "with an empty execution-engine registry"
-        ),
+        "reason": reason,
     }
 
 
+def _missing_settings_hint(config_dir: Path) -> str:
+    """Actionable remediation naming the env var and, when present, the template."""
+    live = (config_dir / "settings.yaml").resolve()
+    template = (config_dir / "settings.yaml.example").resolve()
+    if template.exists():
+        source = f"copy the tracked deployment template: cp {template} {live}"
+    else:
+        source = (
+            f"provide {live} (each project config dir ships a tracked "
+            "settings.yaml.example template — see projects/*/config/)"
+        )
+    return (
+        f"{source}, or set WORKFLOW_CONFIG_DIR to the directory holding this "
+        "deployment's settings.yaml"
+    )
+
+
 def get_runtime() -> WorkflowRuntime:
-    """Create a default WorkflowRuntime from environment / defaults."""
+    """Create a default WorkflowRuntime from environment / defaults.
+
+    An explicitly configured WORKFLOW_CONFIG_DIR with no settings.yaml is
+    fail-closed: booting on default Settings would hand back an empty
+    execution-engine registry whose absence only surfaces later as a confusing
+    ``ValueError: unknown execution engine: <id>`` at enrollment time (issue
+    #34). With WORKFLOW_CONFIG_DIR unset the module default (``./config``) may
+    legitimately be absent, so boot continues with a loud warning.
+    """
     from factory.workflow.runtime.models import Settings
     from factory.workflow.runtime.storage.sqlite import SqliteWorkflowStorage
     from factory.workflow.runtime.execution.adapters import create_executor
+    from factory.workflow.runtime.operations import WorkflowError
 
     config_dir = _config_dir()
-    try:
+    if (config_dir / "settings.yaml").exists():
         return WorkflowRuntime.from_config_dir(config_dir)
-    except Exception as exc:
-        if "Missing settings.yaml" not in str(exc):
-            raise
-        logger.warning(
-            "WORKFLOW_CONFIG_DIR=%s has no settings.yaml (expected %s): starting "
-            "degraded on default Settings with an empty execution-engine registry; "
-            "point WORKFLOW_CONFIG_DIR at the directory holding this deployment's "
-            "settings.yaml.",
-            config_dir.resolve(), (config_dir / "settings.yaml").resolve(),
+    env_value = os.environ.get("WORKFLOW_CONFIG_DIR")
+    if env_value is not None:
+        raise WorkflowError(
+            f"WORKFLOW_CONFIG_DIR={env_value} has no settings.yaml (expected "
+            f"{(config_dir / 'settings.yaml').resolve()}): refusing to start with "
+            "an empty execution-engine registry, which cannot enroll any engine "
+            "and fails later as 'unknown execution engine: <id>'; "
+            f"{_missing_settings_hint(config_dir)}"
         )
-        settings = Settings()
-        db_path = config_dir / "data" / "workflow.db"
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        storage = SqliteWorkflowStorage(db_path)
-        storage.init_schema()
-        return WorkflowRuntime(
-            config_dir=config_dir,
-            settings=settings,
-            settings_raw=settings.model_dump(),
-            workflows=[],
-            storage=storage,
-            executor=create_executor(),
-        )
+    logger.warning(
+        "WORKFLOW_CONFIG_DIR is unset and %s has no settings.yaml: starting the "
+        "library default with an EMPTY execution-engine registry — any engine "
+        "enrollment will fail with 'unknown execution engine: <id>'; %s",
+        (config_dir / "settings.yaml").resolve(), _missing_settings_hint(config_dir),
+    )
+    settings = Settings()
+    db_path = config_dir / "data" / "workflow.db"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    storage = SqliteWorkflowStorage(db_path)
+    storage.init_schema()
+    return WorkflowRuntime(
+        config_dir=config_dir,
+        settings=settings,
+        settings_raw=settings.model_dump(),
+        workflows=[],
+        storage=storage,
+        executor=create_executor(),
+    )
 
 
 def _register_tools(registry: Any, runtime: WorkflowRuntime) -> None:

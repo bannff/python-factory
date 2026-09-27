@@ -93,7 +93,12 @@ Thumbs.db
 
 # Runtime data
 config/data/
-projects/*/config/
+# Every project's config dir is local deployment state — except the tracked
+# template that makes a fresh clone buildable (issue #34). The parent dir is
+# matched by `/*` rather than ignored whole, because an ignored directory can
+# never re-include a child file.
+projects/*/config/*
+!projects/*/config/settings.yaml.example
 **/runs/
 **/kb_store.json
 *.sqlite
