@@ -33,7 +33,7 @@ export const McpReadyTextArea =
   McpReadyTextAreaImpl as unknown as typeof CopilotChatInput.TextArea;
 
 export function McpConnectionNotice() {
-  const { status, retry } = useMcpConnection();
+  const { status, error, retry } = useMcpConnection();
   if (status === "connected") return null;
   const failed = status === "error";
   return (
@@ -41,6 +41,7 @@ export function McpConnectionNotice() {
       aria-live="polite"
       className="flex min-h-7 items-center justify-center gap-2 border-b border-border/30 px-3 text-[10px] text-muted-foreground">
       <span>{failed ? "Tools unavailable." : "Connecting to tools…"}</span>
+      {failed && error && <span className="min-w-0 truncate" title={error}>{error}</span>}
       {failed && <button type="button" onClick={retry}
         className="font-medium text-violet-400 hover:text-violet-300">Retry</button>}
     </div>

@@ -2,43 +2,61 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const sdk = vi.hoisted(() => ({
   options: null as unknown,
+  connectOptions: null as null | { timeout?: number; signal?: AbortSignal },
   handler: null as null | ((request: unknown) => Promise<unknown>),
   connectedUrl: "",
   closed: 0,
   connectImpl: vi.fn(),
+  timeoutError: null as null | (() => Error),
 }));
 
-vi.mock("@modelcontextprotocol/client", () => ({
-  Client: class {
-    constructor(_info: unknown, options: unknown) {
-      sdk.options = options;
+vi.mock("@modelcontextprotocol/client", () => {
+  class MockSdkError extends Error {
+    constructor(public code: string, message: string) {
+      super(message);
     }
-    setRequestHandler(_method: string, handler: (request: unknown) => Promise<unknown>) {
-      sdk.handler = handler;
+    static isInstance(value: unknown): value is MockSdkError {
+      return value instanceof MockSdkError;
     }
-    async connect(transport: { url: URL }) {
-      sdk.connectedUrl = transport.url.toString();
-      await sdk.connectImpl();
-    }
-    async close() {
-      sdk.closed += 1;
-    }
-  },
-  StreamableHTTPClientTransport: class {
-    constructor(public url: URL) {}
-  },
-  UnauthorizedError: { isInstance: () => false },
-  SdkHttpError: { isInstance: () => false },
-  SdkErrorCode: { ClientHttpAuthentication: "CLIENT_HTTP_AUTHENTICATION" },
-}));
+  }
+  sdk.timeoutError = () =>
+    new MockSdkError("REQUEST_TIMEOUT", "Version negotiation probe timed out after 15000ms");
+  return {
+    Client: class {
+      constructor(_info: unknown, options: unknown) {
+        sdk.options = options;
+      }
+      setRequestHandler(_method: string, handler: (request: unknown) => Promise<unknown>) {
+        sdk.handler = handler;
+      }
+      async connect(transport: { url: URL }, options?: { timeout?: number; signal?: AbortSignal }) {
+        sdk.connectedUrl = transport.url.toString();
+        sdk.connectOptions = options ?? null;
+        await sdk.connectImpl();
+      }
+      async close() {
+        sdk.closed += 1;
+      }
+    },
+    StreamableHTTPClientTransport: class {
+      constructor(public url: URL) {}
+    },
+    SdkError: MockSdkError,
+    UnauthorizedError: { isInstance: () => false },
+    SdkHttpError: { isInstance: () => false },
+    SdkErrorCode: { ClientHttpAuthentication: "CLIENT_HTTP_AUTHENTICATION", RequestTimeout: "REQUEST_TIMEOUT" },
+  };
+});
 
 beforeEach(() => {
   sdk.options = null;
+  sdk.connectOptions = null;
   sdk.handler = null;
   sdk.connectedUrl = "";
   sdk.closed = 0;
   sdk.connectImpl.mockReset().mockResolvedValue(undefined);
   vi.resetModules();
+  vi.unstubAllEnvs();
 });
 
 afterEach(async () => {
@@ -67,23 +85,66 @@ describe("modular MCP v2 client", () => {
     let release!: () => void;
     sdk.connectImpl.mockReturnValueOnce(new Promise<void>((resolve) => { release = resolve; }));
     const client = await import("@/lib/mcp-client");
+    const status = await import("@/lib/mcp-connection-status");
 
     const pending = client.getMcpClient();
-    expect(client.getMcpConnectionSnapshot()).toBe("connecting");
+    expect(status.getMcpConnectionState().status).toBe("connecting");
     release();
     await pending;
-    expect(client.getMcpConnectionSnapshot()).toBe("connected");
+    expect(status.getMcpConnectionState().status).toBe("connected");
 
     client.resetMcpClient();
-    expect(client.getMcpConnectionSnapshot()).toBe("idle");
+    expect(status.getMcpConnectionState().status).toBe("idle");
   });
 
   it("reports a failed handshake without pretending to be connected", async () => {
     sdk.connectImpl.mockRejectedValueOnce(new Error("offline"));
     const client = await import("@/lib/mcp-client");
+    const status = await import("@/lib/mcp-connection-status");
 
     await expect(client.getMcpClient()).rejects.toThrow("offline");
-    expect(client.getMcpConnectionSnapshot()).toBe("error");
+    expect(status.getMcpConnectionState().status).toBe("error");
+  });
+
+  it("hands the SDK an explicit, bounded connect budget", async () => {
+    const client = await import("@/lib/mcp-client");
+    await client.getMcpClient();
+
+    expect(client.mcpConnectTimeoutMs()).toBeGreaterThan(0);
+    expect(sdk.connectOptions?.timeout).toBe(client.mcpConnectTimeoutMs());
+    // The wall-clock deadline, so the elapsed bound matches the budget the
+    // gate names even when the SDK re-applies it to the legacy handshake.
+    expect(sdk.connectOptions?.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("honours the NEXT_PUBLIC_MCP_CONNECT_TIMEOUT_MS override", async () => {
+    vi.stubEnv("NEXT_PUBLIC_MCP_CONNECT_TIMEOUT_MS", "1234");
+    const client = await import("@/lib/mcp-client");
+    await client.getMcpClient();
+
+    expect(client.mcpConnectTimeoutMs()).toBe(1234);
+    expect(sdk.connectOptions?.timeout).toBe(1234);
+  });
+
+  it("reports a silent handshake timeout naming the server and the budget", async () => {
+    sdk.connectImpl.mockRejectedValueOnce(sdk.timeoutError!());
+    const client = await import("@/lib/mcp-client");
+    const status = await import("@/lib/mcp-connection-status");
+
+    await expect(client.getMcpClient()).rejects.toMatchObject({ code: "REQUEST_TIMEOUT" });
+    expect(status.getMcpConnectionState().status).toBe("error");
+    expect(status.getMcpConnectionState().error).toMatch(
+      /\/mcp accepted the connection but did not answer the MCP handshake within 15000 ms/,
+    );
+  });
+
+  it("names the underlying transport cause when the server is unreachable", async () => {
+    sdk.connectImpl.mockRejectedValueOnce(new Error("offline"));
+    const client = await import("@/lib/mcp-client");
+    const status = await import("@/lib/mcp-connection-status");
+
+    await expect(client.getMcpClient()).rejects.toThrow("offline");
+    expect(status.getMcpConnectionState().error).toMatch(/\/mcp is unreachable: offline/);
   });
 
   it("returns accepted boolean confirmation through the registered handler", async () => {

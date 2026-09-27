@@ -3,12 +3,16 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 const mocks = vi.hoisted(() => ({
   status: "connecting" as "idle" | "connecting" | "connected" | "error",
+  error: null as string | null,
   retry: vi.fn(),
 }));
 
 vi.mock("@/lib/hooks/use-mcp-connection", () => ({
   useMcpConnection: () => ({
-    status: mocks.status, ready: mocks.status === "connected", retry: mocks.retry,
+    status: mocks.status,
+    ready: mocks.status === "connected",
+    error: mocks.error,
+    retry: mocks.retry,
   }),
 }));
 vi.mock("@copilotkit/react-core/v2", () => ({
@@ -23,6 +27,7 @@ import { StopAwareSendButton } from "../stop-button";
 
 beforeEach(() => {
   mocks.status = "connecting";
+  mocks.error = null;
   mocks.retry.mockReset();
 });
 
@@ -48,6 +53,16 @@ describe("MCP connection composer gate", () => {
     expect(screen.getByPlaceholderText(/Tools unavailable/)).toHaveProperty("disabled", true);
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(mocks.retry).toHaveBeenCalledOnce();
+  });
+
+  it("renders the underlying cause instead of a generic failure string", () => {
+    mocks.status = "error";
+    mocks.error = "Local MCP authentication failed for http://localhost:3000/mcp.";
+    render(<McpConnectionNotice />);
+
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toContain("Local MCP authentication failed for http://localhost:3000/mcp.");
+    expect(screen.getByTitle(mocks.error)).toBeTruthy();
   });
 
   it("keeps CopilotKit stop mode available when MCP is disconnected", () => {

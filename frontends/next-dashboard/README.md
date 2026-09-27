@@ -29,13 +29,20 @@ npm install
 
 ```bash
 cp .env.local.example .env.local
-# Set MCP_LOCAL_AUTH_TOKEN to the same ephemeral value used by the API.
 npm run dev
 ```
 
 Opens at [http://localhost:3000](http://localhost:3000). API and native MCP
 calls are proxied by Next.js Route Handlers. The local MCP bearer remains
 server-side and is never stored by browser JavaScript.
+
+You do **not** need to copy the API's token by hand when you launched it with
+`scripts/companion-x-ui.sh`: that script persists the token it mints to a
+`0600` file at `projects/companion_x/.storage/local-mcp-token` (removed again
+when the launcher stops), and this app reads it as a fallback. So a
+hand-started `npm run dev` can join an already-running API. Set
+`MCP_LOCAL_AUTH_TOKEN` yourself only when you want to override that file — the
+environment variable always wins.
 
 ## Build
 
@@ -57,7 +64,8 @@ docker run -p 3000:3000 -e API_URL=http://host.docker.internal:8000 next-dashboa
 |----------|---------|-------------|
 | `API_URL` | `http://localhost:8000` | Backend API base URL (server-side, read at runtime) |
 | `MCP_LOCAL_AUTH` | — | Must be `true` for the localhost-only MCP BFF |
-| `MCP_LOCAL_AUTH_TOKEN` | — | Exact API local token; server-only, never `NEXT_PUBLIC` |
+| `MCP_LOCAL_AUTH_TOKEN` | — | Exact API local token; server-only, never `NEXT_PUBLIC`. Takes precedence over the token file |
+| `MCP_LOCAL_TOKEN_FILE` | `<repo>/projects/companion_x/.storage/local-mcp-token` | Path of the launcher-persisted token file. Read only when `MCP_LOCAL_AUTH_TOKEN` is unset, and only if it is a regular file with mode `0600`. Must be an **absolute** path and the same value for the launcher and this app (a relative value is resolved against this app's cwd, so the two would disagree) |
 
 ### Backend env vars (set on the API process, not here)
 

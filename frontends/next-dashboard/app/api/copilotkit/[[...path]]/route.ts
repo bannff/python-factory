@@ -1,4 +1,4 @@
-import { HttpAgent } from "@ag-ui/client";
+import { HttpAgent, type RunAgentInput } from "@ag-ui/client";
 import {
   CopilotRuntime,
   createCopilotEndpoint,
@@ -8,7 +8,7 @@ import {
   requestLogger,
   responseLogger,
 } from "@/lib/copilotkit/middleware/logging";
-import { localMcpAuthorizationHeaders } from "@/lib/mcp-local-bff";
+import { localMcpAuthorization } from "@/lib/mcp-local-credential";
 import { COMPANION_X_AGENT_ID } from "@/lib/copilotkit/companion-agent";
 
 /**
@@ -42,9 +42,30 @@ import { COMPANION_X_AGENT_ID } from "@/lib/copilotkit/companion-agent";
 
 const API_URL = process.env.API_URL || "http://localhost:8000";
 
-const agent = new HttpAgent({
+/**
+ * The local bearer is resolved on every run, not once at import: a token file
+ * written after this module loaded (the launcher persists it on start) must be
+ * picked up, and one removed by the launcher's cleanup must stop being sent.
+ * When local auth is required and no credential resolves, the run fails
+ * explicitly instead of going out unauthenticated and surfacing as an opaque
+ * upstream 401.
+ */
+class LocalCredentialHttpAgent extends HttpAgent {
+  protected requestInit(input: RunAgentInput): RequestInit {
+    const init = super.requestInit(input);
+    const { headers, missing } = localMcpAuthorization();
+    if (missing) {
+      throw new Error(
+        "Local MCP credential is unavailable: start Companion X with "
+        + "scripts/companion-x-ui.sh or set MCP_LOCAL_AUTH_TOKEN.",
+      );
+    }
+    return { ...init, headers: { ...init.headers, ...headers } };
+  }
+}
+
+const agent = new LocalCredentialHttpAgent({
   url: `${API_URL}/ag-ui/run`,
-  headers: localMcpAuthorizationHeaders(),
 });
 
 const runtime = new CopilotRuntime({

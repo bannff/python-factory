@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import {
+  localMcpAuthEnabled,
+  localTokenFileDisplayPath,
+  resolveLocalCredential,
+} from "./mcp-local-credential";
+
 const LOCAL_HOSTS = new Set([
   "127.0.0.1", "::1", "localhost",
 ]);
-const LOCAL_TOKEN = /^[A-Za-z0-9._~-]{16,512}$/;
 const UPSTREAM_HOSTS = new Set([
   ...LOCAL_HOSTS, "companion_x-api", "host.docker.internal",
 ]);
@@ -105,12 +110,16 @@ function admitLocalRequest(req: NextRequest): NextResponse | null {
 }
 
 function localConfig(): { apiUrl: URL; token: string } | NextResponse {
-  if (!isEnabled(process.env.MCP_LOCAL_AUTH)) {
+  if (!localMcpAuthEnabled()) {
     return failure(401, "Local MCP authentication is disabled");
   }
-  const token = process.env.MCP_LOCAL_AUTH_TOKEN ?? "";
-  if (!LOCAL_TOKEN.test(token)) {
-    return failure(401, "Local MCP authentication is not configured");
+  const credential = resolveLocalCredential();
+  if (credential === null) {
+    logMissingCredentialOnce();
+    return failure(
+      401,
+      "Local MCP authentication is not configured (checked MCP_LOCAL_AUTH_TOKEN and the launcher token file)",
+    );
   }
   try {
     const apiUrl = new URL(process.env.API_URL || "http://localhost:8000");
@@ -118,7 +127,7 @@ function localConfig(): { apiUrl: URL; token: string } | NextResponse {
         || apiUrl.username || apiUrl.password || apiUrl.search || apiUrl.hash) {
       return failure(503, "Local MCP upstream is not allowed");
     }
-    return { apiUrl, token };
+    return { apiUrl, token: credential.token };
   } catch {
     return failure(503, "Local MCP upstream is invalid");
   }
@@ -141,11 +150,17 @@ function parseHostname(host: string): string {
   } catch { return ""; }
 }
 
-/** Return server-only AG-UI authorization without exposing the token client-side. */
-export function localMcpAuthorizationHeaders(): Record<string, string> {
-  if (!isEnabled(process.env.MCP_LOCAL_AUTH)) return {};
-  const token = process.env.MCP_LOCAL_AUTH_TOKEN ?? "";
-  return LOCAL_TOKEN.test(token) ? { authorization: `Bearer ${token}` } : {};
+let missingCredentialLogged = false;
+
+/** One explicit line naming the cause, instead of only repeated generic 401s. */
+function logMissingCredentialOnce(): void {
+  if (missingCredentialLogged) return;
+  missingCredentialLogged = true;
+  console.warn(
+    "[mcp-local-bff] Local MCP authentication is not configured: set "
+    + "MCP_LOCAL_AUTH_TOKEN or start Companion X with scripts/companion-x-ui.sh "
+    + `(token file: ${localTokenFileDisplayPath()}).`,
+  );
 }
 
 function sameOrigin(candidate: string, expectedHost: string): boolean {
@@ -153,10 +168,6 @@ function sameOrigin(candidate: string, expectedHost: string): boolean {
     const origin = new URL(candidate);
     return origin.protocol === "http:" && origin.host === expectedHost;
   } catch { return false; }
-}
-
-function isEnabled(value: string | undefined): boolean {
-  return ["1", "true", "yes"].includes((value ?? "").toLowerCase());
 }
 
 function failure(status: number, detail: string): NextResponse {

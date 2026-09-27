@@ -1,11 +1,27 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { NextRequest } from "next/server";
 import { SdkErrorCode, SdkHttpError } from "@modelcontextprotocol/client";
 
-import { localMcpAuthorizationHeaders, proxyLocalApi, proxyLocalMcp } from "@/lib/mcp-local-bff";
+import { proxyLocalApi, proxyLocalMcp } from "@/lib/mcp-local-bff";
+import { localMcpAuthorization } from "@/lib/mcp-local-credential";
 import {
   McpAuthenticationError, normalizeMcpConnectionError,
 } from "@/lib/mcp-client";
+
+const tokenDirs: string[] = [];
+
+/** Write a launcher-style token file with the given mode and return its path. */
+function tokenFile(mode: number, token: string): string {
+  const dir = mkdtempSync(path.join(tmpdir(), "mcp-token-"));
+  tokenDirs.push(dir);
+  const file = path.join(dir, "local-mcp-token");
+  writeFileSync(file, token, { mode });
+  return file;
+}
 
 function request(headers: Record<string, string> = {}): NextRequest {
   return new NextRequest("http://localhost:3000/mcp", {
@@ -22,9 +38,14 @@ function request(headers: Record<string, string> = {}): NextRequest {
   });
 }
 
+beforeEach(() => {
+  vi.spyOn(console, "warn").mockImplementation(() => undefined);
+});
+
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
+  for (const dir of tokenDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
 describe("local MCP credential BFF", () => {
@@ -75,11 +96,94 @@ describe("local MCP credential BFF", () => {
     expect((await proxyLocalMcp(request())).status).toBe(401);
 
     vi.stubEnv("MCP_LOCAL_AUTH", "true");
+    vi.stubEnv("MCP_LOCAL_TOKEN_FILE", path.join(tmpdir(), "no-such-mcp-token-file"));
     vi.stubEnv("MCP_LOCAL_AUTH_TOKEN", "short");
-    expect((await proxyLocalMcp(request())).status).toBe(401);
+    const unconfigured = await proxyLocalMcp(request());
+    expect(unconfigured.status).toBe(401);
+    expect(await unconfigured.json()).toEqual({
+      detail: expect.stringContaining("MCP_LOCAL_AUTH_TOKEN"),
+    });
 
     vi.stubEnv("MCP_LOCAL_AUTH_TOKEN", "unsafe-token-with-newline\n1234");
     expect((await proxyLocalMcp(request())).status).toBe(401);
+  });
+
+  it("prefers the ambient token over the launcher-persisted file", async () => {
+    vi.stubEnv("MCP_LOCAL_AUTH", "true");
+    vi.stubEnv("MCP_LOCAL_AUTH_TOKEN", "ambient-local-token-123456");
+    vi.stubEnv("MCP_LOCAL_TOKEN_FILE", tokenFile(0o600, "persisted-local-token-123456"));
+    vi.stubEnv("API_URL", "http://localhost:8000");
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok"));
+
+    expect((await proxyLocalMcp(request())).status).toBe(200);
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(new Headers(init.headers).get("authorization")).toBe("Bearer ambient-local-token-123456");
+  });
+
+  it("falls back to the launcher-persisted 0600 token when the environment is empty", async () => {
+    vi.stubEnv("MCP_LOCAL_AUTH", "true");
+    vi.stubEnv("MCP_LOCAL_AUTH_TOKEN", "");
+    vi.stubEnv("MCP_LOCAL_TOKEN_FILE", tokenFile(0o600, "persisted-local-token-123456"));
+    vi.stubEnv("API_URL", "http://localhost:8000");
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok"));
+
+    expect((await proxyLocalMcp(request())).status).toBe(200);
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(new Headers(init.headers).get("authorization")).toBe("Bearer persisted-local-token-123456");
+    expect(localMcpAuthorization()).toEqual({
+      headers: { authorization: "Bearer persisted-local-token-123456" },
+      missing: false,
+    });
+  });
+
+  it("refuses a token file any other user could read", async () => {
+    vi.stubEnv("MCP_LOCAL_AUTH", "true");
+    vi.stubEnv("MCP_LOCAL_AUTH_TOKEN", "");
+    vi.stubEnv("MCP_LOCAL_TOKEN_FILE", tokenFile(0o644, "persisted-local-token-123456"));
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+
+    expect((await proxyLocalMcp(request())).status).toBe(401);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a symlinked token file and an oversized one", async () => {
+    vi.stubEnv("MCP_LOCAL_AUTH", "true");
+    vi.stubEnv("MCP_LOCAL_AUTH_TOKEN", "");
+
+    const real = tokenFile(0o600, "persisted-local-token-123456");
+    const link = path.join(path.dirname(real), "linked-mcp-token");
+    symlinkSync(real, link);
+    vi.stubEnv("MCP_LOCAL_TOKEN_FILE", link);
+    expect((await proxyLocalMcp(request())).status).toBe(401);
+
+    vi.stubEnv("MCP_LOCAL_TOKEN_FILE", tokenFile(0o600, "x".repeat(4096)));
+    expect((await proxyLocalMcp(request())).status).toBe(401);
+  });
+
+  it("refuses a FIFO at the token path without blocking", async () => {
+    vi.stubEnv("MCP_LOCAL_AUTH", "true");
+    vi.stubEnv("MCP_LOCAL_AUTH_TOKEN", "");
+    const dir = mkdtempSync(path.join(tmpdir(), "mcp-fifo-"));
+    tokenDirs.push(dir);
+    const fifo = path.join(dir, "local-mcp-token");
+    execFileSync("mkfifo", ["-m", "600", fifo]);
+
+    vi.stubEnv("MCP_LOCAL_TOKEN_FILE", fifo);
+    const started = Date.now();
+    expect((await proxyLocalMcp(request())).status).toBe(401);
+    expect(Date.now() - started).toBeLessThan(1000);
+  });
+
+  it("does not disclose the token-file path in the client-visible 401", async () => {
+    vi.stubEnv("MCP_LOCAL_AUTH", "true");
+    vi.stubEnv("MCP_LOCAL_AUTH_TOKEN", "");
+    vi.stubEnv("MCP_LOCAL_TOKEN_FILE", path.join(tmpdir(), "no-such-mcp-token-file"));
+
+    const response = await proxyLocalMcp(request());
+    expect(response.status).toBe(401);
+    const body = await response.text();
+    expect(body).toContain("MCP_LOCAL_AUTH_TOKEN");
+    expect(body).not.toContain("no-such-mcp-token-file");
   });
 
   it("admits IPv6 loopback", async () => {
@@ -115,7 +219,9 @@ describe("local MCP credential BFF", () => {
       "Version negotiation failed: HTTP 401",
       { status: 401, statusText: "Unauthorized", text: "" },
     );
-    expect(normalizeMcpConnectionError(sdkError)).toBeInstanceOf(McpAuthenticationError);
+    const normalized = normalizeMcpConnectionError(sdkError);
+    expect(normalized).toBeInstanceOf(McpAuthenticationError);
+    expect((normalized as McpAuthenticationError).message).toContain("/mcp");
     const other = new Error("offline");
     expect(normalizeMcpConnectionError(other)).toBe(other);
   });
@@ -134,12 +240,16 @@ describe("local MCP credential BFF", () => {
   it("projects the validated server token into server-side AG-UI only", () => {
     vi.stubEnv("MCP_LOCAL_AUTH", "true");
     vi.stubEnv("MCP_LOCAL_AUTH_TOKEN", "server-local-token-123456");
-    expect(localMcpAuthorizationHeaders()).toEqual({
-      authorization: "Bearer server-local-token-123456",
+    expect(localMcpAuthorization()).toEqual({
+      headers: { authorization: "Bearer server-local-token-123456" },
+      missing: false,
     });
+
+    vi.stubEnv("MCP_LOCAL_TOKEN_FILE", path.join(tmpdir(), "no-such-mcp-token-file"));
     vi.stubEnv("MCP_LOCAL_AUTH_TOKEN", "short");
-    expect(localMcpAuthorizationHeaders()).toEqual({});
+    expect(localMcpAuthorization()).toEqual({ headers: {}, missing: true });
+
     vi.stubEnv("MCP_LOCAL_AUTH", "false");
-    expect(localMcpAuthorizationHeaders()).toEqual({});
+    expect(localMcpAuthorization()).toEqual({ headers: {}, missing: false });
   });
 });
