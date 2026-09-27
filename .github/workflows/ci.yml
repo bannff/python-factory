@@ -156,9 +156,11 @@ jobs:
   post-merge:
     # Post-merge smoke for `main` (see the trigger comment): the strict
     # control-plane suites only, no selector — neither a push nor a scheduled
-    # run has a PR merge ref. The sanitizer gate runs here too, because
-    # `checks` is ungated. The frontend and CAN lanes stay PR-scoped: they run
-    # on every PR that touches them, and main moves only through PRs.
+    # run has a PR merge ref. On a `schedule` event the frontend and CAN lanes
+    # run as well (their gate is `event_name != 'push'`, and `schedule` is not
+    # `push`), so the nightly is a broader sweep than this job; that is
+    # deliberate, since nothing else exercises them after a merge. The
+    # sanitizer gate runs here too — `checks` is ungated.
     if: github.event_name == 'push' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     env:
