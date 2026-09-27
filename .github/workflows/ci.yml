@@ -3,13 +3,17 @@ name: PR Safety
 on:
   pull_request:
     branches: [main]
-  # Merges land on main through auto-merge as soon as a PR's own CI is green,
-  # but a PR's merge ref is built when its head last changed, so two
-  # individually-green PRs can still be semantically incompatible. Nothing ran
-  # after a merge, so such a breakage sat on main unnoticed (#56/#57 sat red
-  # for days for a related reason). The `post-merge` job below is that smoke.
+  # Post-merge smoke for main. NOTE: this trigger does NOT fire for the merges
+  # that matter — auto-merge.yml merges with the repository's automatic
+  # GITHUB_TOKEN, and a workflow run started that way does not create `push`
+  # events (GitHub docs, actions/concepts/security/github_token), so auto-merged
+  # PRs would leave main unguarded. The scheduled run below is therefore the
+  # real post-merge coverage; `push` still covers a human pushing to main
+  # directly, and costs nothing.
   push:
     branches: [main]
+  schedule:
+    - cron: "0 5 * * *"
   workflow_dispatch:
 
 env:
@@ -150,12 +154,12 @@ jobs:
         run: uv run pytest -q ${{ steps.affected.outputs.targets }}
 
   post-merge:
-    # Post-merge smoke for `main` (see the `push` trigger comment): the strict
-    # control-plane suites only, no selector — a push has no PR merge ref. The
-    # sanitizer gate and the frontend/CAN lanes are covered elsewhere: `checks`
-    # is ungated and runs on push as well, while the two heavier jobs are
-    # PR-scoped because main only moves through PRs.
-    if: github.event_name == 'push'
+    # Post-merge smoke for `main` (see the trigger comment): the strict
+    # control-plane suites only, no selector — neither a push nor a scheduled
+    # run has a PR merge ref. The sanitizer gate runs here too, because
+    # `checks` is ungated. The frontend and CAN lanes stay PR-scoped: they run
+    # on every PR that touches them, and main moves only through PRs.
+    if: github.event_name == 'push' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     env:
       MCP_LOCAL_AUTH: "true"
