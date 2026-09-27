@@ -27,7 +27,7 @@ from factory.events.runtime.models import Event
 from factory.events.runtime.rewards_handler import handle_rewards_process
 from factory.blockchain.mcp.contracts.deterministic import GetWalletOutput
 from factory.blockchain.mcp.contracts.ledger import TransactionOutput
-from factory.mcp_utils.interface import ToolResult, ok
+from factory.mcp_utils.interface import ToolResult, ok, set_service
 from factory.memory.mcp.contracts.operational import MemoryStoreOutput
 from factory.metrics.mcp.contracts.operational import DriftOutput, RecordOutput
 # Golden required-keys per learning event. THIS dict is the contract.
@@ -74,6 +74,8 @@ def _captured_publish(handler, event, extras=None):
     """Run handler with fake invoker, return [(event_type, payload), ...]."""
     published: list[tuple[str, dict]] = []
     extras = extras or {}
+    set_service("tool_invoker_for_caller",
+                lambda caller: lambda target, **call: fake_invoker("events_publish", **call["arguments"]))
 
     def fake_invoker(tool_name, **kwargs):
         if tool_name == "events_query_events":
@@ -81,10 +83,8 @@ def _captured_publish(handler, event, extras=None):
         if tool_name == "events_publish":
             published.append((kwargs["event_type"], kwargs["payload"]))
             return {"event_id": f"evt-{len(published)}", "status": "ok"}
-        if tool_name == "blockchain_get_wallet":
-            return ToolResult(data=GetWalletOutput(wallet_id=kwargs["wallet_id"], owner_id="agent", balance=0, created_at=""))
-        if tool_name == "blockchain_mint":
-            return ToolResult(data=TransactionOutput(tx_id="tx-1", tx_type="mint", to_wallet=kwargs["to_wallet"], amount=12, memo="", status="committed"))
+        if tool_name == "blockchain_get_wallet": return ToolResult(data=GetWalletOutput(wallet_id=kwargs["wallet_id"], owner_id="agent", balance=0, created_at=""))
+        if tool_name == "blockchain_mint": return ToolResult(data=TransactionOutput(tx_id="tx-1", tx_type="mint", to_wallet=kwargs["to_wallet"], amount=12, memo="", status="committed"))
         return extras.get(tool_name, {"ok": True})
 
     handler(event, fake_invoker)

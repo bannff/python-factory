@@ -33,7 +33,7 @@ from factory.events.runtime.models import Event
 from factory.events.runtime.rewards_handler import handle_rewards_process
 from factory.blockchain.mcp.contracts.deterministic import GetWalletOutput
 from factory.blockchain.mcp.contracts.ledger import TransactionOutput
-from factory.mcp_utils.interface import ToolResult, ok
+from factory.mcp_utils.interface import ToolResult, ok, set_service
 from factory.memory.mcp.contracts.base import MemoryData
 from factory.memory.mcp.contracts.operational import MemoryStoreOutput
 from factory.metrics.mcp.contracts.operational import DriftOutput, RecordOutput
@@ -132,6 +132,8 @@ _TRIPLES = [
 def _capture(handler, event, extras=None):
     extras = extras or {}
     pub: list[tuple[str, dict]] = []
+    set_service("tool_invoker_for_caller",
+                lambda caller: lambda target, **call: fake("events_publish", **call["arguments"]))
 
     def fake(tool, **kw):
         if tool == "events_query_events":
@@ -139,10 +141,8 @@ def _capture(handler, event, extras=None):
         if tool == "events_publish":
             pub.append((kw["event_type"], kw["payload"]))
             return {"event_id": f"evt-{len(pub)}"}
-        if tool == "blockchain_get_wallet":
-            return ToolResult(data=GetWalletOutput(wallet_id=kw["wallet_id"], owner_id="agent", balance=0, created_at=""))
-        if tool == "blockchain_mint":
-            return ToolResult(data=TransactionOutput(tx_id="tx-1", tx_type="mint", to_wallet=kw["to_wallet"], amount=5, memo="", status="committed"))
+        if tool == "blockchain_get_wallet": return ToolResult(data=GetWalletOutput(wallet_id=kw["wallet_id"], owner_id="agent", balance=0, created_at=""))
+        if tool == "blockchain_mint": return ToolResult(data=TransactionOutput(tx_id="tx-1", tx_type="mint", to_wallet=kw["to_wallet"], amount=5, memo="", status="committed"))
         return extras.get(tool, {"ok": True})
 
     handler(event, fake)

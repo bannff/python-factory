@@ -7,7 +7,15 @@ from factory.events.runtime.learning_handlers import handle_memory_learning
 from factory.events.runtime.models import Event
 from factory.memory.mcp.contracts.base import MemoryData
 from factory.memory.mcp.contracts.operational import MemoryStoreOutput
-from factory.mcp_utils.interface import ToolResult
+from factory.mcp_utils.interface import ToolResult, set_service
+
+
+def _capture_learning_signal(published):
+    """Caller-bound service fake so protected signals reach ``published``."""
+    return lambda caller: lambda target, **call: (
+        published.append(call["arguments"]["payload"]),
+        {"ok": True},
+    )[1]
 
 
 def _event() -> Event:
@@ -27,6 +35,7 @@ def _bare_memory() -> dict[str, Any]:
 
 def _invoker(result: Any):
     published: list[dict[str, Any]] = []
+    set_service("tool_invoker_for_caller", _capture_learning_signal(published))
 
     def invoke(name: str, **kwargs: Any) -> Any:
         if name == "events_query_events":

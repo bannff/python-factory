@@ -18,7 +18,15 @@ from factory.events.runtime.learning_result import normalize_learning_result
 from factory.events.runtime.models import Event
 from factory.events.runtime.rewards_handler import handle_rewards_process
 from factory.events.runtime.telemetry_handler import handle_telemetry_reward
-from factory.mcp_utils.interface import ToolResult
+from factory.mcp_utils.interface import ToolResult, set_service
+
+
+def _capture_learning_signal(published):
+    """Caller-bound service fake so protected signals reach ``published``."""
+    return lambda caller: lambda target, **call: (
+        published.append((call["arguments"]["event_type"], call["arguments"]["payload"])),
+        {"ok": True},
+    )[1]
 
 
 def _success_data() -> dict[str, object]:
@@ -127,6 +135,7 @@ def test_generic_handler_skips_failed_learning_envelope() -> None:
 
 def test_chat_turn_handler_accepts_typed_success_envelope() -> None:
     published: list[tuple[str, dict]] = []
+    set_service("tool_invoker_for_caller", _capture_learning_signal(published))
 
     def invoker(tool: str, **kwargs):
         if tool == "learning_compute_reward":
