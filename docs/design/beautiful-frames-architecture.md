@@ -656,7 +656,7 @@ in the per-metric `detail` panel:
             "render_as": "alert",
             "alert_props": {
                 "intent_field": "drifted",
-                "intent_map": {True: "warning", False: "success"},
+                "intent_map": {"true": "warning", "false": "success"},
             },
         },
     ],
@@ -667,6 +667,12 @@ in the per-metric `detail` panel:
     ],
 }
 ```
+
+`colors` and `intent_map` keys must match the serialized field value exactly:
+the strict output model only accepts string keys, and the renderer's
+`Record<string, string>` lookup is case-exact. Booleans therefore arrive as the
+lowercase strings `"true"`/`"false"` — a Python `True` key serializes to
+`"True"` and matches neither.
 
 The `detail.tabs` array declares per-item tabs. When the user expands a metric
 and clicks the "Trend" tab, the `DetailPanelRenderer` calls

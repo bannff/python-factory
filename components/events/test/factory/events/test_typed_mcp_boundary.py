@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from inspect import signature
 
 import pytest
 from factory.events.runtime.runtime import EventsRuntime
 from factory.events.server import create_mcp_server
-from factory.mcp_utils.interface import ToolResult
+from factory.mcp_utils.interface import ToolResult, make_serializable
 
 
 EXPECTED = {
@@ -54,3 +55,24 @@ def test_envelopes_preserve_normal_negative_semantics_and_json_safety(tmp_path) 
     assert result.ok and result.data.views[0]["id"] == "events-stream"
     with pytest.raises(Exception):
         get_event(event_id="missing", unexpected=True)
+
+
+def test_views_boolean_color_keys_serialize_lowercase(tmp_path) -> None:
+    """Regression: bool colour keys shipped as 'True'/'False', but the renderer's
+    ``Record<string, string>`` lookup is case-exact, so it always missed (#46)."""
+    mcp = create_mcp_server(EventsRuntime(tmp_path))
+    views = asyncio.run(mcp.get_tool("events_get_views")).fn
+    result = views()
+    assert result.ok
+
+    # Serialize exactly as the transport does: make_serializable stringifies keys.
+    payload = json.loads(json.dumps(make_serializable(result.data.model_dump())))
+    colors = next(
+        component["props"]["filters"]["colors"]
+        for component in payload["views"][0]["components"]
+        if component["id"] == "events-subscriptions"
+    )
+    assert colors == {"true": "emerald", "false": "gray"}
+    # The lookup is case-exact; booleans serialize as the lowercase strings.
+    assert str(True).lower() in colors
+    assert str(False).lower() in colors

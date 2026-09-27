@@ -32,7 +32,7 @@ def _subscriptions_list() -> dict[str, Any]:
             "filters": {
                 "field": "enabled",
                 "values": [True, False],
-                "colors": {True: "emerald", False: "gray"},
+                "colors": {"true": "emerald", "false": "gray"},
                 "show_counts": False,
             },
             "item_layout": {
