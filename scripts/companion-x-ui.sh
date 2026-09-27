@@ -98,6 +98,22 @@ fi
 
 # Select the project-owned Workflow engine registry, independent of cwd.
 export WORKFLOW_CONFIG_DIR="${WORKFLOW_CONFIG_DIR:-$FACTORY_ROOT/projects/companion_x/config}"
+# Fresh clones have no live settings.yaml (projects/*/config/ is untracked
+# deployment state, issue #34). Without it the workflow brick registers
+# unhealthy with zero tools while /api/health still answers 200, so seed the
+# live file from the tracked template exactly like the container entrypoint
+# does. An existing settings.yaml (the owner's, on this machine) is never
+# touched.
+if [[ ! -f "$WORKFLOW_CONFIG_DIR/settings.yaml" ]]; then
+    if [[ -f "$WORKFLOW_CONFIG_DIR/settings.yaml.example" ]]; then
+        mkdir -p "$WORKFLOW_CONFIG_DIR"
+        cp "$WORKFLOW_CONFIG_DIR/settings.yaml.example" "$WORKFLOW_CONFIG_DIR/settings.yaml"
+        echo "==> Seeded $WORKFLOW_CONFIG_DIR/settings.yaml from the tracked template (execution engines langgraph + migration_import REGISTERED)"
+    else
+        echo "ERROR: $WORKFLOW_CONFIG_DIR has no settings.yaml and no settings.yaml.example to seed it from — the workflow brick will not load" >&2
+        exit 1
+    fi
+fi
 export EVENTS_BACKEND="${EVENTS_BACKEND:-sqlite}"
 export EVENTS_SQLITE_PATH="${EVENTS_SQLITE_PATH:-$FACTORY_ROOT/.storage/events.db}"
 export FACTORY_API_PORT="$API_PORT"

@@ -13,9 +13,34 @@ from factory.workflow.mcp.execution import register
 from factory.workflow.runtime.models import Settings
 
 
-def test_companion_x_registers_bounded_migration_engine() -> None:
+_LIVE_CONFIG = "projects/companion_x/config/settings.yaml"
+_TEMPLATE_CONFIG = "projects/companion_x/config/settings.yaml.example"
+
+
+def _load_settings() -> dict:
+    """Load the pinned deployment contract.
+
+    The live ``settings.yaml`` is untracked machine state (``projects/*/config/``
+    is gitignored, issue #34), so a fresh clone has none; the tracked
+    ``.example`` template is the reviewed contract a checkout can guarantee.
+    When a live file exists it is additionally validated against the same
+    ``Settings`` schema, since it is what a real deployment actually loads.
+    """
     root = Path(__file__).parents[5]
-    raw = yaml.safe_load((root / "projects/companion_x/config/settings.yaml").read_text())
+    template = root / _TEMPLATE_CONFIG
+    assert template.exists(), (
+        f"tracked deployment template {_TEMPLATE_CONFIG} is missing; the pinned "
+        "execution-engine registration contract lives there (issue #34)"
+    )
+    raw = yaml.safe_load(template.read_text())
+    live = root / _LIVE_CONFIG
+    if live.exists():
+        Settings.model_validate(yaml.safe_load(live.read_text()))
+    return raw
+
+
+def test_companion_x_registers_bounded_migration_engine() -> None:
+    raw = _load_settings()
     settings = Settings.model_validate(raw)
     engines = {item.engine_id: item for item in settings.execution_engines.engines}
     migration = engines["migration_import"]
