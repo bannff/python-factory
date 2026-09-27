@@ -13,6 +13,7 @@ from factory.agent.runtime.execution_manifest import (
 from factory.agent.runtime.graph_contracts import GraphConfig
 from factory.mcp_utils.interface import (
     ExecutionBinding,
+    acquire_service_entry,
     begin_service_invocation,
     end_service_invocation,
     mint_internal_invocation_claims,
@@ -25,12 +26,19 @@ from factory.mcp_utils.runtime.tool_catalog import ToolCatalog
 from .test_managed_graph import runtime
 
 
-class Assembled:
-    def __init__(self, manifest, graph) -> None:
-        self.manifest, self.graph = manifest, graph
-        self.closed = False
+class Graph:
+    def __init__(self, started: asyncio.Event, unwound: asyncio.Event) -> None:
+        self.started, self.unwound, self.closed = started, unwound, False
 
-    def close(self) -> None:
+    async def invoke_graph(self, request) -> None:
+        del request
+        self.started.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            self.unwound.set()
+
+    async def close(self) -> None:
         self.closed = True
 
 
@@ -67,7 +75,10 @@ class MCPInvoker:
                 arguments=arguments,
             )
             try:
-                return await self.mcp.call_tool(target.tool_name, arguments)
+                return await self.mcp.call_tool(target.tool_name, {
+                    **arguments,
+                    "_service_entry_authorization": acquire_service_entry(tool.fn),
+                })
             except asyncio.CancelledError:
                 self.cancelled_error_seen = True
                 raise
@@ -85,7 +96,7 @@ class MCPInvoker:
                 "registration_digest", "request_digest", "provider_request_digest",
             )
         }
-        if target.tool_name == "cancel_strands_graph_attempt":
+        if target.tool_name == "cancel_langgraph_attempt":
             run = self.owner.storage.get_run(run_id=arguments["workflow_run_id"])
             rows = self.owner.durable_storage.list_task_attempts(run_id=run.run_id)
             assert run.status == rows[-1]["status"] == "cancelled"
@@ -115,22 +126,14 @@ async def test_real_native_stream_unwinds_only_after_durable_fence(
     tmp_path, monkeypatch,
 ) -> None:
     started, unwound = asyncio.Event(), asyncio.Event()
-
-    class Graph:
-        async def stream_async(self, *args, **kwargs):
-            started.set()
-            try:
-                await asyncio.Event().wait()
-            finally:
-                unwound.set()
-            yield {}
-
+    graph = Graph(started, unwound)
     manifest = _manifest()
     descriptor = await store_manifest(manifest)
-    assembled = Assembled(manifest, Graph())
     monkeypatch.setattr(
-        "factory.agent.mcp.managed_graph_tool.assemble_execution_graph",
-        lambda frozen: assembled,
+        "factory.agent.runtime.adapters.create_runtime_pair",
+        lambda *args, **kwargs: (
+            SimpleNamespace(capability_scope_digest="a" * 64), graph,
+        ),
     )
     monkeypatch.setattr(
         "factory.agent.mcp.managed_graph_tool.ManagedServiceCapability",
@@ -139,13 +142,13 @@ async def test_real_native_stream_unwinds_only_after_durable_fence(
     agent_mcp = ToolCatalog("agent-composed-cancellation")
     register(agent_mcp, SimpleNamespace())
     invoker = MCPInvoker(agent_mcp, asyncio.get_running_loop())
-    owner = runtime(tmp_path, invoker)
+    owner = runtime(tmp_path, invoker, "langgraph")
     invoker.owner = owner
     running = asyncio.create_task(asyncio.to_thread(
         owner.enroll_execution,
-        engine_id="strands_graph", request=descriptor.model_dump(mode="json"),
+        engine_id="langgraph", request=descriptor.model_dump(mode="json"),
         provider_request_digest=manifest.digest.value, run_key="key",
-        envelope=Envelope(tenant_id="tenant"),
+        envelope=Envelope(tenant_id="tenant", principal_id="owner"),
     ))
     started_wait = asyncio.create_task(started.wait())
     done, _ = await asyncio.wait(
@@ -157,20 +160,20 @@ async def test_real_native_stream_unwinds_only_after_durable_fence(
     record = owner.durable_storage.get_run_by_key(run_key="key")
     cancelled = await asyncio.to_thread(
         owner.cancel_run, run_id=record.run_id, reason="stop",
-        envelope=Envelope(tenant_id="tenant"),
+        envelope=Envelope(tenant_id="tenant", principal_id="owner"),
     )
     result = await asyncio.wait_for(running, timeout=5)
     assert cancelled["status"] == result["status"] == "cancelled"
-    cancel_call = next(c for c in invoker.calls if c[0].tool_name == "cancel_strands_graph_attempt")
+    cancel_call = next(c for c in invoker.calls if c[0].tool_name == "cancel_langgraph_attempt")
     assert cancel_call[1] == cancel_call[4]
     assert cancel_call[1] == {
         "workflow_run_id": result["run_id"], "attempt_id": result["attempt_id"],
-        "revision": 1, "engine_id": "strands_graph",
+        "revision": 1, "engine_id": "langgraph",
         "registration_digest": result["registration_digest"],
         "request_digest": result["request_digest"],
         "provider_request_digest": manifest.digest.value,
     }
-    assert unwound.is_set() and assembled.closed
+    assert unwound.is_set() and graph.closed
     assert invoker.cancelled_error_seen is True
     final = owner.storage.get_run(run_id=result["run_id"])
     attempt = owner.durable_storage.list_task_attempts(run_id=result["run_id"])[0]

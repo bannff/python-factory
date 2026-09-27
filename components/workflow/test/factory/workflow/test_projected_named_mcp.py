@@ -116,7 +116,7 @@ def test_domain_outcome_retries_with_new_attempt_binding(tmp_path: Path) -> None
         _config(tmp_path, definition), tool_invoker=invoker,
     )
     started = runtime.start_run(
-        workflow_name_or_id="wf", input={"secret": "not-forwarded"},
+        workflow_name_or_id="wf", input={"private_value": "not-forwarded"},
         run_key="retry", envelope=Envelope(),
     )
     assert started["status"] == "succeeded"
