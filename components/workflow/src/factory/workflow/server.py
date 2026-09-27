@@ -41,9 +41,12 @@ def _config_provenance() -> dict[str, Any]:
         return {"configured": True, "config_dir": str(config_dir)}
     if os.environ.get("WORKFLOW_CONFIG_DIR") is not None:
         reason = (
-            "WORKFLOW_CONFIG_DIR is set but has no settings.yaml: workflow boot "
-            "is fail-closed rather than starting with an empty execution-engine "
-            "registry"
+            "WORKFLOW_CONFIG_DIR is set but has no settings.yaml: "
+            "WorkflowRuntime construction raises WorkflowError, so a caller that "
+            "reaches the workflow runtime directly fails loudly instead of "
+            "getting an empty execution-engine registry; through the MCP "
+            "aggregator the workflow brick is registered unhealthy with zero "
+            "workflow tools while /api/health still answers 200"
         )
     else:
         reason = (
@@ -78,12 +81,16 @@ def _missing_settings_hint(config_dir: Path) -> str:
 def get_runtime() -> WorkflowRuntime:
     """Create a default WorkflowRuntime from environment / defaults.
 
-    An explicitly configured WORKFLOW_CONFIG_DIR with no settings.yaml is
-    fail-closed: booting on default Settings would hand back an empty
-    execution-engine registry whose absence only surfaces later as a confusing
-    ``ValueError: unknown execution engine: <id>`` at enrollment time (issue
-    #34). With WORKFLOW_CONFIG_DIR unset the module default (``./config``) may
-    legitimately be absent, so boot continues with a loud warning.
+    A missing settings.yaml under an explicitly configured WORKFLOW_CONFIG_DIR
+    raises ``WorkflowError`` here (issue #34) rather than returning a runtime
+    with an empty execution-engine registry, whose absence only surfaces later
+    as a confusing ``ValueError: unknown execution engine: <id>``. What an
+    operator observes depends on the caller: reaching this function directly
+    raises, while through the MCP aggregator the error is caught during brick
+    registration, so the workflow brick is reported unhealthy with zero tools
+    and ``/api/health`` still answers 200. With WORKFLOW_CONFIG_DIR unset the
+    module default (``./config``) may legitimately be absent, so boot continues
+    with a loud warning instead.
     """
     from factory.workflow.runtime.models import Settings
     from factory.workflow.runtime.storage.sqlite import SqliteWorkflowStorage
@@ -97,9 +104,11 @@ def get_runtime() -> WorkflowRuntime:
     if env_value is not None:
         raise WorkflowError(
             f"WORKFLOW_CONFIG_DIR={env_value} has no settings.yaml (expected "
-            f"{(config_dir / 'settings.yaml').resolve()}): refusing to start with "
-            "an empty execution-engine registry, which cannot enroll any engine "
-            "and fails later as 'unknown execution engine: <id>'; "
+            f"{(config_dir / 'settings.yaml').resolve()}): raising instead of "
+            "continuing with an empty execution-engine registry, which cannot "
+            "enroll any engine and fails later as 'unknown execution engine: "
+            "<id>' (through the MCP aggregator this surfaces as the workflow "
+            "brick unhealthy with zero workflow tools); "
             f"{_missing_settings_hint(config_dir)}"
         )
     logger.warning(

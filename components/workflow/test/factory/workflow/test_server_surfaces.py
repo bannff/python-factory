@@ -32,9 +32,9 @@ def test_module_surfaces_delegate_without_false_backend_claims(monkeypatch):
 def test_explicit_config_dir_without_settings_yaml_fails_fast(monkeypatch, tmp_path):
     """An operator-asserted config dir must never degrade into an empty registry.
 
-    Starting anyway would surface much later as ``unknown execution engine:
-    <id>`` from an unrelated code path (issue #34), so boot is fail-closed and
-    the message names the env var, the missing path and the shipped template.
+    Continuing anyway would surface much later as ``unknown execution engine:
+    <id>`` from an unrelated code path (issue #34), so this raises and the
+    message names the env var, the missing path and the shipped template.
     """
     config_dir = tmp_path / "config"
     config_dir.mkdir()
@@ -64,8 +64,10 @@ def test_fail_fast_message_names_the_template_when_it_is_not_beside_the_config(
     assert "settings.yaml.example" in str(excinfo.value)
 
 
-def test_explicit_config_dir_provenance_reports_fail_closed(monkeypatch, tmp_path):
-    """The provenance surface must describe the actual boot behaviour."""
+def test_explicit_config_dir_provenance_reports_the_real_failure_mode(
+    monkeypatch, tmp_path,
+):
+    """The provenance surface must describe the actual observable behaviour."""
     config_dir = tmp_path / "config"
     monkeypatch.setenv("WORKFLOW_CONFIG_DIR", str(config_dir))
 
@@ -73,8 +75,8 @@ def test_explicit_config_dir_provenance_reports_fail_closed(monkeypatch, tmp_pat
 
     assert provenance["configured"] is False
     assert provenance["missing"] == str((config_dir / "settings.yaml").resolve())
-    assert "fail-closed" in provenance["reason"]
-    assert "empty execution-engine registry" in provenance["reason"]
+    assert "raises WorkflowError" in provenance["reason"]
+    assert "unhealthy with zero workflow tools" in provenance["reason"]
 
 
 def test_unset_config_dir_logs_actionable_warning_and_starts_degraded(
