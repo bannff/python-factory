@@ -3,7 +3,32 @@ name: PR Safety
 on:
   pull_request:
     branches: [main]
+  # Post-merge smoke for main. NOTE: this trigger does NOT fire for the merges
+  # that matter — auto-merge.yml merges with the repository's automatic
+  # GITHUB_TOKEN, and a workflow run started that way does not create `push`
+  # events (GitHub docs, actions/concepts/security/github_token), so auto-merged
+  # PRs would leave main unguarded. The scheduled run below is therefore the
+  # real post-merge coverage; `push` still covers a human pushing to main
+  # directly, and costs nothing.
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 5 * * *"
   workflow_dispatch:
+
+env:
+  # Single source of truth for the always-run control-plane suites: the
+  # pre-merge lane (`core-tests`) and the post-merge smoke share it, so a suite
+  # added here cannot be forgotten in one of them.
+  CORE_SUITES: >-
+    components/test/test
+    components/foreman/test
+    components/agent/test
+    components/blockchain/test
+    components/events/test
+    components/workflow/test
+    scripts/test/test_ci_lock_contract.py
+    scripts/test/test_sanitize_policy_drift.py
 
 concurrency:
   group: pr-safety-${{ github.event.pull_request.number || github.ref }}
@@ -23,6 +48,19 @@ jobs:
           version: "0.12.0"
       - name: Install core dependencies
         run: uv lock --check && uv sync --frozen
+      - name: Public-repo sanitizer dry-run (blocking publish-path gate)
+        # Non-destructive: it builds the public mirror from `git archive` of
+        # this commit in a temp dir and runs the verify tier (forbidden-pattern
+        # scan, structural checks, compileall, collect-only). Nothing in CI ran
+        # it before, so policy drift -- an anchor that no longer matches a
+        # refactored file, or a target that stopped being tracked -- rotted
+        # invisibly until someone tried to publish (#59). The collect-only step
+        # imports the mirrored tree, so it needs the same core-test overlay the
+        # core-tests job installs.
+        run: |
+          uv pip install --python .venv/bin/python --no-deps \
+            -r config/core-test-requirements.txt
+          uv run python scripts/sanitize_public.py --dry-run
       - name: Guardian check (blocking PR ratchet)
         if: github.event_name == 'pull_request'
         env:
@@ -50,7 +88,6 @@ jobs:
       MCP_LOCAL_AUTH_TOKEN: "ci-local-auth-token-0123456789"
       MCP_PERMISSIONS_CONFIG_DIR: config/mcp_permissions
       TELEMETRY_REQUIRED: "0"
-      BASE_SHA: ${{ github.event.pull_request.base.sha }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -72,20 +109,34 @@ jobs:
             --ignore-glob='components/dataset/test/**' \
             --ignore-glob='components/machine_learning/test/**'
       - name: Run strict control-plane suites
+        # The two brick suites included via CORE_SUITES are listed on purpose
+        # (#56, #57): they were only reachable through the diff-driven selector,
+        # so `main` sat red on them for days and every PR touching those bricks
+        # inherited the red as if it were its own. Running them on every PR is
+        # the guard; the selector skips them so they are not run twice.
         run: |
-          uv run pytest -q \
-            components/test/test \
-            components/foreman/test \
-            components/agent/test \
-            components/blockchain/test \
-            scripts/test/test_ci_lock_contract.py
+          uv run pytest -q $CORE_SUITES
       - name: Select changed brick tests
         id: affected
         run: |
+          # Diff against the base-branch tip this PR's merge ref was built on,
+          # not the event-time tip. `github.event.pull_request.base.sha` goes
+          # stale as `main` advances, and the diff then swallows every commit
+          # merged into `main` since the event — so unrelated PRs run (and are
+          # blocked by) brick suites they never touched (#60). On a
+          # `pull_request` event HEAD is the merge ref, so its first parent is
+          # exactly that base tip. Fail closed if it cannot be resolved rather
+          # than silently selecting nothing.
+          base="$(git rev-parse --verify 'HEAD^1^{commit}')"
+          echo "changed-brick diff range: ${base}..HEAD"
           targets=""
           while IFS= read -r file; do
             case "$file" in
+              # dataset/machine_learning have their own job; events/workflow run
+              # unconditionally in the strict lane above, so selecting them here
+              # would run each suite twice in the same job (#60 review).
               components/dataset/*|components/machine_learning/*) continue ;;
+              components/events/*|components/workflow/*) continue ;;
               components/*/*)
                 target="$(printf '%s' "$file" | cut -d/ -f1-2)/test" ;;
               bases/*/*)
@@ -94,14 +145,49 @@ jobs:
               *) continue ;;
             esac
             if test -d "$target"; then targets="$targets $target"; fi
-          done < <(git diff --name-only "$BASE_SHA"...HEAD)
+          done < <(git diff --name-only "$base" HEAD)
           targets="$(printf '%s\n' $targets | sort -u | tr '\n' ' ' | xargs)"
+          echo "resolved targets: ${targets:-<none>}"
           echo "targets=$targets" >> "$GITHUB_OUTPUT"
       - name: Run changed brick tests
         if: steps.affected.outputs.targets != ''
         run: uv run pytest -q ${{ steps.affected.outputs.targets }}
 
+  post-merge:
+    # Post-merge smoke for `main` (see the trigger comment): the strict
+    # control-plane suites only, no selector — neither a push nor a scheduled
+    # run has a PR merge ref. On a `schedule` event the frontend and CAN lanes
+    # run as well (their gate is `event_name != 'push'`, and `schedule` is not
+    # `push`), so the nightly is a broader sweep than this job; that is
+    # deliberate, since nothing else exercises them after a merge. The
+    # sanitizer gate runs here too — `checks` is ungated.
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    env:
+      MCP_LOCAL_AUTH: "true"
+      MCP_LOCAL_AUTH_TOKEN: "ci-local-auth-token-0123456789"
+      MCP_PERMISSIONS_CONFIG_DIR: config/mcp_permissions
+      TELEMETRY_REQUIRED: "0"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.12.0"
+      - name: Install candidate dependencies
+        run: |
+          uv lock --check
+          uv sync --frozen
+          uv pip install --python .venv/bin/python --no-deps \
+            -r config/core-test-requirements.txt
+      - name: Run strict control-plane suites
+        run: uv run pytest -q $CORE_SUITES
+
   can-tests:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -119,6 +205,7 @@ jobs:
         run: uv run pytest components/dataset/test
 
   frontend-tests:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

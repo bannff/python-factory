@@ -7,6 +7,8 @@ from pathlib import Path
 import subprocess
 import tomllib
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parents[2]
 CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
@@ -89,13 +91,32 @@ def test_personal_project_is_excluded_from_uv_workspace() -> None:
     assert "projects/circuitron" in workspace["exclude"]
 
 
+def _run_blocks(workflow: str) -> list[str]:
+    """Every ``run:`` block in the workflow, in document order."""
+    document = yaml.safe_load(workflow)
+    return [
+        step["run"]
+        for job in document["jobs"].values()
+        for step in job.get("steps", [])
+        if "run" in step
+    ]
+
+
 def test_every_frozen_install_first_checks_lock_freshness() -> None:
+    """Invariant, not a snapshot: *every* step that installs with
+    ``uv sync --frozen`` must check the lock first.
+
+    Counting the occurrences instead required re-pinning this test whenever a
+    job was added (the post-merge lane was the first), which is the kind of
+    incidental pin that hides the real question.
+    """
     workflow = CI_WORKFLOW.read_text()
-    assert workflow.count("uv sync --frozen") == 3
-    assert workflow.count("uv lock --check") == 3
-    assert "uv lock --check && uv sync --frozen" in workflow
+    installs = [block for block in _run_blocks(workflow) if "uv sync --frozen" in block]
+    assert installs, "no step installs with `uv sync --frozen`"
+    for block in installs:
+        assert "uv lock --check" in block, block
+        assert block.index("uv lock --check") < block.index("uv sync --frozen"), block
     candidate = _step_run_block(workflow, "Install candidate dependencies")
-    assert candidate.index("uv lock --check") < candidate.index("uv sync --frozen")
     assert "--no-deps" in candidate
 
 
