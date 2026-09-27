@@ -117,3 +117,39 @@ jobs:
         run: uv run python -c "import asammdf, cantools"
       - name: Run Dataset tests with real MF4 and DBC backends
         run: uv run pytest components/dataset/test
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            frontends/shared-renderer/package-lock.json
+            frontends/next-dashboard/package-lock.json
+      # `npm ci` checks the lockfile against the manifest and runs the
+      # renderer's `prepare` build; the `clean` build after it proves the
+      # committed sources are enough on their own (`lib/` is not tracked).
+      - name: shared-renderer — install
+        working-directory: frontends/shared-renderer
+        run: npm ci
+      - name: shared-renderer — clean build and tests
+        working-directory: frontends/shared-renderer
+        run: |
+          npm run clean
+          npm run build
+          npm test
+      - name: shared-renderer — tsc output stays untracked
+        run: |
+          tracked="$(git ls-files frontends/shared-renderer/lib frontends/shared-renderer/tsconfig.tsbuildinfo)"
+          test -z "$tracked" || { echo "::error::compiled output is tracked again: $tracked"; exit 1; }
+      # The dashboard links the renderer with `file:../shared-renderer`, so it
+      # builds against the `lib/` the step above produced.
+      - name: next-dashboard — install, build and tests
+        working-directory: frontends/next-dashboard
+        run: |
+          npm ci
+          npm run build
+          npm test
