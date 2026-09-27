@@ -1,5 +1,6 @@
 import {
   Client,
+  SdkError,
   SdkErrorCode,
   SdkHttpError,
   StreamableHTTPClientTransport,
@@ -12,42 +13,34 @@ import {
   cancelAllConfirmations,
   requestConfirmation,
 } from "./mcp-confirmation";
+import { setMcpConnectionStatus } from "./mcp-connection-status";
 import { cancelAllQuestions, requestQuestion } from "./mcp-question";
 
 /**
- * Singleton browser-side MCP v2 client.
- *
- * SDK-first pin: @modelcontextprotocol/client@2.0.0. The browser connects to
- * the same-origin local BFF and never owns the backend bearer; the BFF adds it
- * only after loopback/origin admission. CopilotKit/AG-UI and mcp-ui remain
- * independent consumers.
+ * Singleton browser-side MCP v2 client. SDK-first pin:
+ * @modelcontextprotocol/client@2.0.0 — the browser talks to the same-origin
+ * local BFF and never owns the backend bearer (the BFF adds it after
+ * loopback/origin admission). CopilotKit/AG-UI and mcp-ui stay independent.
  */
 
 let clientPromise: Promise<Client> | null = null;
 let clientInstance: Client | null = null;
 
-export type McpConnectionStatus = "idle" | "connecting" | "connected" | "error";
-let connectionStatus: McpConnectionStatus = "idle";
-const connectionListeners = new Set<() => void>();
-
-function setConnectionStatus(status: McpConnectionStatus): void {
-  if (connectionStatus === status) return;
-  connectionStatus = status;
-  connectionListeners.forEach((listener) => listener());
-}
-
-export function getMcpConnectionSnapshot(): McpConnectionStatus {
-  return connectionStatus;
-}
-
-export function subscribeMcpConnection(listener: () => void): () => void {
-  connectionListeners.add(listener);
-  return () => connectionListeners.delete(listener);
+/**
+ * Connect budget in ms, applied twice: the SDK's per-request handshake budget
+ * and a wall-clock deadline for the whole connect. The SDK re-applies the
+ * per-request budget to the era probe and to the legacy `initialize`, so a
+ * server that answers the probe late and then stalls would otherwise take
+ * twice this long. Override with `NEXT_PUBLIC_MCP_CONNECT_TIMEOUT_MS`.
+ */
+export function mcpConnectTimeoutMs(): number {
+  const raw = Number(process.env.NEXT_PUBLIC_MCP_CONNECT_TIMEOUT_MS);
+  return Number.isFinite(raw) && raw > 0 ? raw : 15_000;
 }
 
 export class McpAuthenticationError extends Error {
-  constructor() {
-    super("Local MCP authentication failed. Restart Companion X with a configured local token.");
+  constructor(server: string) {
+    super(`Local MCP authentication failed for ${server}. Restart Companion X with a configured local token.`);
     this.name = "McpAuthenticationError";
   }
 }
@@ -56,9 +49,27 @@ export function normalizeMcpConnectionError(error: unknown): unknown {
   if (UnauthorizedError.isInstance(error)
       || (SdkHttpError.isInstance(error)
           && error.code === SdkErrorCode.ClientHttpAuthentication)) {
-    return new McpAuthenticationError();
+    return new McpAuthenticationError(mcpUrl().toString());
   }
   return error;
+}
+
+/**
+ * Turn a failed handshake into a message naming the server and the underlying
+ * cause (auth vs timeout vs transport), so the connection gate can show why
+ * tools are unavailable instead of a generic string.
+ */
+export function describeMcpConnectionError(
+  error: unknown,
+  server: string,
+  timeoutMs: number,
+): string {
+  if (error instanceof McpAuthenticationError) return error.message;
+  if (SdkError.isInstance(error) && error.code === SdkErrorCode.RequestTimeout) {
+    return `${server} accepted the connection but did not answer the MCP handshake within ${timeoutMs} ms.`;
+  }
+  const cause = error instanceof Error ? error.message : String(error);
+  return `${server} is unreachable: ${cause}`;
 }
 
 function mcpUrl(): URL {
@@ -140,9 +151,10 @@ async function connect(): Promise<Client> {
     },
   );
   client.setRequestHandler("elicitation/create", handleElicitation);
+  const timeout = mcpConnectTimeoutMs();
   await client.connect(new StreamableHTTPClientTransport(mcpUrl(), {
     requestInit: { headers: { "x-companion-x-local": "1" } },
-  }));
+  }), { timeout, signal: AbortSignal.timeout(timeout) });
   clientInstance = client;
   return client;
 }
@@ -150,17 +162,21 @@ async function connect(): Promise<Client> {
 /** Get the shared MCP client, connecting on first use. */
 export async function getMcpClient(): Promise<Client> {
   if (!clientPromise) {
-    setConnectionStatus("connecting");
+    setMcpConnectionStatus("connecting");
     clientPromise = connect().then((client) => {
-      setConnectionStatus("connected");
+      setMcpConnectionStatus("connected");
       return client;
     }).catch((error) => {
       clientPromise = null;
       clientInstance = null;
       cancelAllConfirmations();
       cancelAllQuestions();
-      setConnectionStatus("error");
-      throw normalizeMcpConnectionError(error);
+      const normalized = normalizeMcpConnectionError(error);
+      setMcpConnectionStatus(
+        "error",
+        describeMcpConnectionError(normalized, mcpUrl().toString(), mcpConnectTimeoutMs()),
+      );
+      throw normalized;
     });
   }
   return clientPromise;
@@ -173,7 +189,7 @@ export function resetMcpClient(): void {
   void clientInstance?.close();
   clientInstance = null;
   clientPromise = null;
-  setConnectionStatus("idle");
+  setMcpConnectionStatus("idle");
 }
 
 export function retryMcpConnection(): Promise<Client> {

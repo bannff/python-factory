@@ -35,14 +35,18 @@ KB and Memory both use ChromaDB's built-in `all-MiniLM-L6-v2` sentence-transform
 
 The recommended launcher generates one ephemeral local MCP credential when the
 `.env` leaves it blank, shares it only with the API and Next server processes,
-and stops both on Ctrl-C:
+and stops both on Ctrl-C. It also persists that token to a `0600` file at
+`projects/companion_x/.storage/local-mcp-token` (removed when the launcher
+stops), so a second process — a hand-started `npm run dev`, a smoke stack — can
+join the running API without this shell's environment:
 
 ```bash
 ./scripts/companion-x-ui.sh
 ```
 
 For manual two-terminal startup, generate one URL-safe token and export the
-**same value** in both terminals before the commands below:
+**same value** in both terminals before the commands below (the dashboard's
+`MCP_LOCAL_AUTH_TOKEN` takes precedence over the launcher's token file):
 
 ```bash
 export MCP_LOCAL_AUTH_TOKEN="<same-generated-token>"

@@ -14,6 +14,10 @@ const SPA_VIEWS = ["graph", "timeline", "findings", "evals", "metrics", "ml"];
  */
 const nextConfig: NextConfig = {
   output: "standalone",
+  // `next dev` otherwise writes AGENTS.md + CLAUDE.md into this directory on
+  // every start (agentRules defaults to true and they are not gitignored,
+  // which dirties the tree). This repo ships its own AGENTS.md convention.
+  agentRules: false,
   transpilePackages: ["@companion-x/shared-renderer"],
   // Next copies this value into `outputFileTracingRoot`, so it decides the
   // standalone layout. Anchor it on the directory holding both this app and the

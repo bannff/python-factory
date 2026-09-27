@@ -1,16 +1,12 @@
 #!/usr/bin/env bash
 # Launch Companion-X API + Next.js UI from anywhere — no containers needed.
 #
-# Usage:
-#   ~/workplace/python-factory/scripts/companion-x-ui.sh
+# Usage: ~/workplace/python-factory/scripts/companion-x-ui.sh
+# (or alias it: alias companion-ui='~/workplace/python-factory/scripts/companion-x-ui.sh')
 #
-# Or add a shell alias:
-#   alias companion-ui='~/workplace/python-factory/scripts/companion-x-ui.sh'
-#
-# All adapters are container-free (ChromaDB, SQLite, networkx, memory).
-# The script always runs from the factory root so file-based storage
-# (ChromaDB ./chroma_data, ./chroma_memory, events.db) writes to the
-# correct location.
+# All adapters are container-free (ChromaDB, SQLite, networkx, memory). The
+# script always runs from the factory root so file-based storage (ChromaDB
+# ./chroma_data, ./chroma_memory, events.db) writes to the correct location.
 #
 # Ctrl-C stops both processes.
 
@@ -21,6 +17,12 @@ NEXT_DIR="$FACTORY_ROOT/frontends/next-dashboard"
 API_PORT="${API_PORT:-8000}"
 NEXT_PORT="${NEXT_PORT:-3000}"
 ENV_FILE="$FACTORY_ROOT/projects/companion_x/.env"
+# Launcher-minted local MCP credential: persisted 0600 so a hand-started
+# `next dev` can join this API; gitignored, never a build input, removed by
+# cleanup(). MCP_LOCAL_TOKEN_FILE overrides it, resolved after the env file is
+# sourced; it must be absolute, because the dashboard resolves a relative value
+# against its own cwd.
+MCP_TOKEN_FILE_DEFAULT="$FACTORY_ROOT/projects/companion_x/.storage/local-mcp-token"
 
 # Ports 8000/3000 belong to the owner's live Companion-X. An agent (KiroCrew
 # goal loop, sub-agent, cron) must smoke-launch on API_PORT=18000 NEXT_PORT=13000.
@@ -39,10 +41,11 @@ cleanup() {
     [[ -n "${API_PID:-}" ]] && kill "$API_PID" 2>/dev/null || true
     [[ -n "${NEXT_PID:-}" ]] && kill "$NEXT_PID" 2>/dev/null || true
     [[ -n "${API_PID_FILE:-}" ]] && rm -f "$API_PID_FILE"
+    [[ -n "${MCP_TOKEN_FILE_CREATED:-}" ]] && rm -f "${MCP_TOKEN_FILE:-}" || true
     wait 2>/dev/null
     echo "Done."
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT INT TERM HUP QUIT
 
 # Source the env file so adapters resolve correctly. Preserve the
 # ambient AWS_PROFILE first — the committed .env ships with
@@ -60,6 +63,12 @@ fi
 if [[ -z "${AWS_PROFILE:-}" && -n "$_AMBIENT_AWS_PROFILE" ]]; then
     export AWS_PROFILE="$_AMBIENT_AWS_PROFILE"
 fi
+
+if [[ -n "${MCP_LOCAL_TOKEN_FILE:-}" && "$MCP_LOCAL_TOKEN_FILE" != /* ]]; then
+    echo "MCP_LOCAL_TOKEN_FILE must be an absolute path, e.g. $MCP_TOKEN_FILE_DEFAULT (got: $MCP_LOCAL_TOKEN_FILE)" >&2
+    exit 1
+fi
+MCP_TOKEN_FILE="${MCP_LOCAL_TOKEN_FILE:-$MCP_TOKEN_FILE_DEFAULT}"
 
 # Never mistake a stale API's health response for this launch becoming ready.
 # Mirror uvicorn's bind (SO_REUSEADDR, so TIME_WAIT leftovers don't count) and
@@ -90,6 +99,32 @@ fi
 if [[ -z "${MCP_LOCAL_AUTH_TOKEN:-}" ]]; then
     export MCP_LOCAL_AUTH_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
     echo "==> Generated ephemeral local MCP credential"
+    # Persist it so a hand-started process can join without this shell. The
+    # token goes on stdin (never argv, which `ps` exposes; `python3 -c` keeps
+    # the program out of the data path where a heredoc would consume stdin), the
+    # opened descriptor is fchmod'ed (a pre-existing or symlinked target cannot
+    # keep a looser mode) and the mode is read back from stat.
+    MCP_TOKEN_MODE="$(printf '%s' "$MCP_LOCAL_AUTH_TOKEN" | python3 -c '
+import os, stat, sys
+path = sys.argv[1]
+token = sys.stdin.read().strip()
+os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+try:
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW | os.O_NONBLOCK, 0o600)
+except OSError as error:
+    sys.stderr.write(f"refusing to write the local MCP credential: {error}\n")
+    raise SystemExit(1)
+os.fchmod(descriptor, 0o600)
+with os.fdopen(descriptor, "w") as handle:
+    handle.write(token)
+mode = stat.S_IMODE(os.stat(path, follow_symlinks=False).st_mode)
+if mode != 0o600:
+    sys.stderr.write(f"local MCP credential mode is {mode:04o}, expected 0600\n")
+    raise SystemExit(1)
+print(f"{mode:04o}")
+' "$MCP_TOKEN_FILE")" || { echo "ERROR: could not persist the local MCP credential" >&2; exit 1; }
+    MCP_TOKEN_FILE_CREATED=1
+    echo "==> Persisted the local MCP credential to $MCP_TOKEN_FILE (mode $MCP_TOKEN_MODE)"
 elif [[ ${#MCP_LOCAL_AUTH_TOKEN} -lt 16 || ${#MCP_LOCAL_AUTH_TOKEN} -gt 512 \
         || ! "$MCP_LOCAL_AUTH_TOKEN" =~ ^[A-Za-z0-9._~-]+$ ]]; then
     echo "MCP_LOCAL_AUTH_TOKEN must be 16..512 URL-safe characters" >&2

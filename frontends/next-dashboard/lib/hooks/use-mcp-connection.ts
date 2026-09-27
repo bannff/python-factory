@@ -1,20 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { getMcpClient, retryMcpConnection } from "@/lib/mcp-client";
 import {
-  getMcpClient,
-  getMcpConnectionSnapshot,
-  retryMcpConnection,
+  getMcpConnectionState,
   subscribeMcpConnection,
-} from "@/lib/mcp-client";
+} from "@/lib/mcp-connection-status";
 
 export function useMcpConnection() {
-  const status = useSyncExternalStore(
+  const { status, error } = useSyncExternalStore(
     subscribeMcpConnection,
-    getMcpConnectionSnapshot,
-    getMcpConnectionSnapshot,
+    getMcpConnectionState,
+    getMcpConnectionState,
   );
 
+  // The rejection is swallowed here on purpose: `getMcpClient` records the
+  // cause in the connection store before throwing, so the message reaches the
+  // UI through `error` rather than an unhandled rejection.
   useEffect(() => {
     if (status === "idle") void getMcpClient().catch(() => undefined);
   }, [status]);
@@ -23,5 +25,5 @@ export function useMcpConnection() {
     void retryMcpConnection().catch(() => undefined);
   }, []);
 
-  return { status, ready: status === "connected", retry };
+  return { status, ready: status === "connected", error, retry };
 }
