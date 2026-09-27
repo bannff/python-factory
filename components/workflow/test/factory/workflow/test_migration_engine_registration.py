@@ -17,14 +17,21 @@ _LIVE_CONFIG = "projects/companion_x/config/settings.yaml"
 _TEMPLATE_CONFIG = "projects/companion_x/config/settings.yaml.example"
 
 
+def _engine_ids(settings: Settings) -> set[str]:
+    return {item.engine_id for item in settings.execution_engines.engines}
+
+
 def _load_settings() -> dict:
     """Load the pinned deployment contract.
 
     The live ``settings.yaml`` is untracked machine state (``projects/*/config/``
     is gitignored, issue #34), so a fresh clone has none; the tracked
     ``.example`` template is the reviewed contract a checkout can guarantee.
-    When a live file exists it is additionally validated against the same
-    ``Settings`` schema, since it is what a real deployment actually loads.
+    When a live file exists it must parse *and* still register every engine the
+    template registers — a deployment whose file silently dropped a
+    registration is exactly how the reconstructed config lost
+    ``migration_import`` and failed later as ``unknown execution engine``
+    (#34, #57 item 5).
     """
     root = Path(__file__).parents[5]
     template = root / _TEMPLATE_CONFIG
@@ -35,7 +42,13 @@ def _load_settings() -> dict:
     raw = yaml.safe_load(template.read_text())
     live = root / _LIVE_CONFIG
     if live.exists():
-        Settings.model_validate(yaml.safe_load(live.read_text()))
+        live_settings = Settings.model_validate(yaml.safe_load(live.read_text()))
+        missing = _engine_ids(Settings.model_validate(raw)) - _engine_ids(live_settings)
+        assert not missing, (
+            f"the machine-local {_LIVE_CONFIG} does not register {sorted(missing)}, "
+            f"which the tracked template does: a deployment that drops an engine "
+            "registration fails later as 'unknown execution engine: <id>' (#57)"
+        )
     return raw
 
 
