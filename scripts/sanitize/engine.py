@@ -23,14 +23,23 @@ class Report:
     patched: list[str] = field(default_factory=list)
     renamed: dict[str, int] = field(default_factory=dict)
     scrubbed: dict[str, int] = field(default_factory=dict)
+    absent: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
 
 def delete_paths(tree: Path, policy: dict[str, Any], report: Report) -> None:
+    # Targets declared in `expected_absent` are tracked nowhere, so `git
+    # archive` never contains them; their deletion is a deliberate no-op.
+    # Anything else that has vanished is policy rot and is reported.
+    expected = {str(item["path"]).rstrip("/")
+                for item in policy.get("expected_absent", []) or []}
     for relative in policy.get("delete_paths", []) or []:
         target = confined(tree, relative.rstrip("/"))
         if not target.exists():
-            report.errors.append(f"delete_paths: missing (already gone?) {relative}")
+            if relative.rstrip("/") in expected:
+                report.absent.append(relative)
+            else:
+                report.errors.append(f"delete_paths: missing (already gone?) {relative}")
             continue
         shutil.rmtree(target) if target.is_dir() else target.unlink()
         report.deleted.append(relative)

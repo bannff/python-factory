@@ -108,6 +108,14 @@ def main(arguments: list[str] | None = None) -> int:
         print(f"policy v{policy['version']}; exported {revision[:12]}; {detail}")
         print(f"deleted={len(report.deleted)} replaced={len(report.replaced)} "
               f"patched={len(report.patched)} scrubbed={sum(report.scrubbed.values())}")
+        if report.absent:
+            print(f"note: {len(report.absent)} delete target(s) already absent "
+                  f"(declared in policy expected_absent)")
+        if report.errors:
+            print(f"POLICY DRIFT WARNINGS: {len(report.errors)} "
+                  f"(declared in neither delete_paths nor expected_absent)")
+            for drift in report.errors:
+                print(f"   {drift}")
         result = _verify(tree, policy, options.skip_pytest)
         print(verify.render(result))
         if not result.ok:
