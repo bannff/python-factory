@@ -27,7 +27,8 @@ rules.
 
 Later gates: verify converted-model prediction parity, p50/p95 inference
 latency, RAM, energy, and thermal behavior on the specified iPhone; then
-exchange typed image-classification results between disconnected Ditto peers.
+persist typed image-classification observations in the local Ditto SDK store
+and verify subscribed peers receive them after offline/rejoin.
 
 ## Reproduce the lab run
 

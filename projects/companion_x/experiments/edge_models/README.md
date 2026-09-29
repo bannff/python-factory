@@ -52,9 +52,14 @@ recorded for separate retrieval. Local archive paths in bundled JSONL must
 be remapped when reproducing on another machine.
 
 Every candidate has three separate gates: held-out task quality against a
-simple baseline, export parity and resource use on the named iPhone, then
-correct typed-capability behavior across disconnected Ditto peers. A lab
-quality score only addresses the first gate.
+simple baseline; packaging/conversion of the **model** into the named iPhone
+runtime with prediction parity and resource measurements; then continuous
+local result writes through the real Ditto SDK, restart persistence, and
+correct observation/typed-capability behavior across disconnected peers.
+"Model export" means preparing weights for the device runtime. Inference
+results stay in the device's Ditto-backed local database and sync according
+to the app's subscriptions; the field workflow does not export result files.
+A lab quality score only addresses the first gate.
 
 ## Current records
 
@@ -64,6 +69,7 @@ quality score only addresses the first gate.
 | [edge-vision-defect-001](edge-vision-defect-001/results.md) | Local surface-defect triage | Exploratory lab pilot | MobileNetV3 Small AP 0.778 versus 0.717; improvement uncertain |
 | [edge-audio-command-001](edge-audio-command-001/results.md) | Offline go/stop voice commands | Exploratory lab pilot | Tiny CNN improves macro F1, but 156/954 other words trigger commands |
 | [edge-tool-routing-001](edge-tool-routing-001/results.md) | Local typed-tool selection | Synthetic lab probe | Standalone MiniLM has 6/10 unsafe misroutes; guarded follow-up needs fresh holdout |
+| [edge-ditto-device-flow-001](edge-ditto-device-flow-001/protocol.md) | Model result persistence and offline peer sync through the real Ditto SDK | Protocol ready; not run | Mock-device functional gate, followed by iPhone verification |
 
 ## Candidate coverage
 

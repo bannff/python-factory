@@ -24,8 +24,9 @@ tool-calling candidate; its official weights require acceptance of Google's
 Gemma terms, and it must be evaluated separately on the same frozen tool
 schema and holdout once access and a real inference path are available.
 
-Later gates are iPhone export/parity/resource measurements and correct result
-handoff over disconnected Ditto peers with duplicate and stale-request checks.
+Later gates are converted-model parity and iPhone resource measurements,
+local Ditto SDK persistence, and correct request/result sync over disconnected
+peers with duplicate and stale-request checks.
 
 ## Reproduce the lab run
 

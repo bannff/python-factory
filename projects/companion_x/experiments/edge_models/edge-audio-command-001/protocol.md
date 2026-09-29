@@ -20,9 +20,10 @@ parameter count and serialized bytes. Pick thresholds using validation only.
 Record all feature preprocessing and its fitted state.
 
 Publish the audio record definition and each frozen partition with the Dataset
-brick after external schema and speaker-leakage checks. Later gates are export
-parity and iPhone latency/RAM/energy, followed by a typed, read-only command
-proposal through disconnected Ditto peers with explicit authority checks.
+brick after external schema and speaker-leakage checks. Later gates are
+converted-model parity and iPhone latency/RAM/energy, followed by local Ditto
+SDK persistence and peer sync of a typed, read-only command proposal with
+explicit authority checks.
 
 ## Reproduce the lab run
 

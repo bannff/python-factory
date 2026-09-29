@@ -30,12 +30,13 @@ precision-recall curve (AUPRC). Also report recall and false-positive counts at
 a threshold selected for at most 5% validation false-positive rate, paired
 uncertainty for model comparisons, and training configuration.
 
-On an actual iPhone, record the model and iOS version, export parity, cold
+On an actual iPhone, record the model and iOS version, converted-model parity, cold
 start, p50/p95 inference latency, peak memory, artifact size, energy, thermal
-behavior, and offline operation. For mesh coordination, compare independent
-models with a deterministic local policy, then test task and result exchange
-between two disconnected Ditto peers, including loss/rejoin and duplicate
-claims.
+behavior, and offline operation. Persist each typed prediction in the local
+Ditto SDK store and verify it survives app restart. For mesh coordination,
+compare independent models with a deterministic local policy, then test
+subscribed observation and task exchange between disconnected Ditto peers,
+including loss/rejoin and duplicate claims.
 
 ## Record discipline
 
