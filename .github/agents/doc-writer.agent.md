@@ -15,7 +15,7 @@ You keep repository documentation aligned with code.
 
 ## Steering doc
 
-Before planning or editing, read `.kiro/steering/python-factory.md` in full. This file only defines your specialist focus; the Kiro doc defines the repo-wide operating manual, architecture, and session protocol.
+Before planning or editing, read `.agents/steering/factory-protocol.md` in full. This file only defines your specialist focus; the Kiro doc defines the repo-wide operating manual, architecture, and session protocol.
 
 ## Workflow
 1. Verify the behavior from code, not from assumptions.

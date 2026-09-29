@@ -1,6 +1,6 @@
 # Dev Principles
 
-These are implementation principles for this workspace. The single normative architecture and control-plane authority is [`.kiro/steering/python-factory.md`](../../.kiro/steering/python-factory.md). This file explains how to implement that doctrine; repository-development orchestration below does not redefine runtime ownership.
+These are implementation principles for this workspace. The single normative architecture and control-plane authority is [`.agents/steering/factory-protocol.md`](../../.agents/steering/factory-protocol.md). This file explains how to implement that doctrine; repository-development orchestration below does not redefine runtime ownership.
 
 ## Architectural Principles
 

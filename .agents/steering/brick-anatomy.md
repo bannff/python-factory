@@ -4,7 +4,7 @@ fileMatchPattern: "components/**/*, bases/**/*"
 ---
 # Brick Anatomy
 
-The normative ownership boundaries live in [`.kiro/steering/python-factory.md`](../../.kiro/steering/python-factory.md). This file defines structural patterns only.
+The normative ownership boundaries live in [`.agents/steering/factory-protocol.md`](../../.agents/steering/factory-protocol.md). This file defines structural patterns only.
 
 All bricks (components AND bases) follow the same polymorphic, adapter-based pattern. Workflow is the structural exemplar; that does not make it the owner of intelligent research, synthesis, or within-attempt Agent Graph work.
 

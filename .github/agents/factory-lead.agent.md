@@ -16,7 +16,7 @@ You are the orchestration agent for this repository.
 
 ## Steering doc
 
-Before planning or editing, read `.kiro/steering/python-factory.md` in full. This file only defines your specialist focus; the Kiro doc defines the repo-wide operating manual, architecture, and session protocol.
+Before planning or editing, read `.agents/steering/factory-protocol.md` in full. This file only defines your specialist focus; the Kiro doc defines the repo-wide operating manual, architecture, and session protocol.
 
 ## Delegation Rules
 1. For implementation work, delegate planning to both `Factory Meta-Architect` and `Strands Expert` before implementation. Use the architecture review for repo structure and the Strands review for SDK, provider, and MCP decisions.

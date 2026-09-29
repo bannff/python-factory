@@ -2,7 +2,7 @@
 
 A Polylith monorepo built FOR AI agents. Every brick exposes a full MCP interface.
 
-The normative Agent/Companion-X/Workflow/Dataset/Evals ownership split is defined only in [`.kiro/steering/python-factory.md`](../../.kiro/steering/python-factory.md). This file describes current implementation state.
+The normative Agent/Companion-X/Workflow/Dataset/Evals ownership split is defined only in [`.agents/steering/factory-protocol.md`](../../.agents/steering/factory-protocol.md). This file describes current implementation state.
 
 GitHub is the development work-tracking plane: Issues for work, Discussions for clarification, Wiki for high-level docs, and the Project board for tracking. Companion-X is the runtime control plane; it composes through Agent surfaces rather than owning another agent runtime.
 

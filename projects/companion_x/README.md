@@ -1,6 +1,6 @@
 # Project: companion_x
 
-Companion-X is the domain-neutral runtime control plane and Next.js cockpit; security is domain pack #1, not the engine. It dynamically assembles bounded objective teams through Agent brick surfaces and invokes capability bricks through MCP—it is not another agent runtime. See the normative ownership doctrine in [`.kiro/steering/python-factory.md`](../../.kiro/steering/python-factory.md).
+Companion-X is the domain-neutral runtime control plane and Next.js cockpit; security is domain pack #1, not the engine. It dynamically assembles bounded objective teams through Agent brick surfaces and invokes capability bricks through MCP—it is not another agent runtime. See the normative ownership doctrine in [`.agents/steering/factory-protocol.md`](../../.agents/steering/factory-protocol.md).
 
 ## Brick Wiring
 

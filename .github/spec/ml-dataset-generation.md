@@ -63,7 +63,7 @@ generation backend.
 #### Brick boundary contract
 
 These boundaries apply the single normative control-plane doctrine in
-[`.kiro/steering/python-factory.md`](../../.kiro/steering/python-factory.md) to dataset generation; this spec does not create a competing authority.
+[`.agents/steering/factory-protocol.md`](../../.agents/steering/factory-protocol.md) to dataset generation; this spec does not create a competing authority.
 
 <a name="dataset-owns-agentic-datasets"></a>
 ##### `dataset` owns Agentic-Datasets
@@ -293,7 +293,7 @@ and [CAN Agentic Orchestration](./can-agentic-orchestration.md#6-implementation-
 
 ### 4.1 Implementation Status And Tracked Remaining Work
 
-The following status records implementation state for this spec. Work begins from a corresponding Beads issue; newly discovered scope must first be tracked with a `discovered-from` issue. The repository-wide control-plane authority remains `.kiro/steering/python-factory.md`.
+The following status records implementation state for this spec. Work begins from a corresponding Beads issue; newly discovered scope must first be tracked with a `discovered-from` issue. The repository-wide control-plane authority remains `.agents/steering/factory-protocol.md`.
 
 | Area | Bead | Status | Completion boundary |
 |---|---|---|---|

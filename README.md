@@ -75,7 +75,7 @@ components/<brick>/
 
 **Rules that keep it composable:** no cross-brick imports (use `factory.<brick>.interface`), files under 200 lines, one responsibility per file, adapters behind ports so any backend can be swapped by env var. `foreman_guardian_check` enforces all of it.
 
-**Control-plane split** (normative detail in [`.kiro/steering/python-factory.md`](.kiro/steering/python-factory.md)):
+**Control-plane split** (normative detail in [`.agents/steering/factory-protocol.md`](.agents/steering/factory-protocol.md)):
 
 | Layer | Owns | Does not |
 |---|---|---|
@@ -157,7 +157,7 @@ Ready-made [Kiro](https://kiro.dev) power definitions for both servers are in [`
 
 ## For agents
 
-Start at [`.agents/README.md`](.agents/README.md), then [`.kiro/steering/python-factory.md`](.kiro/steering/python-factory.md) — the single normative authority for architecture and the control-plane split.
+Start at [`.agents/README.md`](.agents/README.md), then [`.agents/steering/factory-protocol.md`](.agents/steering/factory-protocol.md) — the single normative authority for architecture and the control-plane split.
 
 The repo is designed so an autonomous loop can run for days without a human:
 

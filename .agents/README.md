@@ -4,7 +4,7 @@ Welcome, agent. This folder contains everything you need to work effectively in 
 
 ## Quick Start
 
-1. Read [`.kiro/steering/python-factory.md`](../.kiro/steering/python-factory.md), the single normative operating and architecture authority. Steering files in this folder provide secondary implementation detail and must link back rather than redefine doctrine.
+1. Read [`.agents/steering/factory-protocol.md`](../.agents/steering/factory-protocol.md), the single normative operating and architecture authority. Steering files in this folder provide secondary implementation detail and must link back rather than redefine doctrine.
 2. **Ensure the local MCP server is running.** All `foreman_*` tools and brick-level tools come from this server — it's your primary interface to the repo.
    - Config: `.kiro/settings/mcp.json` (Kiro IDE loads this automatically)
    - Entry point: `uv run python -m factory.mcp_server.core`
@@ -30,7 +30,7 @@ Context and guidelines for working in this repo:
 - `a2ui-protocol.md` - A2UI/AG-UI rendering protocol
 - `circuitron.md` - Hardware brick context
 
-The unified index at `.kiro/steering/python-factory.md` is always injected and references these files.
+The unified index at `.agents/steering/factory-protocol.md` is always injected and references these files.
 
 ### `recipes/`
 Integration playbooks for validating brick combinations. Each recipe:

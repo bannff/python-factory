@@ -1,6 +1,6 @@
 # Dataset Brick
 
-Durable asynchronous dataset generation with immutable, content-addressed artifact storage. The normative ownership split is defined in [`.kiro/steering/python-factory.md`](../../.kiro/steering/python-factory.md).
+Durable asynchronous dataset generation with immutable, content-addressed artifact storage. The normative ownership split is defined in [`.agents/steering/factory-protocol.md`](../../.agents/steering/factory-protocol.md).
 
 ## Control-Plane Boundary
 

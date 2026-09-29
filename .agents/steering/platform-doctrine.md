@@ -1,6 +1,6 @@
 # Platform Doctrine — The Expert-Augmentation Engine
 
-This file records product direction and current implementation context. The single normative control-plane authority is [`.kiro/steering/python-factory.md`](../../.kiro/steering/python-factory.md); when guidance conflicts, that file wins. `dev-principles.md` governs implementation practice.
+This file records product direction and current implementation context. The single normative control-plane authority is [`.agents/steering/factory-protocol.md`](../../.agents/steering/factory-protocol.md); when guidance conflicts, that file wins. `dev-principles.md` governs implementation practice.
 
 ## What this platform is
 
@@ -72,7 +72,7 @@ These are the modernization primitives. They are captured here with engineering-
 
 ## Cross-references
 
-- North Star: `.kiro/steering/python-factory.md`
+- North Star: `.agents/steering/factory-protocol.md`
 - How we write code: `.agents/steering/dev-principles.md`
 - Domain-agnostic backend substrate (already shipped): `.agents/recipes/domain-agnostic-substrate.md`, epics bd:`python-factory-hadbi` + bd:`python-factory-d4roe`
 - Rendering protocol: `.agents/steering/a2ui-protocol.md`

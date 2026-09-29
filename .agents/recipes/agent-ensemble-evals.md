@@ -1,6 +1,6 @@
 # Recipe: Agent Ensemble Evals (Strands SOP + Experiment + Simulation)
 
-Systematically evaluate a specialized security catalog using Strands Evals features. IDOR is one domain recipe, not static team ownership; the normative control-plane split lives in [`.kiro/steering/python-factory.md`](../../.kiro/steering/python-factory.md).
+Systematically evaluate a specialized security catalog using Strands Evals features. IDOR is one domain recipe, not static team ownership; the normative control-plane split lives in [`.agents/steering/factory-protocol.md`](../../.agents/steering/factory-protocol.md).
 
 Freeze evaluation policy before execution. Evals owns immutable evidence-bound reports, typed deficiencies, acceptance, and promotion; agents cannot provide executable validators or alter criteria after seeing results. A registered Agent Graph may perform bounded research/synthesis/revision within one attempt, while Workflow journals attempts and enforces global budgets, retries, and stopping. Use Swarm only for bounded exploratory collaboration.
 

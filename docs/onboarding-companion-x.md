@@ -7,7 +7,7 @@ Onboarding artifact per `repo-onboarding` skill. Observations cited to file/line
 Companion-X is the **control plane** of the Python Software Factory: a domain-agnostic
 expert-augmentation engine that dynamically assembles bounded, objective-specific agent
 teams through the `agent` brick's surfaces and invokes capability bricks through MCP.
-It is **not** another agent runtime (normative: `.kiro/steering/python-factory.md`,
+It is **not** another agent runtime (normative: `.agents/steering/factory-protocol.md`,
 "AGENTIC CONTROL PLANE"). Security is domain pack #1 — a *data pack* (skills/SOP/
 taxonomy/challenge ground truth), not engine code (`.agents/steering/platform-doctrine.md`).
 The single interaction surface is Companion-X Web (Next.js cockpit).
