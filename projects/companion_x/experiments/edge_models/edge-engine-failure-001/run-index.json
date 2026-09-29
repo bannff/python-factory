@@ -1,0 +1,132 @@
+{
+  "coordination": {
+    "official_test_auprc": 0.9599468521985686,
+    "paired_validation_delta_vs_best_single_95pct_interval": [
+      -0.07700405880260286,
+      -0.0055219191055257385
+    ],
+    "policy": "equal_mean_of_crossfit_calibrated_lightgbm_and_tcn",
+    "source_manifest_sha256": "e5d6910bb533bd2d62360080d1345d0b0da8a37cabd4134a7736c072ad50817e",
+    "validation_auprc": 0.8973213056583256
+  },
+  "decision": "revise: retain logistic as comparator; require fresh holdout and iPhone benchmark before promotion",
+  "evaluation": {
+    "engine_disjoint_folds": 5,
+    "official_test_engines": 100,
+    "official_test_status": "exploratory: test viewed before candidate comparison completed",
+    "split_sha256": "4b5701fce54e46c20dc7b0ba4afc4e0e8d714c38790cef874262a17af72faf81",
+    "validation_engines": 100,
+    "warning_label": "RUL <= 30 cycles",
+    "window_cycles": 20
+  },
+  "evidence": {
+    "attachment_id": "27e8bc70-e7ad-4b31-9433-245bf9b15164",
+    "bundle_sha256": "1d12fe10d37b7aacb33cecf7af61f01ef9d8be2c1c923cbd343553c8f9edd333",
+    "contents": "code snapshots, model manifests, endpoint scores, workflow configuration and SQLite journal, artifact hash index",
+    "issue": "https://linear.app/ditto/issue/ENG-173/edge-device-multi-model-family-experimentation"
+  },
+  "experiment_id": "edge-engine-failure-001",
+  "implementation_checkout_commit": "b564d9b96ce1b5ba3bd1b6906f67d73c9b7107ca",
+  "model_runs": [
+    {
+      "config": {
+        "seed": 41,
+        "window_cycles": 20
+      },
+      "final_job_id": null,
+      "model": "logistic",
+      "official_test": {
+        "auprc": 0.9804169577548889,
+        "fp": 0,
+        "fpr": 0.0,
+        "n": 100,
+        "positives": 25,
+        "recall": 0.8
+      },
+      "source_manifest_sha256": "9b74437963808c15f2bdbcce2cf3abf300ff21670a0ae7e88431b9a2f0f09790",
+      "trainer": "local sklearn logistic regression",
+      "validation": {
+        "auprc": 0.934697528075787,
+        "fp": 2,
+        "fpr": 0.041666666666666664,
+        "n": 100,
+        "positives": 52,
+        "recall": 0.6730769230769231
+      }
+    },
+    {
+      "config": {
+        "max_depth": 6,
+        "n_estimators": 100,
+        "seed": 41,
+        "validation_split": 0.2,
+        "window_size": 20
+      },
+      "final_job_id": "0bb025e9-ec97-4c1a-b636-9328037de9a1",
+      "model": "lightgbm",
+      "official_test": {
+        "auprc": 0.9509254566257334,
+        "fp": 1,
+        "fpr": 0.013333333333333334,
+        "n": 100,
+        "positives": 25,
+        "recall": 0.68
+      },
+      "source_manifest_sha256": "9ff7565d9ad144812ba2dd08eaa1ed41b437a35de52acd4a80c48e1cee340b43",
+      "trainer": "Companion-X MCP machine_learning.ml_train_timeseries",
+      "validation": {
+        "auprc": 0.9091187064964457,
+        "fp": 2,
+        "fpr": 0.041666666666666664,
+        "n": 100,
+        "positives": 52,
+        "recall": 0.6923076923076923
+      }
+    },
+    {
+      "config": {
+        "batch_size": 256,
+        "epochs": 3,
+        "learning_rate": 0.001,
+        "seed": 41,
+        "validation_split": 0.2,
+        "window_size": 20
+      },
+      "final_job_id": "4d42a118-88ac-4d12-a402-68620d026207",
+      "model": "tcn",
+      "official_test": {
+        "auprc": 0.9425774036614305,
+        "fp": 0,
+        "fpr": 0.0,
+        "n": 100,
+        "positives": 25,
+        "recall": 0.56
+      },
+      "source_manifest_sha256": "81c56edccd6c965ee7eb7ce209e7b1a11f69982a28622b01f5defd81ff551fec",
+      "trainer": "Companion-X MCP machine_learning.ml_train_timeseries",
+      "validation": {
+        "auprc": 0.9008915675698874,
+        "fp": 2,
+        "fpr": 0.041666666666666664,
+        "n": 100,
+        "positives": 52,
+        "recall": 0.6153846153846154
+      }
+    }
+  ],
+  "schema_version": 1,
+  "source_dataset": {
+    "archive_sha256": "74bef434a34db25c7bf72e668ea4cd52afe5f2cf8e44367c55a82bfd91a5a34f",
+    "name": "NASA C-MAPSS FD001",
+    "url": "https://data.nasa.gov/docs/legacy/CMAPSSData.zip"
+  },
+  "source_provenance_note": "Experiment scripts were outside the repository at execution; later snapshots are evidence, not verified runtime source identity.",
+  "status": "exploratory",
+  "target_device": "iPhone; exact model and iOS version pending",
+  "workflow": {
+    "kind": "sequential named-MCP inference; no in-workflow fusion",
+    "latest_run_id": "wfr:v1:634d3c147d64196cf93cafa595ceebc657043903e45050014a7e41e2af3bed96",
+    "source_manifest_sha256": "fad6ab1d887f1531c8d117e6b748d61ff8ec92bc8e6578991ad851366304e462",
+    "status": "succeeded"
+  }
+}

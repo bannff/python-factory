@@ -186,6 +186,19 @@ adapters/*.safetensors
 # Experiment data (raw results, journals, caches)
 **/experiments/
 
+# Curated, versioned Companion-X edge-model research records. Generated data
+# and model artifacts remain ignored; only these document types are admitted.
+!projects/companion_x/experiments/
+projects/companion_x/experiments/*
+!projects/companion_x/experiments/edge_models/
+projects/companion_x/experiments/edge_models/*
+!projects/companion_x/experiments/edge_models/README.md
+!projects/companion_x/experiments/edge_models/*/
+projects/companion_x/experiments/edge_models/*/*
+!projects/companion_x/experiments/edge_models/*/protocol.md
+!projects/companion_x/experiments/edge_models/*/results.md
+!projects/companion_x/experiments/edge_models/*/run-index.json
+
 # ChromaDB local persistence (container-free memory adapter)
 chroma_memory/
 
