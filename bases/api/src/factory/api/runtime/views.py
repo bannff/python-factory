@@ -39,15 +39,30 @@ def ensure_views_registered(agg) -> dict[str, dict[str, Any]]:
             continue
         try:
             result = agg.invoke_tool(tool_name)
-            if isinstance(result, dict) and result.get("error"):
-                logger.warning(
-                    "View payload from %s was rejected: %s",
-                    tool_name, result["error"],
-                )
+            result = agg.invoke_tool(tool_name)
+            # Native MCP v2 tools return a ToolResult envelope
+            # ({ok, data: {views: [...]}}); legacy bricks may return a bare
+            # list. Same dual-shape unwrap as
+            # components/ui/test/factory/ui/test_action_ingestion_real_views.py.
+            if isinstance(result, list):
+                views = result
+            else:
+                ok_flag = result.get("ok") if isinstance(result, dict) else getattr(result, "ok", None)
+                if ok_flag is False or (isinstance(result, dict) and result.get("error")):
+                    error = result.get("error") if isinstance(result, dict) else getattr(result, "error", None)
+                    logger.warning(
+                        "View payload from %s was rejected: %s",
+                        tool_name, error,
+                    )
+                    continue
+                data = result.get("data") if isinstance(result, dict) else getattr(result, "data", None)
+                views = getattr(data, "views", None)
+                if views is None and isinstance(data, dict):
+                    views = data.get("views")
                 continue
-            if not isinstance(result, list):
-                continue
-            for vdef in result:
+            for vdef in views:
+                if not isinstance(vdef, dict):
+                    vdef = vdef.model_dump(mode="json") if hasattr(vdef, "model_dump") else dict(vdef)
                 vid = vdef.get("id")
                 if vid:
                     all_view_defs.append(vdef)
@@ -73,7 +88,10 @@ def _register_views_in_ui(agg, view_defs: list[dict[str, Any]]) -> None:
         return
     try:
         result = agg.invoke_tool(reg_tool, views=view_defs)
-        count = result.get("count", 0) if isinstance(result, dict) else 0
+        # ui_register_brick_views returns a ToolResult envelope; the count
+        # lives in data (dict or pydantic DTO).
+        data = result.get("data") if isinstance(result, dict) else getattr(result, "data", None)
+        count = (data.get("count") if isinstance(data, dict) else getattr(data, "count", 0)) or 0
         if count > 0:
             _views_registered = True
         logger.info("Registered %d views in ui brick ViewManager", count)
