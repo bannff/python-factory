@@ -24,6 +24,15 @@ rerun-key fix. The Workflow run used freshly trained models and returned
 prediction artifacts; it did **not** execute the evaluated fusion policy.
 There was no Ditto mesh or iPhone execution.
 
+After this model run, a separate 100-engine endpoint subset was externally
+checked for schema and engine separation and registered with the Dataset
+brick as immutable train/validation/test artifacts. It was a Dataset
+integration probe; those artifacts were **not** the model-training inputs
+that produced the scores above. The Dataset brick's conversation-specific
+quality checks report failure for these sensor rows even though its generic
+materialization completed. The [run index](run-index.json) records this
+supplemental registration separately.
+
 ## Deviations and limits
 
 - The official test set was viewed during the logistic pilot before candidate

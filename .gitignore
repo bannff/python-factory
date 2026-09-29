@@ -198,6 +198,7 @@ projects/companion_x/experiments/edge_models/*/*
 !projects/companion_x/experiments/edge_models/*/protocol.md
 !projects/companion_x/experiments/edge_models/*/results.md
 !projects/companion_x/experiments/edge_models/*/run-index.json
+!projects/companion_x/experiments/edge_models/*/run.py
 
 # ChromaDB local persistence (container-free memory adapter)
 chroma_memory/

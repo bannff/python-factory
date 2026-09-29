@@ -25,6 +25,13 @@
     "contents": "code snapshots, model manifests, endpoint scores, workflow configuration and SQLite journal, artifact hash index",
     "issue": "https://linear.app/ditto/issue/ENG-173/edge-device-multi-model-family-experimentation"
   },
+  "evidence_bundle": {
+    "attachment_id": "24d3838f-9f91-404b-9b14-b7c847778ac9",
+    "filename": "edge-model-pilots-evidence-v2.zip",
+    "issue": "https://linear.app/ditto/issue/ENG-173/edge-device-multi-model-family-experimentation",
+    "scope": "Frozen source/materialized ML JSONL, Dataset definitions/manifests, runners, metrics and small derived artifacts; no raw media or pretrained weights.",
+    "sha256": "703ebbebc270784866c1f5fce75cb7d2d84373fcaa2509d2cd9eac17dc227bd6"
+  },
   "experiment_id": "edge-engine-failure-001",
   "implementation_checkout_commit": "b564d9b96ce1b5ba3bd1b6906f67d73c9b7107ca",
   "model_runs": [
@@ -114,6 +121,35 @@
       }
     }
   ],
+  "posthoc_dataset_brick_probe": {
+    "artifacts": {
+      "test": {
+        "digest": "ebe2da613889be8725246ad29cea25fc6342669918227fe1aa4b9073e394f6c4",
+        "job_id": "2d082f55-184a-4fbf-96a4-33f5de90a95a"
+      },
+      "train": {
+        "digest": "aca2a1f4565a5769793955d93471733bb20387567403f6697a90ae05952c4223",
+        "job_id": "5cf45921-d38f-45b9-af9b-c71ae6d1da30"
+      },
+      "val": {
+        "digest": "455d47ee1e32021ceebbd1dac9be502d8ed4238b351fae9a97598d8022d9c754",
+        "job_id": "ea742ba4-9ce2-4d70-92a8-486d288a1808"
+      }
+    },
+    "cohort_counts": {
+      "test": 20,
+      "train": 60,
+      "val": 20
+    },
+    "definition_sha256": "6d25bfa67ffd21845651eda93263ef1ff514056ee908265cb24e7e76852fb33f",
+    "engine_disjoint": true,
+    "generic_quality_results_passed": false,
+    "identity": "edge-fd001-endpoint-small",
+    "quality_note": "Conversation-specific built-in checks fail for sensor rows; external sensor schema and group checks passed before generic materialization.",
+    "registration_manifest_sha256": "95e3caacb13ad455662f426f14ffc62e77a7ebc7bad01dec1bae9337509306ad",
+    "scope": "Separate 100-endpoint subset, not the training/evaluation partitions that produced the model metrics above. Official-test labels had already been viewed.",
+    "version": "1"
+  },
   "schema_version": 1,
   "source_dataset": {
     "archive_sha256": "74bef434a34db25c7bf72e668ea4cd52afe5f2cf8e44367c55a82bfd91a5a34f",
