@@ -69,7 +69,7 @@ Experiment tracking and fine-tuning job management.
 
 ## Experiment Tracking
 - Create experiments, start runs, log params/metrics
-- Backends: memory, mlflow, tensorboard
+- Backends: memory, mlflow, tensorboard (default resolves from ML_TRACKER_BACKEND env; MLFLOW_TRACKING_URI passes through)
 
 ## Fine-Tuning
 - Create and manage fine-tuning jobs

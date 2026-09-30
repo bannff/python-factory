@@ -20,7 +20,7 @@ _MLX_MARKER = '; platform_system == "Darwin" and platform_machine == "arm64"'
 _PINNED = {
     "chronos-forecasting": "chronos-forecasting==2.3.1",
     "lightgbm": "lightgbm==4.7.0",
-    "mlflow": "mlflow==3.14.0",
+    "mlflow": "mlflow==3.16.0",
     "mlx": f"mlx==0.31.1{_MLX_MARKER}",
     "mlx-lm": f"mlx-lm==0.31.2{_MLX_MARKER}",
     "ncps": "ncps==1.0.1",

@@ -71,6 +71,15 @@ class TestTrackingRuntime:
         tracker = runtime.get_tracker("memory")
         assert tracker is not None
 
+    def test_env_resolved_backend_mlflow(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """ML_TRACKER_BACKEND=mlflow must drive get_tracker() default
+        resolution (production path — MCP tools pass no backend arg)."""
+        monkeypatch.setenv("ML_TRACKER_BACKEND", "mlflow")
+        monkeypatch.setenv("MLFLOW_TRACKING_URI", "sqlite:////tmp/issue80-test.db")
+        runtime = TrackingRuntime()
+        tracker = runtime.get_tracker()
+        assert type(tracker).__name__ == "MLflowTracker"
+
     def test_health_check_empty(self) -> None:
         """Should return empty health when no trackers active."""
         runtime = TrackingRuntime()

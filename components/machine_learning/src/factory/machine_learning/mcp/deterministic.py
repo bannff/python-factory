@@ -49,7 +49,7 @@ def register(mcp: Any, get_runtime: Callable[[], TrackingRuntime]) -> None:
         """Describe machine_learning configuration schema."""
         return ConfigSchemaOutput(type="object", properties={"backend": {
             "type": "string", "enum": ["memory", "mlflow", "tensorboard"],
-            "description": "Tracking backend.", "default": "memory"},
+            "description": "Tracking backend. Default resolves from ML_TRACKER_BACKEND env (fallback memory).", "default": "memory"},
             "finetuning_backend": {"type": "string",
             "enum": TrackingRuntime.available_finetuning_backends(),
             "description": "Fine-tuning backend", "default": "memory"}})
