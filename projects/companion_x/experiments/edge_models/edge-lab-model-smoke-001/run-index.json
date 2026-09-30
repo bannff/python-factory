@@ -1,0 +1,63 @@
+{
+  "dataset": {
+    "archive_sha256": "74bef434a34db25c7bf72e668ea4cd52afe5f2cf8e44367c55a82bfd91a5a34f",
+    "channels_per_cycle": 24,
+    "engines": 100,
+    "source": "NASA C-MAPSS FD001 official test engines",
+    "window_cycles": 20
+  },
+  "decision": "pursue: proceed to Ditto local-write and two-peer gates; no iPhone claim",
+  "environment": {
+    "architecture": "aarch64",
+    "ditto_sdk_used": false,
+    "image_id": "sha256:ea55631109384789e3dbe2b5d36cfd9aa3d83e32d4b98d6fc19e60b853c21348",
+    "profile": "edge-lab",
+    "python": "3.12.14"
+  },
+  "evidence": {
+    "cohort_file_sha256": "5cae03aa99132cbaa646f8e78187414649972c3635d268b49843e8f9f6438fbf",
+    "execution_log_path": "/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/runs/edge-lab-model-smoke-001/run-001/execution-log.json",
+    "execution_log_sha256": "7f7f3230636db451b4beefda933ffc5b6d216f0adea61cfd2a847ba6386dbaff",
+    "model_file_sha256": "58128c57716e9643ba18922b2281511c29722df4d4871ed264cf4037eb5755fe",
+    "result_sha256": "44c05a70e2e4b3f0af8f2a68d1465abb77e1629f621db0934ab80185d13527cb",
+    "run_manifest_path": "/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/runs/edge-lab-model-smoke-001/run-001/run-manifest.json",
+    "run_manifest_sha256": "8ea9dc5f827aed2d64ca37f79c010901be8a646883a86887b2edc95d231f05ac",
+    "runner_sha256": "5e4d6b84da818c9a600415cdfc53932e1066fef3c637f4f4de7edfc09b6480a9"
+  },
+  "experiment_id": "edge-lab-model-smoke-001",
+  "gate": {
+    "engines": 100,
+    "matching_decisions": 100,
+    "max_abs_probability_error": 3.3306690738754696e-16,
+    "prediction_rows_retained": 100,
+    "status": "passed",
+    "tolerance": 1e-06
+  },
+  "limitations": [
+    "Docker Desktop Linux/aarch64 only; no iPhone resource or energy measurement",
+    "Pure-Python scorer, not converted Core ML artifact",
+    "No Ditto store or peer sync in this run",
+    "No container memory limit configured"
+  ],
+  "memory": {
+    "cgroup_after_bytes": 13094912,
+    "cgroup_before_bytes": 12599296,
+    "cgroup_peak_bytes": 18141184,
+    "process_peak_rss_bytes": 21078016
+  },
+  "model": {
+    "exported_scorer_payload_sha256": "4fbdcf7c28c25712e3a5ed1934d9d2798234021b26f51cb4952f5f469c982f63",
+    "joblib_sha256": "6dbb0b9b37e6640322048ecd965cfc72eda00e2564915e2a6f9b1125576a74e8",
+    "name": "edge-engine-failure-001 logistic baseline",
+    "threshold": 0.7392553708788053
+  },
+  "run_id": "run-001",
+  "schema_version": 1,
+  "status": "completed",
+  "timing": {
+    "inferences": 10000,
+    "p50_us": 96.834,
+    "p95_us": 111.833,
+    "sandbox_execute_duration_ms": 1123
+  }
+}

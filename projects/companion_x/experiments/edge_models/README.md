@@ -70,6 +70,7 @@ A lab quality score only addresses the first gate.
 | [edge-audio-command-001](edge-audio-command-001/results.md) | Offline go/stop voice commands | Exploratory lab pilot | Tiny CNN improves macro F1, but 156/954 other words trigger commands |
 | [edge-tool-routing-001](edge-tool-routing-001/results.md) | Local typed-tool selection | Synthetic lab probe | Standalone MiniLM has 6/10 unsafe misroutes; guarded follow-up needs fresh holdout |
 | [edge-ditto-device-flow-001](edge-ditto-device-flow-001/protocol.md) | N-device model persistence and offline peer sync through the real Ditto SDK | Protocol ready; not run | Python SDK mesh gate, followed by physical iPhone verification |
+| [edge-lab-model-smoke-001](edge-lab-model-smoke-001/results.md) | Frozen sensor-model inference inside one `edge-lab` container | Functional gate passed | 100/100 decisions; 3.33e-16 maximum score error; Ditto gate remains separate |
 
 ## Candidate coverage
 
