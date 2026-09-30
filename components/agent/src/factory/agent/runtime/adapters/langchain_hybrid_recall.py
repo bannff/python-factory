@@ -31,7 +31,7 @@ class LangChainHybridRecallMiddleware(AgentMiddleware):
         try:
             recalled = await self._port.recall(request)
         except Exception as exc:
-            logger.warning("hybrid recall unavailable error_type=%s", type(exc).__name__)
+            logger.debug("hybrid recall unavailable error_type=%s", type(exc).__name__)
             return None
         block, node_ids = _format(recalled)
         if not block:
@@ -94,7 +94,10 @@ class HybridRecallMCP:
         try:
             return await self._call(request, brick, tool, arguments)
         except Exception as exc:
-            logger.warning(
+            # Caught-and-continued: a dead recall source must not spam
+            # WARNING on every chat turn (kb outages log per-request
+            # otherwise). DEBUG keeps it available for diagnostics.
+            logger.debug(
                 "hybrid recall source unavailable brick=%s error_type=%s",
                 brick, type(exc).__name__,
             )

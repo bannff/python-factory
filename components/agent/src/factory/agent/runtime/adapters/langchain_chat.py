@@ -125,8 +125,10 @@ class LangChainChatAgent:
                         return
                 if produced:
                     return
-        except Exception:  # noqa: BLE001 - expose only a stable safe error
-            yield ErrorEvent(message="Chat is temporarily unavailable. Please retry.")
+        except Exception as exc:  # noqa: BLE001 - expose only a stable safe error
+            from .provider_errors import log_stream_failure, provider_error_message
+            log_stream_failure(exc)
+            yield ErrorEvent(message=provider_error_message(exc))
 
     async def history(self, agent_id: str, thread_id: str) -> list[dict[str, Any]]:
         """Return the durable transcript in AG-UI message shape."""
