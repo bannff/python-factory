@@ -204,6 +204,74 @@ jobs:
       - name: Run Dataset tests with real MF4 and DBC backends
         run: uv run pytest components/dataset/test
 
+  # ML static lane: pyright ratchet + hypothesis property tests over
+  # components/machine_learning. Core deps only (`uv sync --frozen`, no ml
+  # group) — the selected property/contract suites import no torch/mlx/mlflow,
+  # so this runs on ubuntu. If a heavy-import module ever sneaks into the
+  # selector, collection fails loudly: fail-closed by design.
+  ml-static:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      MCP_LOCAL_AUTH: "true"
+      # Deterministic test credential only; never a production or GitHub secret.
+      MCP_LOCAL_AUTH_TOKEN: "ci-local-auth-token-0123456789"
+      MCP_PERMISSIONS_CONFIG_DIR: config/mcp_permissions
+      TELEMETRY_REQUIRED: "0"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.12.0"
+      - name: Install core dependencies
+        run: uv lock --check && uv sync --frozen
+      - name: Run machine_learning property/contract tests
+        run: |
+          uv run pytest components/machine_learning/test -q \
+            -k "properties or property or contract or registry or split or curriculum or projection"
+      - name: Pyright ratchet (HEAD errors must not exceed BASE)
+        # Same ratchet philosophy as the guardian's file_size_mode='ratchet':
+        # compare HEAD against the PR base, not a frozen baseline file, so the
+        # count can only improve as the base advances. Both runs share this
+        # checkout's .venv (base sources exported to _pyright-base, config
+        # venvPath "."), keeping type resolution apples-to-apples. pyright
+        # exits 1 when it finds errors, so its rc is ignored — only the
+        # --outputjson counts are compared.
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          rm -rf _pyright-base && mkdir -p _pyright-base
+          git archive "$BASE_SHA" components/machine_learning components/mcp_utils bases/mcp_server \
+            | tar -x -C _pyright-base
+          python3 - <<'EOF' > pyrightconfig.base.json
+          import json
+          print(json.dumps({
+              "include": ["_pyright-base/components/machine_learning/src"],
+              "extraPaths": [
+                  "_pyright-base/components/machine_learning/src/factory/machine_learning/runtime",
+                  "_pyright-base/components/mcp_utils/src",
+                  "_pyright-base/bases/mcp_server/src",
+              ],
+              "typeCheckingMode": "basic",
+              "venvPath": ".",
+              "venv": ".venv",
+          }, indent=2))
+          EOF
+          uvx pyright --outputjson --project pyrightconfig.base.json > pyright-base.json || true
+          uvx pyright --outputjson > pyright-head.json || true
+          python3 - <<'EOF'
+          import json, sys
+          base = json.load(open("pyright-base.json"))["summary"]["errorCount"]
+          head = json.load(open("pyright-head.json"))["summary"]["errorCount"]
+          verdict = "PASS" if head <= base else "FAIL"
+          print(f"pyright ratchet: base={base} head={head} -> {verdict}")
+          sys.exit(0 if head <= base else 1)
+          EOF
+
   frontend-tests:
     if: github.event_name != 'push'
     runs-on: ubuntu-latest
