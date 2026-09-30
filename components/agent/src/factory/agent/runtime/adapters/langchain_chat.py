@@ -12,6 +12,7 @@ from ..models import (
     ErrorEvent,
     FrontendToolSpec,
     InterruptEvent,
+    StateDeltaEvent,
     TextDeltaEvent,
     ToolCallDeltaEvent,
     ToolResultEvent,
@@ -113,6 +114,9 @@ class LangChainChatAgent:
                     elif event.kind == "tool_result":
                         produced = True
                         yield ToolResultEvent(**payload)
+                    elif event.kind == "state_delta":
+                        produced = True
+                        yield StateDeltaEvent(**payload)
                     elif event.kind == "interrupt":
                         produced = True
                         yield InterruptEvent(**payload)

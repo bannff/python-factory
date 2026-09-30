@@ -188,6 +188,18 @@ snapshot-test asserts. Custom producers that build A2UI by hand and
 bypass `ui_paint_canvas` MUST call `lift_props_children` themselves
 or emit canonical flat-with-`parent:` directly.
 
+**Object-arg ingress coercion — `payload: JsonObject`
+(bd:python-factory-38veu).** Paint tools' object args
+(`ui_paint_canvas` / `ui_paint_chat` `payload`) are typed as
+`factory.mcp_utils.interface.JsonObject` (from
+`factory.mcp_utils.coercion.py`), matching the `evals_record_run`
+precedent: LLM transports that serialize nested object args as JSON
+strings are auto-recovered (stringified JSON parsed at the DTO
+boundary, byte-identical to the dict path); a malformed string fails
+loudly at pydantic validation instead of a friendly fail() envelope.
+Do not "fix" `ui_paint_uiresource`'s `body: str` — it is a string by
+design.
+
 ## Carrier #5 — UIResource render
 
 Carrier #5 is the mcp-ui escape hatch for content the A2UI catalog can't

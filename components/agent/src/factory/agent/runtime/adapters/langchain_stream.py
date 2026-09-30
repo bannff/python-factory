@@ -71,6 +71,80 @@ def pending_interrupt_events(snapshot: Any) -> list[tuple[str, dict[str, Any]]]:
     return [*pending_approval_events(snapshot), *pending_frontend_events(snapshot)]
 
 
+def _structured_payload(content: Any) -> Any:
+    """Prefer MCP ``structured_content`` over the escaped text block.
+
+    ``invoke_capability`` returns ``asdict(CapabilityResult)`` — the
+    normalized MCP ``CallToolResult`` shape ``{content: [...],
+    structured_content: {...}}``. LangGraph stringifies it into the
+    ``ToolMessage`` (or keeps the dict), so a paint-tool envelope only
+    reaches the AG-UI stream as JSON-encoded text inside a text block
+    and the frontend carrier detectors see no ``components`` / ``ui://``
+    at all ("nothing paints"). Unwrap once here so every tool result —
+    not just paint — rides the stream as structured JSON.
+    """
+    if isinstance(content, (str, bytes)):
+        try:
+            content = json.loads(content)
+        except (TypeError, ValueError):
+            return content
+    if isinstance(content, list):
+        # Text-only content-block list (e.g. a CallToolResult.content
+        # passthrough): carry the first text block's JSON when present.
+        texts = [
+            block.get("text") for block in content
+            if isinstance(block, dict) and isinstance(block.get("text"), str)
+        ]
+        if len(content) == 1 and texts and texts[0] is not None:
+            return _structured_payload(texts[0])
+        return content
+    if not isinstance(content, dict):
+        return content
+    structured = content.get("structured_content")
+    if structured is not None:
+        return structured
+    # CallToolResult.content passthrough without structured_content —
+    # recover the payload from a single text block.
+    inner = content.get("content")
+    if isinstance(inner, list):
+        return _structured_payload(inner)
+    return content
+
+
+_CANVAS_TARGETS = frozenset({"graph", "timeline", "findings", "live"})
+
+
+def _canvas_state_delta(payload: Any) -> tuple[str, str, dict[str, Any]] | None:
+    """Extract a ``(target, mode, payload)`` canvas paint from a tool result.
+
+    Port of the Strands ``state_delta_plugin`` (removed in the native-v2
+    migration, a4437ac0) to the LangGraph message path: ``ui_paint_canvas``
+    returns a v1 envelope whose ``data`` carries the ``_a2ui_canvas``
+    sentinel. The AG-UI mapper consumes the resulting ``state_delta`` event
+    and emits ``STATE_SNAPSHOT`` / ``STATE_DELTA`` so the canvas views
+    (``agentState.canvas.<slot>``) paint. Malformed sentinels return
+    ``None`` — never a stream failure.
+    """
+    if not isinstance(payload, dict) or payload.get("schema_version") != "v1":
+        return None
+    if payload.get("ok") is not True or payload.get("error") is not None:
+        return None
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        return None
+    sentinel = data.get("_a2ui_canvas")
+    if not isinstance(sentinel, dict):
+        return None
+    target = sentinel.get("target")
+    mode = sentinel.get("mode", "snapshot")
+    slot_payload = sentinel.get("payload")
+    if target not in _CANVAS_TARGETS or mode not in ("snapshot", "delta"):
+        return None
+    if not isinstance(slot_payload, dict):
+        return None
+    return str(target), str(mode), slot_payload
+
+
 def message_events(
     message: Any, state: ToolChunkState | None = None,
 ) -> list[tuple[str, dict[str, Any]]]:
@@ -105,11 +179,19 @@ def message_events(
             "args_delta": chunk.get("args") or "",
         }))
     if isinstance(message, ToolMessage):
-        events.append(("tool_result", {
+        structured = _structured_payload(content)
+        payload: dict[str, Any] = {
             "tool_call_id": str(getattr(message, "tool_call_id", "")),
-            "payload": content,
+            "payload": structured if structured is not None else content,
             "is_error": getattr(message, "status", "success") == "error",
-        }))
+        }
+        events.append(("tool_result", payload))
+        paint = _canvas_state_delta(payload["payload"])
+        if paint is not None:
+            target, mode, slot_payload = paint
+            events.append(("state_delta", {
+                "target": target, "mode": mode, "payload": slot_payload,
+            }))
     return events
 
 
