@@ -121,14 +121,18 @@ brick for frozen input definitions and partitions, the ML brick for supported
 training and model references, and the Evals brick for terminal gate outcomes
 with artifact hashes.
 
-Companion-X Sandbox now has a local `edge-lab` profile for one Docker
-container. Its MCP process must be restarted with `SANDBOX_ADAPTER=docker` and
-`SANDBOX_PROFILES_DIR` pointing to the profile directory before provisioning;
-the process already running when this profile was authored still used `mock`.
-Sandbox provisions the environment and provides upload/execute/terminate
-operations. The checked-in experiment runner, not Sandbox, will own N peer
-processes and their evidence. Sandbox does not yet model typed network edges,
-independent stores, or resource limits for N separate containers.
+Companion-X Sandbox has a local `edge-lab` workload profile and a separate
+device-preset catalog. Restart its MCP process on the current Sandbox code with
+`SANDBOX_ADAPTER=docker` and `SANDBOX_PROFILES_DIR` pointing to the profile
+directory. List presets with `sandbox.list_device_presets`, then provision a
+Linux proxy with `sandbox.provision(profile="edge-lab", device_preset="iphone-15")`.
+The selected preset applies a repeatable resource budget and creates a distinct
+container; it does not run iOS. Sandbox provides upload/execute/terminate for
+each environment. The checked-in experiment runner, not Sandbox, owns peer
+processes, SDK stores, topology, and evidence. Multiple preset containers do
+not establish typed network edges or a Ditto mesh by themselves. Keep the
+single-container two-peer gate above as the first SDK check; use separate
+containers only after that path is measured and the runner supports them.
 
 ## iPhone stage
 
