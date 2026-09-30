@@ -31,6 +31,14 @@ _prepend_workspace_src_paths()
 
 
 @pytest.fixture(autouse=True)
+def _pin_memory_tracker_backend(monkeypatch):
+    """Keep tracker selection hermetic: the suite relies on the memory
+    backend's fabricated seed-hash metrics. ML_TRACKER_BACKEND stays an
+    opt-in per-env flip, never a test default."""
+    monkeypatch.setenv("ML_TRACKER_BACKEND", "memory")
+
+
+@pytest.fixture(autouse=True)
 def _isolate_mcp_service_registry():
     """Snapshot and restore the mcp_utils service registry around each test.
 

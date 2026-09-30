@@ -72,17 +72,17 @@ def create_timeseries_trainer(
         return MemoryTimeSeriesTrainingAdapter(**kwargs)
     if backend == "torch":
         from .adapters.torch_timeseries import TorchTimeSeriesAdapter
-        return TorchTimeSeriesAdapter(tracker=runtime.get_tracker("memory"), **kwargs)
+        return TorchTimeSeriesAdapter(tracker=runtime.get_tracker(), **kwargs)
     if backend == "mlx":
         from .adapters.mlx_timeseries import MlxTimeSeriesAdapter
         storage_root = kwargs.pop("storage_root", runtime.chronos_storage_root())
         return MlxTimeSeriesAdapter(
-            storage_root=storage_root, tracker=runtime.get_tracker("memory"), **kwargs,
+            storage_root=storage_root, tracker=runtime.get_tracker(), **kwargs,
         )
     if backend == "sklearn":
         from .adapters.sklearn_timeseries import SklearnTimeSeriesAdapter
         return SklearnTimeSeriesAdapter(
-            tracker=runtime.get_tracker("memory"),
+            tracker=runtime.get_tracker(),
             checkpoint_store=runtime.get_checkpoint_store(),
             **kwargs,
         )

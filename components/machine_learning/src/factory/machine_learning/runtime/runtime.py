@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -50,8 +51,20 @@ class TrackingRuntime:
             self._checkpoint_store = CheckpointStore(base_path)
         return self._checkpoint_store
 
-    def get_tracker(self, backend: str = "memory", **kwargs: Any) -> ExperimentTracker:
-        """Get or create an experiment tracker adapter."""
+    def get_tracker(self, backend: str | None = None, **kwargs: Any) -> ExperimentTracker:
+        """Get or create an experiment tracker adapter.
+
+        Default backend resolves from ML_TRACKER_BACKEND (fallback memory);
+        the MLflow backend inherits MLFLOW_TRACKING_URI when unset.
+        """
+        if backend is None:
+            backend = os.environ.get("ML_TRACKER_BACKEND", "memory")
+        if backend == "mlflow" and not kwargs:
+            tracking_uri = os.environ.get(
+                "MLFLOW_TRACKING_URI", self._config.get("mlflow_tracking_uri"),
+            )
+            if tracking_uri:
+                kwargs["tracking_uri"] = tracking_uri
         key = f"{backend}:{hash(frozenset(kwargs.items()))}"
         if key not in self._trackers:
             self._trackers[key] = self._create_tracker(backend, **kwargs)

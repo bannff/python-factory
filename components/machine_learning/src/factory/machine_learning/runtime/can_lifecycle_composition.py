@@ -68,7 +68,7 @@ class CanLifecycleOperations:
             }
             if family == "lightgbm":
                 portfolio = train_portfolio(
-                    **common, tracker=self.runtime.get_tracker("memory"),
+                    **common, tracker=self.runtime.get_tracker(),
                 )
             else:
                 portfolio = train_native_portfolio(
