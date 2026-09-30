@@ -38,13 +38,31 @@ export function TypographyRenderer({ node }: RendererProps) {
   const props = node.props as {
     text?: string; content?: string; value?: string;
     variant?: string; className?: string;
+    color?: string; size?: string | number; align?: React.CSSProperties["textAlign"];
   };
   const { variant = "p", className } = props;
   const body = props.text ?? props.content ?? props.value ?? "";
   const Tag = (variant.startsWith("h") && /^h[1-4]$/.test(variant)
     ? variant : "p") as keyof React.JSX.IntrinsicElements;
+  // A2UI catalog optionalProps: color→CSS color, size→font-size
+  // (number/numeric-string → px), align→text-align. Catalog-declared
+  // semantic props only — free-form props.style stays at the
+  // ComponentRenderer wrapper (bd:python-factory-3hkqx round 6).
+  const style: React.CSSProperties = {};
+  if (props.color) style.color = props.color;
+  if (props.size !== undefined) {
+    style.fontSize =
+      typeof props.size === "number" || /^\d+$/.test(props.size)
+        ? `${props.size}px`
+        : props.size;
+  }
+  if (props.align) style.textAlign = props.align as React.CSSProperties["textAlign"];
+  const hasStyle = Object.keys(style).length > 0;
   return (
-    <Tag className={cn(TYPOGRAPHY_VARIANTS[variant] ?? TYPOGRAPHY_VARIANTS.p, className)}>
+    <Tag
+      className={cn(TYPOGRAPHY_VARIANTS[variant] ?? TYPOGRAPHY_VARIANTS.p, className)}
+      style={hasStyle ? style : undefined}
+    >
       {body}
     </Tag>
   );

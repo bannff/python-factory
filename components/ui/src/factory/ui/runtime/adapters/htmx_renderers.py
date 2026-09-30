@@ -35,7 +35,24 @@ def render_text(c: UIComponent) -> str:
                "caption": "text-sm text-base-content/60 italic"}
     css = f'{cls_map.get(variant, "text-base")} {intent_cls(c)}'.strip()
     tag = {"h1": "h1", "h2": "h2"}.get(variant, "p")
-    return f'<{tag} class="{css}" id="comp-{c.id}">{content}</{tag}>'
+    # A2UI catalog optionalProps: color→CSS color, size→font-size
+    # (number/numeric-string → px), align→text-align. Catalog-declared
+    # semantic props only — no free-form style pass-through.
+    parts = []
+    if c.props.get("color"):
+        parts.append(f"color: {c.props['color']}")
+    size = c.props.get("size")
+    if isinstance(size, (int, float)):
+        parts.append(f"font-size: {size}px")
+    elif isinstance(size, str) and size.isdigit():
+        parts.append(f"font-size: {size}px")
+    elif isinstance(size, str) and size:
+        parts.append(f"font-size: {size}")
+    align = c.props.get("align")
+    if align:
+        parts.append(f"text-align: {align}")
+    style = f' style="{"; ".join(parts)}"' if parts else ""
+    return f'<{tag} class="{css}"{style} id="comp-{c.id}">{content}</{tag}>'
 
 
 def render_button(c: UIComponent) -> str:

@@ -110,3 +110,37 @@ class TestHTMXAdapter:
         view = UIView(id="v", name="Flex", layout={"type": "flex", "direction": "col"})
         result = adapter.render_view(view)
         assert "flex flex-col" in result.content
+
+
+class TestRenderTextStyleProps:
+    """GH #78 — render_text maps catalog style props color/size/align."""
+
+    @pytest.fixture
+    def adapter(self) -> HTMXAdapter:
+        return HTMXAdapter()
+
+    def _render(self, props: dict) -> str:
+        c = UIComponent(id="t", component_type=ComponentType.TEXT, props=props)
+        return HTMXAdapter().render_component(c).content
+
+    def test_color_and_size_paint_inline_style(self) -> None:
+        html = self._render({"content": "Daniel", "color": "#ff0099", "size": 24})
+        assert "style=" in html
+        assert "color: #ff0099" in html
+        assert "font-size: 24px" in html
+
+    def test_size_numeric_string_gets_px(self) -> None:
+        html = self._render({"content": "x", "size": "18"})
+        assert "font-size: 18px" in html
+
+    def test_size_css_string_passes_through(self) -> None:
+        html = self._render({"content": "x", "size": "1.5rem"})
+        assert "font-size: 1.5rem" in html
+
+    def test_align_maps_to_text_align(self) -> None:
+        html = self._render({"content": "x", "align": "center"})
+        assert "text-align: center" in html
+
+    def test_no_style_props_no_style_attr(self) -> None:
+        html = self._render({"content": "plain"})
+        assert "style=" not in html
