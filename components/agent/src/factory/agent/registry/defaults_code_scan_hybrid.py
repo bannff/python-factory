@@ -158,12 +158,12 @@ SAST_HYBRID_GRAPH: dict = {
          "description": "Nova2 Lite scanner + Maverick reviewer"},
         # bd:python-factory-2tgo1 — Tier-D coordinator nodes have no
         # specialist skill (prompts are fully inline).
-        {"id": "consolidator", "type": "agent", "model": SONNET,
+        {"id": "consolidator", "type": "agent", "model": "",
          "description": "Merges findings via 2/3 voting.",
          "system_prompt": _CONSOLIDATOR_PROMPT,
          "skills": [],
          "tools": ["think"]},
-        {"id": "validator", "type": "agent", "model": SONNET,
+        {"id": "validator", "type": "agent", "model": "",
          "description": "Adversarial challenge of findings.",
          "system_prompt": _VALIDATOR_PROMPT,
          "skills": [],

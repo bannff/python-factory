@@ -61,22 +61,22 @@ ANALYZE_SWARM: dict = {
     "max_handoffs": 20,
     "max_iterations": 40,
     "agents": [
-        {"id": "code-reader", "model": HAIKU,
+        {"id": "code-reader", "model": "",
          "system_prompt": ANALYZE_CODE_READER + SERVICE_MOCK_DETECTION
          + VERITAS_INFRA_DISCOVERY + _ANALYZE_ROSTER, "tools": []},
-        {"id": "attack-planner", "model": SONNET,
+        {"id": "attack-planner", "model": "",
          "system_prompt": ANALYZE_ATTACK_PLANNER + _ANALYZE_ROSTER,
          "tools": []},
-        {"id": "analyze-scout", "model": SCOUT,
+        {"id": "analyze-scout", "model": "",
          "system_prompt": ANALYZE_CODE_READER + _ANALYZE_ROSTER
          + _A_SCOUT, "tools": []},
-        {"id": "analyze-maverick", "model": MAVERICK,
+        {"id": "analyze-maverick", "model": "",
          "system_prompt": ANALYZE_ATTACK_PLANNER + _ANALYZE_ROSTER
          + _A_MAV, "tools": []},
-        {"id": "analyze-nova", "model": NOVA2_LITE,
+        {"id": "analyze-nova", "model": "",
          "system_prompt": ANALYZE_CODE_READER + _ANALYZE_ROSTER
          + _A_NOVA, "tools": []},
-        {"id": "graph-modeler", "model": GPT_OSS,
+        {"id": "graph-modeler", "model": "",
          "system_prompt": ANALYZE_ATTACK_PLANNER + _ANALYZE_ROSTER
          + _A_MODELER, "tools": []},
     ],
@@ -111,23 +111,23 @@ DEPLOY_SWARM: dict = {
     "max_handoffs": 20,
     "max_iterations": 40,
     "agents": [
-        {"id": "sandbox-deployer", "model": HAIKU,
+        {"id": "sandbox-deployer", "model": "",
          "system_prompt": DEPLOY_SANDBOX_DEPLOYER
          + SERVICE_MOCK_DEPLOYMENT + _DEPLOY_ROSTER,
          "tools": []},
-        {"id": "env-validator", "model": SONNET,
+        {"id": "env-validator", "model": "",
          "system_prompt": DEPLOY_ENV_VALIDATOR + _DEPLOY_ROSTER,
          "tools": []},
-        {"id": "deploy-scout", "model": SCOUT,
+        {"id": "deploy-scout", "model": "",
          "system_prompt": DEPLOY_SANDBOX_DEPLOYER + _DEPLOY_ROSTER
          + _D_SCOUT, "tools": []},
-        {"id": "deploy-maverick", "model": MAVERICK,
+        {"id": "deploy-maverick", "model": "",
          "system_prompt": DEPLOY_ENV_VALIDATOR + _DEPLOY_ROSTER
          + _D_MAV, "tools": []},
-        {"id": "deploy-nova", "model": NOVA2_LITE,
+        {"id": "deploy-nova", "model": "",
          "system_prompt": DEPLOY_SANDBOX_DEPLOYER + _DEPLOY_ROSTER
          + _D_NOVA, "tools": []},
-        {"id": "resource-auditor", "model": GPT_OSS,
+        {"id": "resource-auditor", "model": "",
          "system_prompt": DEPLOY_ENV_VALIDATOR + _DEPLOY_ROSTER
          + _D_AUDITOR, "tools": []},
     ],

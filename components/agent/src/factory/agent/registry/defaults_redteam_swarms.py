@@ -47,7 +47,7 @@ RECON_SWARM: dict = {
     "entry_point": "recon-lead",
     "max_handoffs": 8, "max_iterations": 15,
     "agents": [
-        {"id": "recon-lead", "model": HAIKU,
+        {"id": "recon-lead", "model": "",
          "description": "Queries Veritas, writes entities to graph.",
          "system_prompt": (
              "You are the recon-lead — first agent in the recon "
@@ -56,7 +56,7 @@ RECON_SWARM: dict = {
              "query for CodePackage nodes. Write App, each Account, "
              "each CodePackage to graph. Hand off to recon-verify."
          ), "tools": [], "skills": list(_CTX_SKILLS)},
-        {"id": "recon-verify", "model": NOVA2_LITE,
+        {"id": "recon-verify", "model": "",
          "description": "Cross-checks recon, fills gaps in graph.",
          "system_prompt": (
              "You are the recon-verify agent — second in the recon "
@@ -65,7 +65,7 @@ RECON_SWARM: dict = {
              "Run independent Veritas queries to fill gaps. Add any "
              "missing entities. Hand off to recon-summary."
          ), "tools": [], "skills": list(_CTX_SKILLS)},
-        {"id": "recon-summary", "model": GPT_OSS,
+        {"id": "recon-summary", "model": "",
          "description": "Consolidates recon graph into summary.",
          "system_prompt": (
              "You are the recon-summary agent — last in the recon "
@@ -86,7 +86,7 @@ PULL_ARTIFACTS_SWARM: dict = {
     "entry_point": "artifact-puller",
     "max_handoffs": 8, "max_iterations": 15,
     "agents": [
-        {"id": "artifact-puller", "model": HAIKU,
+        {"id": "artifact-puller", "model": "",
          "description": "Reads code package files.",
          "system_prompt": (
              "You are the artifact-puller — first agent in the "
@@ -95,7 +95,7 @@ PULL_ARTIFACTS_SWARM: dict = {
              "builder, read key files, add CodeFile entities. Hand "
              "off to artifact-reviewer."
          ), "tools": [], "skills": list(_CTX_SKILLS)},
-        {"id": "artifact-reviewer", "model": SONNET,
+        {"id": "artifact-reviewer", "model": "",
          "description": "Reviews code for secrets and misconfigs.",
          "system_prompt": (
              "You are the artifact-reviewer — second in the "
@@ -105,7 +105,7 @@ PULL_ARTIFACTS_SWARM: dict = {
              "Add Secret or Misconfig entities, link to CodeFile. "
              "Hand off to artifact-summary."
          ), "tools": [], "skills": list(_CTX_SKILLS)},
-        {"id": "artifact-summary", "model": GPT_OSS,
+        {"id": "artifact-summary", "model": "",
          "description": "Summarizes artifacts in graph.",
          "system_prompt": (
              "You are the artifact-summary agent — last in the "
@@ -125,7 +125,7 @@ SETUP_SANDBOX_SWARM: dict = {
     "entry_point": "cfn-builder",
     "max_handoffs": 8, "max_iterations": 15,
     "agents": [
-        {"id": "cfn-builder", "model": SONNET,
+        {"id": "cfn-builder", "model": "",
          "description": "Builds CFN template from graph model.",
          "system_prompt": (
              "You are the cfn-builder — first agent in the "
@@ -135,7 +135,7 @@ SETUP_SANDBOX_SWARM: dict = {
              "S3 buckets, DynamoDB tables). Add a CFNTemplate entity "
              "with the body in properties. Hand off to deployer."
          ), "tools": [], "skills": list(_CTX_SKILLS)},
-        {"id": "deployer", "model": HAIKU,
+        {"id": "deployer", "model": "",
          "description": "Deploys CFN to LocalStack.",
          "system_prompt": (
              "You are the deployer — second in the setup-sandbox "
@@ -145,7 +145,7 @@ SETUP_SANDBOX_SWARM: dict = {
              "list sandbox envs, deploy via sandbox_deploy_cfn. Add "
              "a SandboxEnv entity. Hand off to deploy-verify."
          ), "tools": [], "skills": list(_CTX_SKILLS_SANDBOX)},
-        {"id": "deploy-verify", "model": SCOUT,
+        {"id": "deploy-verify", "model": "",
          "description": "Validates sandbox deployment.",
          "system_prompt": (
              "You are the deploy-verify agent — last in the "

@@ -54,11 +54,11 @@ SANDBOX_HYBRID_TEAM_A: dict = {
     "agents": [
         # bd:python-factory-2tgo1 — both prompts name sandbox-ops +
         # compx-platform.
-        {"id": "creator-a", "model": HAIKU,
+        {"id": "creator-a", "model": "",
          "description": "Haiku sandbox creator.",
          "system_prompt": _CREATOR_PROMPT, "tools": [],
          "skills": ["sandbox-ops", "compx-platform"]},
-        {"id": "checker-a", "model": GPT_OSS,
+        {"id": "checker-a", "model": "",
          "description": "GPT OSS sandbox checker.",
          "system_prompt": _CHECKER_PROMPT, "tools": [],
          "skills": ["sandbox-ops", "compx-platform"]},
@@ -72,11 +72,11 @@ SANDBOX_HYBRID_TEAM_B: dict = {
     "entry_point": "creator-b",
     "max_handoffs": 4, "max_iterations": 15,
     "agents": [
-        {"id": "creator-b", "model": SCOUT,
+        {"id": "creator-b", "model": "",
          "description": "Scout sandbox creator.",
          "system_prompt": _CREATOR_PROMPT, "tools": [],
          "skills": ["sandbox-ops", "compx-platform"]},
-        {"id": "checker-b", "model": SONNET,
+        {"id": "checker-b", "model": "",
          "description": "Sonnet sandbox checker.",
          "system_prompt": _CHECKER_PROMPT, "tools": [],
          "skills": ["sandbox-ops", "compx-platform"]},
@@ -104,7 +104,7 @@ SANDBOX_HYBRID_GRAPH: dict = {
         {"id": "sandbox-team-b", "type": "swarm",
          "swarm_id": "rt-sandbox-hybrid-team-b",
          "description": "Scout creator + Sonnet checker"},
-        {"id": "summary", "type": "agent", "model": SONNET,
+        {"id": "summary", "type": "agent", "model": "",
          "description": "Summarizes sandbox state.",
          "system_prompt": _SUMMARY_PROMPT,
          "skills": ["sandbox-ops"],

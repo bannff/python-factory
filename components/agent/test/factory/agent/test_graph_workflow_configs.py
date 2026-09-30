@@ -103,8 +103,11 @@ def test_eval_tail_swarm_structure():
     assert s["agents"][0]["id"] == "eval-scorer"
 
 
-def test_eval_tail_uses_nova2_lite():
-    assert RT_EVAL_TAIL_SWARM["agents"][0]["model"] == NOVA2_LITE
+def test_eval_tail_model_inherits_deployment_default():
+    # Personas no longer pin concrete models (deployment-agnostic registry);
+    # model="" inherits COMPANION_X_CHAT_MODEL via
+    # LangChainModelCache.effective_id / _node_behavior at compile time.
+    assert RT_EVAL_TAIL_SWARM["agents"][0]["model"] == ""
 
 
 def test_eval_tail_prompt_contains_all_sections():

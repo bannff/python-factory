@@ -11,7 +11,7 @@ SECURITY_AGENTS: list[dict] = [
             "insecure direct object references and broken object-level "
             "authorization vulnerabilities."
         ),
-        "model": "ollama/foundation-sec",
+        "model": "",
         "system_prompt": (
             "You are Foundation-Sec-8B, a model fine-tuned for "
             "cybersecurity research and vulnerability discovery. Your "

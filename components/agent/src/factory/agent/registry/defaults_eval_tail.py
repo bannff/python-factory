@@ -28,7 +28,7 @@ RT_EVAL_TAIL_SWARM: dict = {
     "entry_point": "eval-scorer",
     "max_handoffs": 2, "max_iterations": 10,
     "agents": [
-        {"id": "eval-scorer", "model": NOVA2_LITE,
+        {"id": "eval-scorer", "model": "",
          "description": "Scores workflow and records metrics.",
          "system_prompt": EVAL_TAIL_PREAMBLE
          + EVAL_SESSION_SCORING + EVAL_METRICS_RECORDING,

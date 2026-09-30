@@ -125,7 +125,11 @@ def compile_swarm(node_id: str, swarm: Any,
         members.append(AgentManifest(
             id=item.id, name=item.name or item.id, description=item.description,
             system_prompt=render_text(item.system_prompt, member_context),
-            model=freeze_model(item.model), tools=tools, skills=skills,
+            # Empty = inherit the process default, same as _node_behavior —
+            # deployment-inherited personas (model="") must freeze concrete ids.
+            model=freeze_model(item.model or os.environ.get(
+                "COMPANION_X_CHAT_MODEL", "").strip() or "us.anthropic.claude-sonnet-4-6"),
+            tools=tools, skills=skills,
             output_schema=None,
             plugins=swarm_member_plugins(item.id, ids, skills),
             conversation=conversation(), initial_state={},
