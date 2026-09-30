@@ -132,6 +132,8 @@ projects/circuitron/
 .beads/interactions.jsonl
 .beads/push-state.json
 .beads/*.lock
+.beads.gate.lock
+.beads/dolt-server-config.yaml
 .beads/.beads-credential-key
 .beads/.local_version
 .beads/redirect
