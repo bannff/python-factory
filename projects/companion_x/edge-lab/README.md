@@ -1,6 +1,6 @@
 # edge-lab
 
-`edge-lab` is a single Linux container for rehearsing the
+`edge-lab` is a Linux workload image and Sandbox profile for rehearsing the
 `edge-ditto-device-flow-001` experiment. Its image contains Python 3.12 and a
 hash-locked Ditto Python SDK preview wheel. It contains no license, model,
 dataset, or experiment results.
@@ -15,32 +15,39 @@ Set `SANDBOX_ADAPTER=docker` and point `SANDBOX_PROFILES_DIR` at the absolute
 `projects/companion_x/sandbox-profiles` directory in the MCP server's
 environment. Until this branch's Sandbox code is installed in the server's
 Python environment, also put this worktree's `components/sandbox/src` first
-on `PYTHONPATH` so the `replace_existing: false` profile field is recognized.
-Restart that server, then call
-`sandbox.provision(profile="edge-lab")`. The profile keeps the container
-running for `sandbox.upload_file` and `sandbox.execute`; call
-`sandbox.terminate(env_id=...)` when finished. A second provision refuses to
-replace an existing `edge-lab` container. The Sandbox runtime currently
-keeps its environment registry in memory, so restart the MCP server only
-after terminating the container or recover it by Docker name.
+on `PYTHONPATH` so the device-preset tools and profile fields are recognized.
+Restart that server, call `sandbox.list_device_presets`, then provision the
+workload with a target, for example
+`sandbox.provision(profile="edge-lab", device_preset="iphone-15")`.
+The same image can be used with `ipad-a16`, `pixel-8`, `galaxy-s24`,
+`galaxy-tab-s9`, `zebra-tc58`, or `raspberry-pi-5-4gb`. Presets are packaged
+with Sandbox; additional validated YAML presets can be placed in the directory
+set by `SANDBOX_DEVICE_PRESETS_DIR`. The older call without a device preset
+still provisions the generic `edge-lab` container and refuses to replace it.
+Selected presets create uniquely named containers and also refuse to replace
+an existing container. Selected presets require a profile without fixed host
+ports; `edge-lab` has none. Use `sandbox.upload_file` and `sandbox.execute` for each
+environment; call `sandbox.terminate(env_id=...)` when finished.
 
-The existing Sandbox profile registry is the source of device configuration.
-This profile requests a Linux ARM64 container and records `iphone` as the
-intended device family with `linux_proxy` fidelity. The generic profile fields
-`cpus` and `memory_mb` can apply a resource envelope once a specific device
-model and limits are chosen. The profile does not turn Docker into iOS or
-reproduce Apple silicon, the Neural Engine, radios, energy use, or thermal
-behavior. Reprovision after changing the YAML; an already running container
-keeps its original Docker settings. Use `docker inspect` to record the actual
-image, platform, CPU quota, and memory limit in each experiment's evidence.
+Sandbox profiles describe the workload image and tools; device presets describe
+the intended form factor and a repeatable **Linux proxy** CPU/memory envelope.
+The preset limits are initial experiment budgets, not manufacturer RAM/CPU
+specifications or measured app limits. They do not run iOS or Android or
+reproduce a device SoC, accelerator, radios, energy use, or thermal behavior.
+Reprovision after changing YAML; an already running container keeps its old
+settings. Record the requested preset and `docker inspect` image, platform,
+CPU quota, and memory limit in each run's evidence. A physical-device run is
+required before claiming device performance or mesh-radio behavior.
 
 These instructions target the Companion-X MCP server running directly on the
 host. The separate Companion-X Compose security overlay selects LocalStack
 and does not mount this profile directory; it does not use this setup.
 
-The experiment runner will launch N independent processes inside this
-container. Each process must open its own SDK instance, persistence directory,
-and loopback TCP port; the processes share one test database ID. Supply the
+The first Ditto flow protocol launches N independent processes inside one
+container. The preset path can launch multiple containers for stronger process
+and filesystem isolation. Every SDK instance needs its own persistence
+directory and port; peers share one test database ID. The containers do not
+establish a Ditto mesh topology on their own. Supply the
 authorized offline Ditto license at run time through a protected local input.
 Do not put it in this profile, Dockerfile, command history, or checked-in
 artifacts. Model and dataset artifacts are uploaded for a run and identified

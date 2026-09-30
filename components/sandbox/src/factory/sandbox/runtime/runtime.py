@@ -38,13 +38,21 @@ class SandboxRuntime(CfnStackOpsMixin, OrphanSweepMixin):
 
     async def provision(
         self, config: SandboxConfig | None = None, profile: str | None = None,
+        device_preset: str | None = None,
     ) -> EnvironmentInfo:
         """Provision a new sandbox environment.
 
         When profile is set, resolves it and merges Docker config into adapter config.
         """
         cfg = config or SandboxConfig()
-        adapter_config, metadata, setup_commands = build_provision_context(cfg, profile)
+        adapter_config, metadata, setup_commands = build_provision_context(
+            cfg, profile, device_preset,
+        )
+        if device_preset is not None:
+            from .adapters.docker_adapter import DockerAdapter
+
+            if not isinstance(self._adapter, DockerAdapter):
+                raise ValueError("Device presets require the Docker adapter")
 
         env_id = await self._adapter.provision(adapter_config)
         self.workspace_dir(env_id)  # create artifact staging dir

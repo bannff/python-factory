@@ -47,6 +47,13 @@ class DockerAdapter:
         """
         image = config.get("image", self._default_image)
         container_name = config.get("container_name", f"sandbox-{uuid.uuid4().hex[:8]}")
+        device_labels: dict[str, str] = {}
+        if config.get("device_labels") is not None:
+            from ..device_presets import DeviceRunLabels
+
+            device_labels = DeviceRunLabels.model_validate(
+                config["device_labels"]
+            ).docker_labels()
 
         if config.get("replace_existing", True):
             # Legacy profiles intentionally replace a container with this name.
@@ -65,6 +72,8 @@ class DockerAdapter:
 
         cmd = ["docker", "run", "-d", "--name", container_name,
                "--label", "factory.sandbox=true"]
+        for key, value in device_labels.items():
+            cmd.extend(["--label", f"{key}={value}"])
         if platform := config.get("platform"):
             cmd.extend(["--platform", platform])
         if cpus := config.get("cpus"):

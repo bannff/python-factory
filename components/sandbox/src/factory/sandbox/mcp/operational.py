@@ -32,6 +32,9 @@ def register(mcp: Any, runtime: "SandboxRuntime") -> None:
         auto_terminate: bool = True,
         ami_id: str | None = Field(default=None, min_length=1, max_length=256),
         profile: str | None = Field(default=None, min_length=1, max_length=128),
+        device_preset: str | None = Field(
+            default=None, pattern=r"^[a-z0-9][a-z0-9_-]{0,127}$",
+        ),
     ) -> ToolResult[SandboxProvisionResult]:
         """Provision a sandbox environment."""
         environment = await runtime.provision(
@@ -40,9 +43,11 @@ def register(mcp: Any, runtime: "SandboxRuntime") -> None:
                 auto_terminate=auto_terminate, ami_id=ami_id,
             ),
             profile=profile,
+            device_preset=device_preset,
         )
         return ok(SandboxProvisionResult(
             environment=to_mcp_environment(environment), profile=profile,
+            device_preset=device_preset,
         ))
 
     @mcp.tool(name="sandbox.terminate")

@@ -1,7 +1,7 @@
-"""Sandbox target profiles — one container at a time.
+"""Sandbox workload profiles for Docker container configuration.
 
-Maps profile names to Docker container configs. Only one sandbox
-runs at a time. Provision auto-terminates the previous one.
+Legacy profile-only provisioning uses one container; selecting a device preset
+creates a separate named container for each target.
 """
 from __future__ import annotations
 

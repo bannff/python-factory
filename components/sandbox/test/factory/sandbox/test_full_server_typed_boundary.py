@@ -12,7 +12,8 @@ from factory.sandbox.runtime.adapters.mock import MockAdapter
 
 DETERMINISTIC = {
     "sandbox.get_capabilities", "sandbox.health_check", "sandbox.describe_config_schema",
-    "sandbox.list_profiles", "sandbox.list_environments", "sandbox.generate_cfn_from_recon",
+    "sandbox.list_profiles", "sandbox.list_device_presets",
+    "sandbox.list_environments", "sandbox.generate_cfn_from_recon",
     "sandbox.validate_manifest", "sandbox.list_live_launch_ids",
     "sandbox_get_dashboard_summary",
     "sandbox_get_environment_activity", "sandbox_get_environment_graph_context", "sandbox_get_views",
@@ -43,7 +44,7 @@ async def test_fresh_server_has_exact_strict_typed_catalog() -> None:
     assert {name for name, category in categories.items() if category == "deterministic"} == DETERMINISTIC
     assert {name for name, category in categories.items() if category == "operational"} == OPERATIONAL
     assert {name for name, category in categories.items() if category == "authoring"} == AUTHORING
-    assert len(DETERMINISTIC) == 12 and len(OPERATIONAL) == 17 and len(AUTHORING) == 4
+    assert len(DETERMINISTIC) == 13 and len(OPERATIONAL) == 17 and len(AUTHORING) == 4
     for tool in tools:
         input_model = getattr(tool.fn, "_mcp_input_model", None)
         output_model = getattr(tool.fn, "_mcp_output_model", None)

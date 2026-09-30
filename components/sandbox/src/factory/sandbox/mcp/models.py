@@ -16,12 +16,16 @@ class SandboxProvisionRequest(StrictModel):
     auto_terminate: bool = True
     ami_id: str | None = Field(default=None, min_length=1, max_length=256)
     profile: str | None = Field(default=None, min_length=1, max_length=128)
+    device_preset: str | None = Field(
+        default=None, pattern=r"^[a-z0-9][a-z0-9_-]{0,127}$",
+    )
 
 
 class SandboxProvisionResult(StrictModel):
     success: Literal[True] = True
     environment: SandboxEnvironmentInfo
     profile: str | None = None
+    device_preset: str | None = None
 
 
 class SandboxEnvironmentRequest(StrictModel):

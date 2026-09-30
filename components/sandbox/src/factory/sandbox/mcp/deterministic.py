@@ -1,7 +1,7 @@
 """Typed deterministic contract MCP tools for the Sandbox brick."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import Field
 
@@ -50,6 +50,28 @@ class ProfilesResult(StrictModel):
     profiles: dict[str, ProfileInfo]
 
 
+class ProxyEnvelopeInfo(StrictModel):
+    platform: Literal["linux/arm64", "linux/amd64"]
+    cpus: float = Field(gt=0, allow_inf_nan=False)
+    memory_mb: int = Field(ge=64)
+
+
+class DevicePresetInfo(StrictModel):
+    name: str
+    vendor: str
+    model: str
+    variant: str | None = None
+    form_factor: Literal["phone", "tablet", "rugged_handheld", "single_board"]
+    os_family: Literal["ios", "ipados", "android", "linux"]
+    fidelity: Literal["linux_proxy"]
+    source_url: str
+    proxy: ProxyEnvelopeInfo
+
+
+class DevicePresetsResult(StrictModel):
+    presets: dict[str, DevicePresetInfo]
+
+
 class LiveLaunchInfo(StrictModel):
     policy_id: str
     env_id: str
@@ -73,6 +95,7 @@ def register(mcp: Any, runtime: "SandboxRuntime") -> None:
                 "deterministic": [
                     "sandbox.get_capabilities", "sandbox.health_check",
                     "sandbox.describe_config_schema", "sandbox.list_profiles",
+                    "sandbox.list_device_presets",
                     "sandbox.list_environments", "sandbox.generate_cfn_from_recon",
                     "sandbox.validate_manifest", "sandbox.list_live_launch_ids",
                     "sandbox_get_dashboard_summary",
@@ -145,6 +168,26 @@ def register(mcp: Any, runtime: "SandboxRuntime") -> None:
                 ),
             )
         return ok(ProfilesResult(profiles=profiles))
+
+    @mcp.tool(name="sandbox.list_device_presets")
+    @deterministic(input_model=EmptyInput, output_model=DevicePresetsResult)
+    def list_device_presets() -> ToolResult[DevicePresetsResult]:
+        """List validated device targets and their Linux proxy envelopes."""
+        from ..runtime.device_presets import (
+            list_device_presets as _names,
+            resolve_device_preset,
+        )
+
+        presets: dict[str, DevicePresetInfo] = {}
+        for name in _names():
+            try:
+                presets[name] = DevicePresetInfo.model_validate(
+                    resolve_device_preset(name).model_dump()
+                )
+            except (ValueError, OSError, KeyError):
+                # An invalid user YAML must not hide the rest of the catalog.
+                continue
+        return ok(DevicePresetsResult(presets=presets))
 
     @mcp.tool(name="sandbox.list_live_launch_ids")
     @deterministic(input_model=EmptyInput, output_model=LiveLaunchesResult)
