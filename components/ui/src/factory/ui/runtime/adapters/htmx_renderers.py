@@ -26,7 +26,8 @@ def render_text(c: UIComponent) -> str:
     if c.props.get("loading"):
         return _skel("text", c)
     variant = c.props.get("variant", "body")
-    content = c.props.get("content", "")
+    # Catalog canonical 'text'; 'content'/'value' aliased (mirrors renderers-basic.tsx).
+    content = c.props.get("text") or c.props.get("content") or c.props.get("value") or ""
     hero = hero_gradient_cls(c)
     if hero:
         return f'<div class="{hero}" id="comp-{c.id}"><h1 class="text-5xl font-bold">{content}</h1></div>'

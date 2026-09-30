@@ -144,3 +144,13 @@ class TestRenderTextStyleProps:
     def test_no_style_props_no_style_attr(self) -> None:
         html = self._render({"content": "plain"})
         assert "style=" not in html
+
+    def test_canonical_text_prop_renders_content(self) -> None:
+        """GH #78 — canonical 'text' prop must render (matches React renderer)."""
+        html = self._render({"text": "Hello", "color": "#00ff00"})
+        assert ">Hello</p>" in html
+        assert "color: #00ff00" in html
+
+    def test_value_alias_renders_content(self) -> None:
+        html = self._render({"value": "Via value"})
+        assert ">Via value</p>" in html
