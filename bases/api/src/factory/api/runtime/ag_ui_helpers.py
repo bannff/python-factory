@@ -28,10 +28,24 @@ TOOL_FALLBACK_TEXT = (
 
 
 def extract_user_message(messages: list[dict]) -> str:
-    """Return the most recent user message from a messages array."""
+    """Return the most recent user message from a messages array.
+
+    AG-UI clients send the user turn as content blocks
+    (``[{"type": "text", "text": "..."}]``), not a bare string; collapse
+    to plain text so the typed ``ReasonInput(task: str)`` validates.
+    Mirrors ``content_text`` in the agent's langchain_stream adapter.
+    """
     for msg in reversed(messages):
         if msg.get("role") == "user":
-            return msg.get("content", "")
+            content = msg.get("content", "")
+            if isinstance(content, str):
+                return content
+            if isinstance(content, list):
+                return "".join(
+                    block["text"] for block in content
+                    if isinstance(block, dict) and isinstance(block.get("text"), str)
+                )
+            return str(content)
     return ""
 
 

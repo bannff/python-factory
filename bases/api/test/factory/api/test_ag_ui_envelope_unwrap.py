@@ -114,3 +114,30 @@ def test_deltas_are_json_serializable():
     envelope = {"ok": True, "data": {"result": {"output": "x"}}}
     for evt in extract_ag_ui_events(envelope, "t1"):
         json.dumps(evt)
+
+
+def test_extract_user_message_collapses_content_blocks():
+    """AG-UI clients send content as block lists; task must be a str."""
+    from factory.api.runtime.ag_ui_helpers import extract_user_message
+    messages = [{"role": "user", "content": [
+        {"type": "text", "text": "take me to the metrics page"},
+    ]}]
+    assert extract_user_message(messages) == "take me to the metrics page"
+
+
+def test_extract_user_message_concatenates_multiple_text_blocks():
+    from factory.api.runtime.ag_ui_helpers import extract_user_message
+    messages = [{"role": "user", "content": [
+        {"type": "text", "text": "hello "},
+        {"type": "text", "text": "world"},
+    ]}]
+    assert extract_user_message(messages) == "hello world"
+
+
+def test_extract_user_message_passthrough_shapes():
+    from factory.api.runtime.ag_ui_helpers import extract_user_message
+    assert extract_user_message(
+        [{"role": "user", "content": "plain"}],
+    ) == "plain"
+    assert extract_user_message([]) == ""
+    assert extract_user_message([{"role": "assistant", "content": "x"}]) == ""
