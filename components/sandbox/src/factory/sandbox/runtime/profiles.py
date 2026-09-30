@@ -22,6 +22,7 @@ class SandboxProfile(BaseModel):
     health_check_url: str | None = None
     health_check_timeout: int = 60
     container_name: str = "factory-sandbox"
+    replace_existing: bool = True
     shell: str = "/bin/sh"
     env_vars: dict[str, str] = Field(default_factory=dict)
     # Commands run once, in order, right after provision (e.g. install tooling).

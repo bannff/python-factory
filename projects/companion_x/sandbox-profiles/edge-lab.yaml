@@ -1,0 +1,10 @@
+# One Linux container for the edge-device experiment rehearsal.
+# The experiment runner will start N separate SDK processes inside it.
+name: edge-lab
+image: python-factory/edge-lab:local
+container_name: edge-lab
+replace_existing: false
+shell: /bin/sh
+entrypoint: ["sleep", "infinity"]
+env_vars:
+  PYTHONUNBUFFERED: "1"

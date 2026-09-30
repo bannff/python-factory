@@ -1,9 +1,28 @@
 # Protocol: edge-ditto-device-flow-001
 
 **Status:** Planned, 29 September 2026. No SDK integration result has been
-measured. This protocol tests the field path: local input → model inference →
-typed observation → Ditto SDK local store → subscribed peer. It does not
-export inference records as files or require cloud connectivity.
+measured. A single-container Linux rehearsal environment named `edge-lab` is
+defined but has not produced a run. This protocol tests the field path: local
+input → model inference → typed observation → Ditto SDK local store →
+subscribed peer. It does not export inference records as files or require
+cloud connectivity.
+
+## Single-container Linux rehearsal
+
+Build and provision the [edge-lab environment](../../../edge-lab/README.md)
+through Companion-X Sandbox. Begin with two separate peer processes inside
+that container, each opening its own SDK handle and using a separate
+persistence directory and loopback TCP port. This stage establishes that the
+SDK wheel loads in Linux and rehearses local writes, restart persistence, and
+explicit TCP peer sync with one shared test database ID. Its topology and run
+outputs must be recorded using the same manifest and artifact rules below.
+An authorized offline license is supplied at run time, never baked into the
+image or profile. Model inference and N=4/N=8 runs follow only after the
+two-peer path is measured.
+
+Peers inside one container share a network namespace. Record that limitation
+and do not use this stage as evidence of independent device networking,
+selective physical-link failure, iPhone runtime behavior, or radio transport.
 
 ## Functional N-device stage
 
@@ -102,12 +121,14 @@ brick for frozen input definitions and partitions, the ML brick for supported
 training and model references, and the Evals brick for terminal gate outcomes
 with artifact hashes.
 
-The current Companion-X Sandbox MCP is not an N-peer runtime: its live health
-check in this session reported a `mock` adapter, while the documented full
-stack uses LocalStack. The Docker provision path reuses one default container
-name and lacks typed network edges, persistent stores, and resource limits.
-Use it only after those controls are implemented and verified; the first real
-run can use local child processes.
+Companion-X Sandbox now has a local `edge-lab` profile for one Docker
+container. Its MCP process must be restarted with `SANDBOX_ADAPTER=docker` and
+`SANDBOX_PROFILES_DIR` pointing to the profile directory before provisioning;
+the process already running when this profile was authored still used `mock`.
+Sandbox provisions the environment and provides upload/execute/terminate
+operations. The checked-in experiment runner, not Sandbox, will own N peer
+processes and their evidence. Sandbox does not yet model typed network edges,
+independent stores, or resource limits for N separate containers.
 
 ## iPhone stage
 

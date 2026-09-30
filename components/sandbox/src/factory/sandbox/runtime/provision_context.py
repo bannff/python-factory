@@ -32,6 +32,7 @@ def build_provision_context(
         adapter_config.update({
             "image": p.image, "ports": p.ports,
             "entrypoint": p.entrypoint, "container_name": p.container_name,
+            "replace_existing": p.replace_existing,
             "env_vars": p.env_vars,
         })
         cfg.instance_type = "docker"

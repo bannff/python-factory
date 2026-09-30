@@ -48,8 +48,18 @@ class DockerAdapter:
         image = config.get("image", self._default_image)
         container_name = config.get("container_name", f"sandbox-{uuid.uuid4().hex[:8]}")
 
-        # Auto-terminate existing container with same name (ignore errors)
-        _run(["docker", "rm", "-f", container_name], timeout=10)
+        if config.get("replace_existing", True):
+            # Legacy profiles intentionally replace a container with this name.
+            _run(["docker", "rm", "-f", container_name], timeout=10)
+        else:
+            code, _, _ = _run(
+                ["docker", "container", "inspect", container_name], timeout=10,
+            )
+            if code == 0:
+                raise RuntimeError(
+                    f"Container {container_name!r} already exists; "
+                    "terminate it explicitly before provisioning again"
+                )
 
         from .uds_mount import build_mount_args, proxy_env
 
