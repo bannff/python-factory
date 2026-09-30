@@ -69,7 +69,7 @@ A lab quality score only addresses the first gate.
 | [edge-vision-defect-001](edge-vision-defect-001/results.md) | Local surface-defect triage | Exploratory lab pilot | MobileNetV3 Small AP 0.778 versus 0.717; improvement uncertain |
 | [edge-audio-command-001](edge-audio-command-001/results.md) | Offline go/stop voice commands | Exploratory lab pilot | Tiny CNN improves macro F1, but 156/954 other words trigger commands |
 | [edge-tool-routing-001](edge-tool-routing-001/results.md) | Local typed-tool selection | Synthetic lab probe | Standalone MiniLM has 6/10 unsafe misroutes; guarded follow-up needs fresh holdout |
-| [edge-ditto-device-flow-001](edge-ditto-device-flow-001/protocol.md) | Model result persistence and offline peer sync through the real Ditto SDK | Protocol ready; not run | Mock-device functional gate, followed by iPhone verification |
+| [edge-ditto-device-flow-001](edge-ditto-device-flow-001/protocol.md) | N-device model persistence and offline peer sync through the real Ditto SDK | Protocol ready; not run | Python SDK mesh gate, followed by physical iPhone verification |
 
 ## Candidate coverage
 
