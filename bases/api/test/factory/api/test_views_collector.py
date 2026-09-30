@@ -25,6 +25,24 @@ def _aggregator(result):
     return agg
 
 
+def test_no_view_tools_defers_collection_without_caching():
+    """Early /api/health hit during lazy brick load must not cache empty
+    collection (registry issue #68): a later call retries discovery."""
+    agg = MagicMock()
+    agg.get_all_tool_names.return_value = ["demo_greet", "demo_health_check"]
+    first = views_mod.ensure_views_registered(agg)
+    assert first == {}
+    assert views_mod._collected_views is None  # not cached
+
+    # Bricks finish lazy-loading; second call collects for real.
+    agg.get_all_tool_names.return_value = ["demo_get_views"]
+    agg.invoke_tool.return_value = [{
+        "id": "demo-view", "ok": True, "data": {"views": [{"id": "v1"}]},
+    }]
+    second = views_mod.ensure_views_registered(agg)
+    assert views_mod._collected_views is not None  # now cached
+
+
 def test_rejected_view_payload_is_reported(caplog):
     """A failed tool envelope (``{"error": ...}``) must log a WARNING."""
     agg = _aggregator({"error": "1 validation error for ViewsOutput"})

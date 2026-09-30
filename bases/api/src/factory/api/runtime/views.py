@@ -33,12 +33,23 @@ def ensure_views_registered(agg) -> dict[str, dict[str, Any]]:
     all_view_defs: list[dict[str, Any]] = []
     metadata: dict[str, dict[str, Any]] = {}
 
-    # Find *_get_views tools across all bricks
-    for tool_name in agg.get_all_tool_names():
-        if not tool_name.endswith("_get_views"):
-            continue
+    # Find *_get_views tools across all bricks. If none are visible yet,
+    # bricks are still lazy-loading — return without caching so a later
+    # /api/health hit retries discovery (else the empty result is cached
+    # forever and the dashboard shows 0 views).
+    view_tools = [
+        tool_name for tool_name in agg.get_all_tool_names()
+        if tool_name.endswith("_get_views")
+    ]
+    if not view_tools:
+        logger.warning(
+            "No *_get_views tools visible yet — bricks still lazy-loading; "
+            "deferring view collection to the next health check"
+        )
+        return metadata
+
+    for tool_name in view_tools:
         try:
-            result = agg.invoke_tool(tool_name)
             result = agg.invoke_tool(tool_name)
             # Native MCP v2 tools return a ToolResult envelope
             # ({ok, data: {views: [...]}}); legacy bricks may return a bare
@@ -59,8 +70,7 @@ def ensure_views_registered(agg) -> dict[str, dict[str, Any]]:
                 views = getattr(data, "views", None)
                 if views is None and isinstance(data, dict):
                     views = data.get("views")
-                continue
-            for vdef in views:
+            for vdef in views or []:
                 if not isinstance(vdef, dict):
                     vdef = vdef.model_dump(mode="json") if hasattr(vdef, "model_dump") else dict(vdef)
                 vid = vdef.get("id")
