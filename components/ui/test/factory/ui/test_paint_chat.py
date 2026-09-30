@@ -13,8 +13,10 @@ Verdicts:
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
+import pytest
 from hypothesis import given, settings, strategies as st
 
 from factory.ui.mcp.paint_chat import register
@@ -127,11 +129,31 @@ def test_known_component_types_accepted_case_insensitive():
 # --- Validation envelope (never raise) ------------------------------------
 
 
-def test_invalid_payload_type_returns_error_envelope():
-    """Bad payload → error envelope, NOT raise — must not stall the run."""
-    result = _make_tool()(payload="not a dict")  # type: ignore[arg-type]
-    assert "error" in result
-    assert "components" in result["error"]
+def test_invalid_payload_type_fails_at_ingress():
+    """Non-dict, non-JSON-string payloads raise at the typed ingress,
+    never a silent default."""
+    with pytest.raises(Exception):
+        _make_tool()(payload=42)  # type: ignore[arg-type]
+
+
+def test_stringified_json_payload_matches_dict_path():
+    """LLMs serialize nested object args as JSON strings — coerce, don't reject.
+
+    Regression: ``payload`` sent as ``"{\"components\": [...]}"`` used to
+    bounce off ``_error_for_payload`` with ``payload must be an object…``.
+    """
+    as_dict = _make_tool()(payload=_VALID_PAYLOAD)
+    as_str = _make_tool()(payload=json.dumps(_VALID_PAYLOAD))
+    assert as_str == as_dict
+    assert as_str["components"] == _VALID_PAYLOAD["components"]
+    assert as_str["name"] == "Demo"
+
+
+def test_malformed_json_string_payload_fails_loudly():
+    """A string that is not valid JSON raises at the ingress boundary —
+    mirrors the evals_record_run coercion posture (bd python-factory-38veu)."""
+    with pytest.raises(Exception):
+        _make_tool()(payload="{not valid json")  # type: ignore[arg-type]
 
 
 def test_invalid_a2ui_payload_returns_error_envelope():

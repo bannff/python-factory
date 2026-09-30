@@ -5,6 +5,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from factory.mcp_utils.interface import JsonObject
+
 
 class _Input(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
@@ -20,7 +22,10 @@ class CanvasPaintInput(_Input):
     """Permissive field values let the tool return failed envelopes."""
 
     target: Any
-    payload: Any
+    # LLMs serialize nested object args as JSON strings (bd python-factory-38veu
+    # precedent); JsonObject parses them before the tool body runs. A
+    # malformed string still fails loudly at this boundary.
+    payload: JsonObject
     mode: Any = "snapshot"
 
 
@@ -44,7 +49,8 @@ class CanvasPaintOutput(_Output):
 
 
 class ChatPaintInput(_Input):
-    payload: Any
+    # Same JSON-string ingress coercion as CanvasPaintInput (bd python-factory-38veu).
+    payload: JsonObject
     name: Any = None
 
 

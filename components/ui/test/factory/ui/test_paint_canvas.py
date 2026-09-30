@@ -13,6 +13,7 @@ plugin-side detection is tested in
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import pytest
@@ -150,10 +151,34 @@ def test_invalid_mode_returns_error_envelope():
     assert "Invalid mode" in result["error"]
 
 
-def test_invalid_payload_type_returns_error_envelope():
-    result = _make_tool()(target="graph", payload="not a dict")  # type: ignore[arg-type]
-    assert "error" in result
-    assert "components" in result["error"]
+def test_invalid_payload_type_fails_at_ingress():
+    """Non-dict, non-JSON-string payloads raise at the typed ingress
+    (SchemaMigrationError from migrate_to), never a silent default."""
+    with pytest.raises(Exception):
+        _make_tool()(target="graph", payload=42)  # type: ignore[arg-type]
+
+
+def test_stringified_json_payload_matches_dict_path():
+    """LLMs serialize nested object args as JSON strings — coerce, don't reject.
+
+    Regression: ``payload`` sent as ``"{\"components\": [...]}"`` used to
+    bounce off ``_error_for_payload`` with ``payload must be an object…``,
+    leaving the canvas stuck at 'Awaiting agent paint…'.
+    """
+    as_dict = _make_tool()(target="live", payload=_VALID_PAYLOAD)
+    as_str = _make_tool()(target="live", payload=json.dumps(_VALID_PAYLOAD))
+    assert as_str == as_dict
+    assert "_a2ui_canvas" in as_str
+    assert as_str["_a2ui_canvas"]["payload"]["components"] == (
+        _VALID_PAYLOAD["components"]
+    )
+
+
+def test_malformed_json_string_payload_fails_loudly():
+    """A string that is not valid JSON raises at the ingress boundary —
+    mirrors the evals_record_run coercion posture (bd python-factory-38veu)."""
+    with pytest.raises(Exception):
+        _make_tool()(target="live", payload="{not valid json")  # type: ignore[arg-type]
 
 
 def test_invalid_a2ui_payload_returns_error_envelope():
