@@ -4,6 +4,7 @@ Extracted from ``ag_ui_routes.py`` so that file stays a thin transport
 shell under the 200 LOC budget. Helpers here:
 
 - ``extract_user_message``: pull the latest user message out of the request
+- ``unwrap_agent_output``: pull prose out of a typed ``ToolResult`` envelope
 - ``extract_ag_ui_events``: map an ``agent_reason`` result to AG-UI events
 - ``execute_tool_calls``: invoke any tool_calls returned by the agent and
   emit AG-UI ``TOOL_CALL_START``/``TOOL_CALL_END`` events
@@ -19,6 +20,11 @@ import uuid
 from typing import Any, Callable, Awaitable
 
 logger = logging.getLogger(__name__)
+
+# Bubbled to users verbatim when a run fails; never a raw envelope repr.
+TOOL_FALLBACK_TEXT = (
+    "I hit an internal error while working on that. Please try again."
+)
 
 
 def extract_user_message(messages: list[dict]) -> str:
@@ -38,21 +44,56 @@ def extract_user_message_id(messages: list[dict]) -> str | None:
     return None
 
 
+def unwrap_agent_output(agent_result: Any) -> str | None:
+    """Return the assistant prose inside an ``agent_reason`` result.
+
+    Navigates the nested typed-MCP envelope (``data.result.output`` and
+    friends) instead of stringifying the whole envelope. Returns ``None``
+    for failed envelopes so callers can emit a graceful fallback rather
+    than a raw Python repr as the chat reply.
+    """
+    if isinstance(agent_result, str):
+        return agent_result or None
+    if not isinstance(agent_result, dict):
+        return str(agent_result) if agent_result else None
+    if agent_result.get("ok") is False:
+        return None
+    data = agent_result.get("data")
+    candidates: list[Any] = [
+        agent_result.get("text"),
+        agent_result.get("output"),
+        agent_result.get("result"),
+        data.get("output") if isinstance(data, dict) else None,
+        data.get("result") if isinstance(data, dict) else None,
+    ]
+    for candidate in candidates:
+        if isinstance(candidate, str) and candidate.strip():
+            return candidate
+        if isinstance(candidate, dict):
+            nested = candidate.get("output", candidate.get("text", ""))
+            if isinstance(nested, str) and nested.strip():
+                return nested
+    return None
+
+
 def extract_ag_ui_events(
     agent_result: Any, thread_id: str,
 ) -> list[dict[str, Any]]:
     """Map an ``agent_reason`` result to AG-UI ``TEXT_MESSAGE_*`` events."""
     ts = time.time()
     msg_id = str(uuid.uuid4())[:8]
-    text = ""
-    if isinstance(agent_result, dict):
-        text = agent_result.get("text", agent_result.get("output", ""))
-        if not text:
-            text = agent_result.get("result", str(agent_result))
-    elif isinstance(agent_result, str):
-        text = agent_result
-    else:
-        text = str(agent_result) if agent_result else ""
+    text = unwrap_agent_output(agent_result)
+    if text is None:
+        if isinstance(agent_result, dict) and agent_result.get("ok") is False:
+            # A failed typed envelope must never surface as chat text —
+            # emit a graceful fallback so the UI shows prose, not a repr.
+            logger.error(
+                "agent_reason returned a failed envelope thread_id=%s error=%s",
+                thread_id, agent_result.get("error"),
+            )
+            text = TOOL_FALLBACK_TEXT
+        else:
+            return []
     if not text:
         return []
     return [
