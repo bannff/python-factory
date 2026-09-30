@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any
 
 from ..emit import emit_ml_event
+from ..finetuning_tracker import log_finetuning_run
 from ..models import (
     Checkpoint,
     CheckpointType,
@@ -84,6 +85,10 @@ class MemoryFineTuningAdapter:
             "job_id": job_id, "status": job.status.value,
             "metrics": job.metrics,
         })
+        log_finetuning_run(
+            job_id=job_id, base_model=job.base_model, method=job.method.value,
+            status=job.status.value, metrics=job.metrics,
+        )
         # Persist to knowledge graph (fire-and-forget, never blocks)
         try:
             from .graph_adapter import GraphMLStore

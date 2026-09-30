@@ -8,11 +8,16 @@ from pydantic import BaseModel
 from .can_lifecycle_canonical import effect_identity, semantic_request
 from .can_lifecycle_contracts import CanEffectIntent, CanEffectReceipt, with_digest
 from .can_lifecycle_ports import CanLifecycleStore
+from .emit import emit_ml_event
 
 _RESERVED_RESULT_KEYS = frozenset({
     "schema_version", "operation", "status", "attempt_id", "request_sha256",
     "existing_request_sha256", "error", "terminal_ref",
 })
+_TERMINAL_EVENT = {
+    "completed": "ml.training.completed",
+    "failed": "ml.training.failed",
+}
 Runner = Callable[["CanLifecycleContext"], dict[str, Any]]
 
 
@@ -80,6 +85,10 @@ class CanLifecycleCoordinator:
                 self._verify(terminal, operation, attempt_id, request_sha, result_model)
                 return self._with_ref(terminal, record)
             record = self.store.running(record)
+            emit_ml_event("ml.training.started", {
+                "operation": operation, "attempt_id": attempt_id,
+                "request_sha256": request_sha, "status": "started",
+            })
             try:
                 result = runner(CanLifecycleContext(operation, request_sha, self.store))
                 if not isinstance(result, dict):
@@ -106,6 +115,11 @@ class CanLifecycleCoordinator:
             published = self.store.publish(record, terminal)
             canonical = self.store.load_terminal(published)
             self._verify(canonical, operation, attempt_id, request_sha, result_model)
+            emit_ml_event(_TERMINAL_EVENT[terminal["status"]], {
+                "operation": operation, "attempt_id": attempt_id,
+                "request_sha256": request_sha, "status": terminal["status"],
+                **({"error": terminal["error"]} if "error" in terminal else {}),
+            })
             return self._with_ref(canonical, published)
 
     def _with_ref(self, terminal, record):

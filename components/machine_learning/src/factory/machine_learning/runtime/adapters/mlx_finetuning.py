@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Any
 
 from ..emit import emit_ml_event
+from ..finetuning_tracker import log_finetuning_run
 from ..models import (
     Checkpoint,
     CheckpointType,
@@ -81,6 +82,10 @@ class MlxFineTuningAdapter:
             emit_ml_event("ml.finetuning.failed", {
                 "job_id": job_id, "status": job.status.value, "error": job.error,
             })
+            log_finetuning_run(
+                job_id=job_id, base_model=job.base_model,
+                method=job.method.value, status=job.status.value,
+            )
             return job
 
         job.status = JobStatus.running

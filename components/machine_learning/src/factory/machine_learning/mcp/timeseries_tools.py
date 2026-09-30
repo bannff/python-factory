@@ -8,6 +8,7 @@ from factory.mcp_utils.runtime.tool_result import ToolResult
 
 from ..runtime.adapters.timeseries_training import MemoryTimeSeriesTrainingAdapter
 from ..runtime.adapters.training_run_store import persist_training_run
+from ..runtime.emit import emit_ml_event
 from ..runtime.runtime import TrackingRuntime
 from ..runtime.time_series_ports import (
     TimeSeriesModelConfig, TimeSeriesModelType, TimeSeriesTrainingConfig,
@@ -39,14 +40,31 @@ def register(mcp: Any, get_runtime: Callable[[], TrackingRuntime]) -> None:
             validate_model_config_for_family(model_type_enum, family_config)
         except (TypeError, ValueError) as error:
             return fail(str(error))
-        if model_type_enum == TimeSeriesModelType.timegan:
-            job = get_runtime().timegan_adapter.train(X_uri=X_uri, config=cfg, experiment_name=experiment_name)
-        else:
-            job = get_runtime().get_timeseries_trainer().train(
-                model_type=model_type_enum, X_uri=X_uri, y_uri=y_uri, config=cfg,
-                experiment_name=experiment_name, model_config=family_config,
-            )
+        emit_ml_event("ml.training.started", {
+            "model_type": model_type_enum.value,
+            "experiment_name": experiment_name, "status": "started",
+        })
+        try:
+            if model_type_enum == TimeSeriesModelType.timegan:
+                job = get_runtime().timegan_adapter.train(X_uri=X_uri, config=cfg, experiment_name=experiment_name)
+            else:
+                job = get_runtime().get_timeseries_trainer().train(
+                    model_type=model_type_enum, X_uri=X_uri, y_uri=y_uri, config=cfg,
+                    experiment_name=experiment_name, model_config=family_config,
+                )
+        except Exception as error:
+            emit_ml_event("ml.training.failed", {
+                "job_id": "", "model_type": model_type_enum.value,
+                "experiment_name": experiment_name, "status": "failed",
+                "error": str(error),
+            })
+            raise
         persist_training_run(job, experiment_name=experiment_name, source="mcp")
+        emit_ml_event("ml.training.completed", {
+            "job_id": job.id, "model_type": job.model_type.value,
+            "experiment_name": experiment_name, "status": job.status,
+            "metrics": job.metrics, "run_id": job.run_id,
+        })
         return ok(TrainTimeSeriesOutput(
             job_id=job.id, model_type=job.model_type.value, status=job.status,
             experiment_id=job.experiment_id, run_id=job.run_id, metrics=job.metrics,
@@ -106,14 +124,36 @@ def register(mcp: Any, get_runtime: Callable[[], TrackingRuntime]) -> None:
     ) -> ToolResult[ContinueTimeSeriesOutput]:
         """Continue training a TimeGAN from a previous checkpoint."""
         cfg = TimeSeriesTrainingConfig(**(config or {})) if config else None
+        emit_ml_event("ml.training.started", {
+            "model_type": "timegan", "experiment_name": experiment_name,
+            "status": "started", "parent_model_id": model_id,
+        })
         try:
             job = get_runtime().timegan_adapter.continue_train(
                 model_id=model_id, X_uri=X_uri, config=cfg, experiment_name=experiment_name,
                 classifier_feedback=classifier_feedback,
             )
         except KeyError as error:
+            emit_ml_event("ml.training.failed", {
+                "job_id": "", "model_type": "timegan",
+                "experiment_name": experiment_name, "status": "failed",
+                "parent_model_id": model_id, "error": str(error),
+            })
             return fail(str(error))
+        except Exception as error:
+            emit_ml_event("ml.training.failed", {
+                "job_id": "", "model_type": "timegan",
+                "experiment_name": experiment_name, "status": "failed",
+                "parent_model_id": model_id, "error": str(error),
+            })
+            raise
         persist_training_run(job, experiment_name=experiment_name, source="mcp")
+        emit_ml_event("ml.training.completed", {
+            "job_id": job.id, "model_type": job.model_type.value,
+            "experiment_name": experiment_name, "status": job.status,
+            "metrics": job.metrics, "run_id": job.run_id,
+            "parent_model_id": model_id,
+        })
         return ok(ContinueTimeSeriesOutput(
             job_id=job.id, parent_model_id=model_id, model_type=job.model_type.value,
             status=job.status, metrics=job.metrics, model_path=job.model_path,

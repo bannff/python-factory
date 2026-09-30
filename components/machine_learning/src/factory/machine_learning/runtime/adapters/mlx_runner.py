@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Any, Callable
 
 from ..emit import emit_ml_event
+from ..finetuning_tracker import log_finetuning_run
 from ..models import (
     Checkpoint,
     CheckpointType,
@@ -78,6 +79,11 @@ def run_mlx_training(
             "job_id": job.id, "status": job.status.value,
             "metrics": job.metrics, "error": job.error
         })
+        log_finetuning_run(
+            job_id=job.id, base_model=job.base_model,
+            method=job.method.value, status=job.status.value,
+            metrics=job.metrics,
+        )
         persist_fn(job)
         on_complete(job.id)
 

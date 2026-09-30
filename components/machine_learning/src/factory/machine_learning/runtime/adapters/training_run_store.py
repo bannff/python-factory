@@ -63,12 +63,17 @@ def persist_training_run(
     job: Any, experiment_name: str = "", source: str = "mcp",
 ) -> bool:
     """Persist a training job to the doc store. Returns True on success."""
+    record = build_run_record(job, experiment_name=experiment_name, source=source)
+    return _insert_record(record)
+
+
+def _insert_record(record: dict[str, Any]) -> bool:
+    """Best-effort doc-store insert; never raises. Returns True on success."""
     invoker = _get_invoker()
     if invoker is None:
         logger.warning("training_run_store: no tool_invoker; run %s not persisted",
-                       getattr(job, "id", "?"))
+                       record["run_id"])
         return False
-    record = build_run_record(job, experiment_name=experiment_name, source=source)
     try:
         result = invoker(
             "storage_doc_insert",
@@ -96,4 +101,4 @@ def persist_training_run(
     return True
 
 
-__all__ = ["COLLECTION", "build_run_record", "persist_training_run"]
+__all__ = ["COLLECTION", "build_run_record", "persist_training_run", "_insert_record"]

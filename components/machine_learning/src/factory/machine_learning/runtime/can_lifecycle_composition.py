@@ -1,12 +1,14 @@
 """Production composition for the five ML CAN lifecycle terminals."""
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
 from factory.mcp_utils.interface import get_service
 
 from .adapters.local_can_lifecycle import LocalCanLifecycleStore
+from .adapters.training_run_store import _insert_record
 from .can_dataset_binding import DATASET_TOOL_IDENTITY, resolve_training_bundle
 from .can_evals_binding import EVALS_TOOL_IDENTITY
 from .can_evaluation_request import build_evaluation_record_request
@@ -27,6 +29,9 @@ from .can_projection import project_pipeline_result
 from .passport_composition import create_local_passport_service
 from .passport_config import configured_passport_root
 from .passport_service import ModelPassportService
+from .can_lifecycle_receipts import persist_portfolio_receipts
+
+logger = logging.getLogger(__name__)
 
 
 class CanLifecycleOperations:
@@ -85,7 +90,9 @@ class CanLifecycleOperations:
                 ),
             }
 
-        return self.coordinator.run(TRAIN_OPERATION, request, tools, run, CanTrainResult)
+        terminal = self.coordinator.run(TRAIN_OPERATION, request, tools, run, CanTrainResult)
+        persist_portfolio_receipts(terminal)
+        return terminal
 
     def issue(self, request: dict[str, Any]) -> dict[str, Any]:
         tools = {"evals": EVALS_TOOL_IDENTITY, "self": ISSUE_OPERATION}
