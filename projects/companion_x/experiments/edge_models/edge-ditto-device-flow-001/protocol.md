@@ -81,6 +81,34 @@ link cut/rejoin needs a separate proxy controller or harness extension before
 gate 4 runs. The first N=2 run can follow the existing Python SDK loopback
 fixture directly.
 
+## Companion-X execution and evidence
+
+Implement a checked-in runner for this experiment that owns peer processes,
+model input replay, topology, cleanup, and raw measurements. Give it a typed,
+versioned scenario manifest and a stable run ID; it must write per-peer logs,
+database directories, prediction records, environment/version details, and a
+machine-readable result manifest to an isolated artifact directory. Hash those
+outputs and link them from `run-index.json`. Summarize deviations and the
+pursue/revise/stop decision in `results.md`. Do not treat a live dashboard or
+in-memory tracker as the only evidence.
+
+Expose new, narrow start/status/cancel/result MCP tools through Companion-X at
+run boundaries. Its Workflow brick can coordinate dataset, training, peer-run,
+and evaluation steps after the peer-run target is allowed and a workflow
+definition is registered. Named MCP runs also need durable SQLite state and a
+nonempty run key. Keep prediction writes and peer sync inside the runner's SDK
+processes, not as one MCP call per observation. Use the Dataset
+brick for frozen input definitions and partitions, the ML brick for supported
+training and model references, and the Evals brick for terminal gate outcomes
+with artifact hashes.
+
+The current Companion-X Sandbox MCP is not an N-peer runtime: its live health
+check in this session reported a `mock` adapter, while the documented full
+stack uses LocalStack. The Docker provision path reuses one default container
+name and lacks typed network edges, persistent stores, and resource limits.
+Use it only after those controls are implemented and verified; the first real
+run can use local child processes.
+
 ## iPhone stage
 
 Run the same typed observation contract in a thin Swift iPhone app with the
