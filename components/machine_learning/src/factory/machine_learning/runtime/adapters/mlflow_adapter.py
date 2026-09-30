@@ -15,56 +15,67 @@ class MLflowTracker:
     def __init__(self, tracking_uri: str | None = None, **kwargs: Any) -> None:
         self._tracking_uri = tracking_uri
         self._mlflow: Any = None
+        self._client: Any = None
         self._datasets: dict[str, Dataset] = {}
 
     def _get_mlflow(self) -> Any:
         if self._mlflow is None:
             try:
                 import mlflow
-                if self._tracking_uri:
-                    mlflow.set_tracking_uri(self._tracking_uri)
                 self._mlflow = mlflow
             except ImportError:
                 raise ImportError("mlflow required: pip install mlflow")
         return self._mlflow
 
+    def _get_client(self) -> Any:
+        """Lazily build MlflowClient scoped to our tracking_uri.
+
+        The fluent API cannot target an arbitrary run by id (mlflow.end_run
+        and mlflow.log_param take no usable run_id), so all run-targeted
+        operations go through MlflowClient, which avoids the global
+        set_tracking_uri side effect entirely.
+        """
+        if self._client is None:
+            from mlflow import MlflowClient
+            self._client = MlflowClient(tracking_uri=self._tracking_uri)
+        return self._client
+
     def create_experiment(self, name: str, description: str = "", tags: dict[str, str] | None = None) -> Experiment:
-        mlflow = self._get_mlflow()
-        exp_id = mlflow.create_experiment(name, tags=tags)
+        # All ops go through the client: fluent start_run/create_experiment
+        # would honor the global tracking uri, not our tracking_uri.
+        exp_id = self._get_client().create_experiment(name, tags=tags)
         return Experiment(id=exp_id, name=name, description=description, tags=tags or {})
 
     def get_experiment(self, experiment_id: str) -> Experiment | None:
-        mlflow = self._get_mlflow()
         try:
-            exp = mlflow.get_experiment(experiment_id)
+            exp = self._get_client().get_experiment(experiment_id)
             return Experiment(id=exp.experiment_id, name=exp.name, tags=exp.tags or {}) if exp else None
         except Exception:
             return None
 
     def get_experiment_by_name(self, name: str) -> Experiment | None:
-        mlflow = self._get_mlflow()
-        exp = mlflow.get_experiment_by_name(name)
+        exp = self._get_client().get_experiment_by_name(name)
         return Experiment(id=exp.experiment_id, name=exp.name, tags=exp.tags or {}) if exp else None
 
     def list_experiments(self) -> list[Experiment]:
-        mlflow = self._get_mlflow()
-        return [Experiment(id=e.experiment_id, name=e.name, tags=e.tags or {}) for e in mlflow.search_experiments()]
+        return [Experiment(id=e.experiment_id, name=e.name, tags=e.tags or {})
+                for e in self._get_client().search_experiments()]
 
     def start_run(self, experiment_id: str, name: str = "", tags: dict[str, str] | None = None) -> Run:
-        mlflow = self._get_mlflow()
-        run = mlflow.start_run(experiment_id=experiment_id, run_name=name, tags=tags)
+        run = self._get_client().create_run(experiment_id, run_name=name, tags=tags)
         return Run(id=run.info.run_id, experiment_id=experiment_id, name=name, status="running", tags=tags or {})
 
     def end_run(self, run_id: str, status: str = "completed") -> Run:
-        mlflow = self._get_mlflow()
-        # Bug fix: pass run_id so we end the intended run, not the active one.
-        mlflow.end_run(run_id=run_id, status="FINISHED" if status == "completed" else "FAILED")
+        # Fluent mlflow.end_run takes no run_id; use the client to terminate
+        # the specific run. Status map: completed -> FINISHED, else FAILED.
+        self._get_client().set_terminated(
+            run_id, status="FINISHED" if status == "completed" else "FAILED"
+        )
         return self.get_run(run_id)
 
     def get_run(self, run_id: str) -> Run | None:
-        mlflow = self._get_mlflow()
         try:
-            run = mlflow.get_run(run_id)
+            run = self._get_client().get_run(run_id)
             return Run(id=run.info.run_id, experiment_id=run.info.experiment_id, name=run.info.run_name or "",
                        status="completed" if run.info.status == "FINISHED" else run.info.status.lower(),
                        params=run.data.params, metrics=run.data.metrics, tags=run.data.tags)
@@ -72,29 +83,33 @@ class MLflowTracker:
             return None
 
     def list_runs(self, experiment_id: str | None = None) -> list[Run]:
-        mlflow = self._get_mlflow()
-        filter_str = f"experiment_id = '{experiment_id}'" if experiment_id else ""
-        runs = mlflow.search_runs(filter_string=filter_str) if filter_str else mlflow.search_runs()
+        client = self._get_client()
+        if experiment_id:
+            runs = client.search_runs(experiment_ids=[experiment_id])
+        else:
+            exp_ids = [e.experiment_id for e in client.search_experiments()]
+            runs = client.search_runs(experiment_ids=exp_ids) if exp_ids else []
         return [Run(id=r.info.run_id, experiment_id=r.info.experiment_id, name=r.info.run_name or "",
                     status="completed" if r.info.status == "FINISHED" else r.info.status.lower()) for r in runs]
 
     def log_param(self, run_id: str, key: str, value: Any) -> None:
-        mlflow = self._get_mlflow()
-        # Bug fix: pass run_id directly. The old `with start_run(run_id=...)`
-        # would re-activate and then end the run on every log call.
-        mlflow.log_param(key, value, run_id=run_id)
+        # Fluent log_param(run_id=None, param_key=None, param_value=None)
+        # binds positional (key, value) to the wrong slots; the client
+        # signature is unambiguous.
+        self._get_client().log_param(run_id, key, value)
 
     def log_params(self, run_id: str, params: dict[str, Any]) -> None:
-        mlflow = self._get_mlflow()
-        mlflow.log_params(params, run_id=run_id)
+        client = self._get_client()
+        for key, value in params.items():
+            client.log_param(run_id, key, value)
 
     def log_metric(self, run_id: str, key: str, value: float, step: int = 0) -> None:
-        mlflow = self._get_mlflow()
-        mlflow.log_metric(key, value, step=step, run_id=run_id)
+        self._get_client().log_metric(run_id, key, value, step=step)
 
     def log_metrics(self, run_id: str, metrics: dict[str, float], step: int = 0) -> None:
-        mlflow = self._get_mlflow()
-        mlflow.log_metrics(metrics, step=step, run_id=run_id)
+        client = self._get_client()
+        for key, value in metrics.items():
+            client.log_metric(run_id, key, value, step=step)
 
     def log_artifact(self, run_id: str, artifact_path: str) -> None:
         mlflow = self._get_mlflow()
