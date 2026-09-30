@@ -26,6 +26,19 @@ def _process_default_model_id() -> str:
     return os.environ.get("COMPANION_X_CHAT_MODEL", "us.anthropic.claude-sonnet-4-6")
 
 
+def _default_project() -> str:
+    """Project bound at chat-session creation (COMPANION_X_DEFAULT_PROJECT).
+
+    Devtools' binding chain requires every Session row to carry a project
+    (``session resolve_thread`` → ``validate_project``); chat-created rows
+    previously never set one, so ``devtools_list_dir`` et al. failed with
+    ``tool_execution_failed`` for every chat thread regardless of the
+    requested path. Empty/unset keeps the old unbound behavior (devtools
+    fails loudly rather than guessing a root).
+    """
+    return os.environ.get("COMPANION_X_DEFAULT_PROJECT", "").strip()
+
+
 class SessionSteeringMCP:
     """Resolve and settle steers through caller-bound native MCP only."""
     def bind(self, request: RuntimeInvocation) -> RuntimeInvocation:
@@ -59,6 +72,7 @@ class SessionSteeringMCP:
                 "agent_id": request.agent_id,
                 "model": request.model_id or _process_default_model_id(),
                 "memory_scope": request.memory_scope, "mode": request.memory_mode,
+                "project": _default_project(),
                 "envelope": self._identity(request),
             }, request,
         )

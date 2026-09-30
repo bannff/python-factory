@@ -35,7 +35,7 @@ from ..runtime.registry_contracts import AgentConfig
 CAN_INGEST_AGENT: AgentConfig = AgentConfig(
     id="can-ingest",
     name="CAN Ingest Agent",
-    model="openrouter",
+    model="",  # inherit COMPANION_X_CHAT_MODEL — bare "openrouter" broke spawns on non-OpenRouter deployments
     description=(
         "Parses MF4 captures, matches DBC candidates, and emits "
         "decoded CAN frames + observed CAN IDs."
@@ -59,7 +59,7 @@ CAN_INGEST_AGENT: AgentConfig = AgentConfig(
 CAN_PROFILER_AGENT: AgentConfig = AgentConfig(
     id="can-profiler",
     name="CAN Profiler Agent",
-    model="openrouter",
+    model="",  # inherit COMPANION_X_CHAT_MODEL — bare "openrouter" broke spawns on non-OpenRouter deployments
     description=(
         "Maps signal boundaries, temporal correlations, and delta "
         "thresholds from decoded CAN frames into a constraint schema."
@@ -82,7 +82,7 @@ CAN_PROFILER_AGENT: AgentConfig = AgentConfig(
 CAN_SYNTHESIZER_AGENT: AgentConfig = AgentConfig(
     id="can-synthesizer",
     name="CAN Synthesizer Agent",
-    model="openrouter",
+    model="",  # inherit COMPANION_X_CHAT_MODEL — bare "openrouter" broke spawns on non-OpenRouter deployments
     description=(
         "Generates synthetic CAN frames using the SDV adapter and "
         "injects failure modes (dropout, drift, stuck_value, spike); "
@@ -111,7 +111,7 @@ CAN_SYNTHESIZER_AGENT: AgentConfig = AgentConfig(
 CAN_TRAINER_AGENT: AgentConfig = AgentConfig(
     id="can-trainer",
     name="CAN Trainer Agent",
-    model="openrouter",
+    model="",  # inherit COMPANION_X_CHAT_MODEL — bare "openrouter" broke spawns on non-OpenRouter deployments
     description=(
         "Trains time-series models (lightgbm | lstm | tcn | patchtst) "
         "and evaluates them against the CAN rubric."
@@ -136,7 +136,7 @@ CAN_TRAINER_AGENT: AgentConfig = AgentConfig(
 CAN_GAN_LOOP_AGENT: AgentConfig = AgentConfig(
     id="can-gan-loop",
     name="CAN GAN Loop Agent",
-    model="openrouter",
+    model="",  # inherit COMPANION_X_CHAT_MODEL — bare "openrouter" broke spawns on non-OpenRouter deployments
     description=(
         "Closed-loop adversarial CAN synthesis — trains LightGBM + LSTM + TCN "
         "each iteration, compares architectures, tracks which benefits most "

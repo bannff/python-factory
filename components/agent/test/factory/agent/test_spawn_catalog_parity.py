@@ -59,3 +59,25 @@ def test_developer_persona_has_exact_devtools_scope() -> None:
         "devtools_write_file", "devtools_edit_file", "devtools_run_command",
         "devtools_cancel_command", "devtools_git_stage", "devtools_git_commit", "devtools_git_push",
     ]
+
+
+def test_generic_selector_personas_inherit_the_process_default_model() -> None:
+    """Regression (live 2026-09-30): personas whose ``model`` was the bare
+    ``openrouter`` selector hard-required OPENROUTER_MODEL, so every
+    spawn failed on deployments whose default provider is anything else
+    (e.g. the Casper openai-compat profile) — chat worked, spawns did
+    not. Personas meant to run on the deployment's default chat provider
+    must leave ``model`` empty so ``LangChainModelCache.effective_id``
+    inherits COMPANION_X_CHAT_MODEL. Personas pinned to a genuinely
+    special backend (e.g. ``ollama/foundation-sec``) keep their override
+    and are excluded here."""
+    from factory.agent.registry.unified import unified_personas
+
+    generic_backend_prefixes = ("openrouter", "openai-compat")
+    for config in unified_personas():
+        if config.model.startswith(generic_backend_prefixes):
+            raise AssertionError(
+                f"persona {config.id!r} pins generic selector "
+                f"model={config.model!r}; it must be empty to inherit "
+                "COMPANION_X_CHAT_MODEL"
+            )

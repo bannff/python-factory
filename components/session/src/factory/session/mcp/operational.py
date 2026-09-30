@@ -36,12 +36,13 @@ def register(mcp: Any, get_runtime: Callable[[], Any]) -> None:
     def session_ensure_thread(
         thread_id: str, title: str, agent_id: str, model: str,
         mode: str = "", crew_id: str = "", memory_scope: str = "",
+        project: str = "",
         envelope: dict[str, Any] | None = None,
     ) -> ToolResult[SessionOutput]:
         runtime = get_runtime().lifecycle
         return result(lambda: SessionOutput(session=runtime.ensure_thread(
             *identity(runtime, envelope), thread_id, title, agent_id, model,
-            crew_id, memory_scope, mode,
+            crew_id, memory_scope, mode, project,
         )))
     @typed_tool(mcp)
     @operational(input_model=BindProjectInput, output_model=SessionOutput)

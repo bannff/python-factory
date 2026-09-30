@@ -1,6 +1,7 @@
 """Preparation-time Agent and native Swarm materialization."""
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from .base import json_object
@@ -34,6 +35,14 @@ def _node_behavior(node: Any) -> Any:
 
     model = value("model", base.model if base else None)
     prompt = value("system_prompt", base.system_prompt if base else None)
+    if not model:
+        # Empty = inherit the process default (COMPANION_X_CHAT_MODEL), the
+        # same convention LangChainModelCache.effective_id applies at
+        # runtime; manifests still freeze a concrete id, so substitute the
+        # default here rather than rejecting deployment-inherited personas.
+        model = os.environ.get("COMPANION_X_CHAT_MODEL", "").strip() or (
+            "us.anthropic.claude-sonnet-4-6"
+        )
     if not model or prompt is None:
         raise ValueError(f"agent node {node.id!r} requires concrete model and prompt")
     inherited_context = dict(base.context) if base else {}

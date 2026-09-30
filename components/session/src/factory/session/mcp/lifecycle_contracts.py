@@ -67,6 +67,7 @@ class EnsureThreadInput(InputDTO):
     mode: str = Field(default="", max_length=16, pattern=r"^$|^(persistent|incognito|temporary)$")
     crew_id: str = Field(default="", max_length=128, pattern=r"^$|^[a-z0-9][a-z0-9_-]{0,127}$")
     memory_scope: str = Field(default="", max_length=64, pattern=r"^$|^[a-z0-9][a-z0-9_-]{0,63}$")
+    project: str = Field(default="", max_length=512)
     envelope: EnvelopeInput | None = None
 
 

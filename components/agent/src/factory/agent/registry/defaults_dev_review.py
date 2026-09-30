@@ -13,7 +13,11 @@ def _graph(graph_id: str, name: str) -> GraphConfig:
     return GraphConfig(
         id=graph_id, name=name, description=policy.rubric,
         nodes=[AgentNodeRef(
-            id="review", type="agent", agent_id=None, model="openrouter",
+            id="review", type="agent", agent_id=None,
+            # Empty = inherit COMPANION_X_CHAT_MODEL — bare "openrouter"
+            # broke non-OpenRouter deployments (same class as the persona
+            # spawn regression fixed 2026-09-30).
+            model="",
             system_prompt=policy.rubric, read_only=True,
             mcp_tool_allowlist=list(policy.allowed_tool_scope),
         )],

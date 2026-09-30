@@ -42,7 +42,13 @@ from ..runtime.registry_contracts import AgentConfig
 COMPANION_X_DEFAULT_AGENT: AgentConfig = AgentConfig(
     id="companion-x-default",
     name="Companion X (default)",
-    model="openrouter",
+    # Empty model = inherit the process default (COMPANION_X_CHAT_MODEL)
+    # via LangChainModelCache.effective_id. The docstring above says "no
+    # persona-level override", but the literal "openrouter" selector WAS
+    # an override: it hard-required OPENROUTER_MODEL and broke chat/spawn
+    # on deployments whose default provider is not OpenRouter (e.g. the
+    # Casper openai-compat profile).
+    model="",
     system_prompt=COMPANION_X_PROMPT,
     tools=[],
     skills=[

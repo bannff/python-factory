@@ -6,7 +6,7 @@ from ..runtime.registry_contracts import AgentConfig, GraphConfig
 DATASET_RESEARCHER = AgentConfig(
     id="dataset-researcher",
     name="Dataset Researcher",
-    model="openrouter",
+    model="",  # inherit COMPANION_X_CHAT_MODEL — bare "openrouter" broke spawns on non-OpenRouter deployments
     system_prompt=(
         "You are a read-only dataset research specialist. Follow the node's "
         "assigned skill and return only evidence-backed structured output. "

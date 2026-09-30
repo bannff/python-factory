@@ -97,6 +97,7 @@ class HealthOutput(StrictDTO):
     agents_loaded: int
     swarms_loaded: int
     graphs_loaded: int
+    squads_loaded: int
 
 
 class WorkflowStatusInput(StrictDTO):

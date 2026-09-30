@@ -77,6 +77,7 @@ class SessionLifecycle(
         self, tenant_id: str, owner_id: str, thread_id: str,
         title: str, agent_id: str, model: str,
         crew_id: str = "", memory_scope: str = "", mode: str = "",
+        project: str = "",
     ) -> SessionRecord:
         existing = self.store.get_by_thread(tenant_id, owner_id, thread_id)
         if existing is not None:
@@ -84,7 +85,7 @@ class SessionLifecycle(
         try:
             return self.create(
                 tenant_id, owner_id, title, agent_id, model, mode=mode,
-                crew_id=crew_id, memory_scope=memory_scope,
+                crew_id=crew_id, memory_scope=memory_scope, project=project,
                 origin="chat", thread_id=thread_id,
             )
         except Exception:

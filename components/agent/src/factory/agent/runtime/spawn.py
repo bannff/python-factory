@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable
 from typing import Any
 from uuid import uuid4
@@ -10,6 +11,8 @@ from factory.mcp_utils.interface import CapabilityScope, get_capability_scope
 
 from .adapters.capability_policy import delegation_allowed
 from .runtime_contracts import GraphEdge, GraphNode, GraphRequest, RuntimeInvocation
+
+LOG = logging.getLogger(__name__)
 
 _MAX_AGENTS = 32
 
@@ -43,8 +46,9 @@ class SpawnCoordinator:
             return self._result("subagent", result)
         except TimeoutError:
             return self._failure("subagent", "timeout", "execution_timeout")
-        except Exception:
-            return self._failure("subagent", "failed", "execution_failed")
+        except Exception as exc:
+            LOG.exception("subagent spawn failed")
+            return self._failure("subagent", "failed", f"execution_failed: {exc}")
         finally:
             await graph.close()
 
@@ -93,8 +97,9 @@ class SpawnCoordinator:
         try:
             result = await graph.invoke_graph(request)
             return self._result(kind, result)
-        except Exception:
-            return self._failure(kind, "failed", "execution_failed")
+        except Exception as exc:
+            LOG.exception("%s graph execution failed", kind)
+            return self._failure(kind, "failed", f"execution_failed: {exc}")
         finally:
             await graph.close()
 
@@ -154,6 +159,7 @@ class SpawnCoordinator:
     @staticmethod
     def _failure(kind: str, status: str, code: str) -> dict[str, Any]:
         return {"success": False, "kind": kind, "status": status,
+                "invocation_id": "", "output": "", "execution_order": [],
                 "error_code": code}
 
 

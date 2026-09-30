@@ -346,6 +346,49 @@ def test_ensure_thread_mode_round_trips_through_the_real_mcp_boundary(
         )
 
 
+def test_ensure_thread_project_round_trips_through_the_real_mcp_boundary(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    """Chat-created Sessions must be able to bind a devtools project at
+    creation: session steering passes COMPANION_X_DEFAULT_PROJECT through
+    ensure_thread; without the project the devtools binding chain rejects
+    every chat thread (``Session has no project binding``). The project
+    goes through the same canonical validator as create/bind (PathRefused
+    → typed rejection), idempotent re-ensure keeps the original binding,
+    and a bad project fails closed."""
+    allowed = tmp_path / "projects"
+    allowed.mkdir()
+    monkeypatch.setenv("COMPANION_X_PROJECT_ALLOWED_ROOTS", str(allowed))
+    root = tmp_path / "projects" / "repo"
+    root.mkdir()
+    (root / "pyproject.toml").write_text("[project]\nname='fixture'\n")
+    tools = _tools(tmp_path)
+    created = tools["session_ensure_thread"].fn(
+        thread_id="thread-project", title="Repo question",
+        agent_id="companion-x-default", model="openrouter",
+        project=str(root), envelope=_env(),
+    )
+    assert created.ok and created.data.session.project == str(root.resolve())
+    rebound = tools["session_ensure_thread"].fn(
+        thread_id="thread-project", title="Repo question",
+        agent_id="companion-x-default", model="openrouter",
+        envelope=_env(),
+    )
+    assert rebound.ok
+    assert rebound.data.session.session_id == created.data.session.session_id
+    # Real, existing directory OUTSIDE the allowed roots — the live-bug
+    # failure mode (a nonexistent path raises FileNotFoundError even
+    # earlier; see test_session_create_reports_the_real_error_for_a_refused_project_path).
+    outside = tmp_path / "outside-allowed-roots"
+    outside.mkdir()
+    rejected = tools["session_ensure_thread"].fn(
+        thread_id="thread-bad-project", title="x",
+        agent_id="companion-x-default", model="openrouter",
+        project=str(outside), envelope=_env(),
+    )
+    assert rejected.ok is False and rejected.error == "session_project_path_refused"
+
+
 def test_session_fork_round_trips_through_the_real_mcp_boundary(
     tmp_path: Path,
 ) -> None:

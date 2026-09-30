@@ -28,7 +28,12 @@ _DEVELOPER_TOOLS = [
 DEVELOPER_AGENT = AgentConfig(
     id="developer",
     name="Developer",
-    model="openrouter",
+    # Empty model = inherit the process default (COMPANION_X_CHAT_MODEL)
+    # via LangChainModelCache.effective_id. The prior "openrouter" bare
+    # selector hard-required OPENROUTER_MODEL, so every spawn of this
+    # persona failed on deployments using another provider (e.g. the
+    # Casper openai-compat profile) even though chat itself worked.
+    model="",
     system_prompt=_DEVELOPER_PROMPT,
     tools=_DEVELOPER_TOOLS,
     exact_tools=True,

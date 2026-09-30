@@ -21,7 +21,7 @@ from ..runtime.registry_contracts import AgentConfig
 CAN_GAN_LOOP_AGENT: AgentConfig = AgentConfig(
     id="can-gan-loop",
     name="CAN GAN Loop Agent",
-    model="openrouter",
+    model="",  # inherit COMPANION_X_CHAT_MODEL — bare "openrouter" broke spawns on non-OpenRouter deployments
     description=(
         "Closed-loop adversarial CAN synthesis — trains LightGBM + LSTM + TCN "
         "each iteration, compares architectures, tracks which benefits most "

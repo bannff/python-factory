@@ -17,7 +17,7 @@ ARTIFACT_CHAT_TOOLS = [
 ARTIFACT_CURATOR_AGENT = AgentConfig(
     id="artifact-curator",
     name="Artifact Curator",
-    model="openrouter",
+    model="",  # inherit COMPANION_X_CHAT_MODEL — bare "openrouter" broke spawns on non-OpenRouter deployments
     system_prompt=(
         COMPANION_X_PROMPT
         + "\n\nYou organize and iterate versioned artifacts. Use only the supplied "

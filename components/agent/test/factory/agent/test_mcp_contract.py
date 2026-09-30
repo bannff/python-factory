@@ -107,3 +107,17 @@ class TestHealthCheck:
         await agent.initialize()
         result = agent.health_check()
         assert "status" in result
+
+    @pytest.mark.asyncio
+    async def test_health_dict_fits_strict_output_contract(self, temp_config_dir) -> None:
+        """Regression (live 2026-09-30): SuperAgent.health_check() gained
+        ``squads_loaded`` (squads feature port) while the strict
+        HealthOutput contract (extra="forbid") did not — every
+        agent_health_check call flattened to tool_execution_failed. The
+        dict the runtime produces must always validate against the
+        contract the MCP boundary enforces."""
+        from factory.agent.mcp.contracts.discovery import HealthOutput
+
+        agent = SuperAgent(config_dir=str(temp_config_dir))
+        await agent.initialize()
+        HealthOutput.model_validate(agent.health_check())
