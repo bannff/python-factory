@@ -33,7 +33,7 @@ _EXPECTED_IDENTITIES = {
         "lightgbm",
         "4.7.0",
         "mlflow",
-        "3.14.0",
+        "3.16.0",
         "mlflow.lightgbm",
         "mlflow-lightgbm",
         "lightgbm",

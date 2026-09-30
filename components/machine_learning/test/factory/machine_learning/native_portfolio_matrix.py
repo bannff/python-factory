@@ -64,7 +64,7 @@ def _mlx_evidence(name: str) -> PortfolioEvidence:
 
 PORTFOLIO = (
     NativePortfolioCase(
-        "lightgbm", "lightgbm", "4.7.0", "mlflow", "3.14.0",
+        "lightgbm", "lightgbm", "4.7.0", "mlflow", "3.16.0",
         "mlflow.lightgbm", "mlflow-lightgbm", "lightgbm",
         "local-lightgbm-isolated-v1", PortfolioEvidence(
             _node("test_lightgbm_passport_subprocess.py", "test_candidate_promotes_then_cold_predicts_and_tamper_fails_before_scoring"),
