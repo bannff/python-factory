@@ -5,7 +5,20 @@ runs at a time. Provision auto-terminates the previous one.
 """
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
+
+
+class DeviceTarget(BaseModel):
+    """Device being approximated; Docker execution remains Linux."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    family: Literal["iphone", "ipad", "android_phone", "android_tablet", "other"]
+    model: str | None = None
+    os_version: str | None = None
+    fidelity: Literal["linux_proxy"] = "linux_proxy"
 
 
 class SandboxProfile(BaseModel):
@@ -25,6 +38,12 @@ class SandboxProfile(BaseModel):
     replace_existing: bool = True
     shell: str = "/bin/sh"
     env_vars: dict[str, str] = Field(default_factory=dict)
+    # Docker launch envelope. Limits bound the container; they do not emulate
+    # a phone's SoC, operating system, radios, or power behavior.
+    platform: Literal["linux/amd64", "linux/arm64"] | None = None
+    cpus: float | None = Field(default=None, gt=0)
+    memory_mb: int | None = Field(default=None, gt=0)
+    device_target: DeviceTarget | None = None
     # Commands run once, in order, right after provision (e.g. install tooling).
     # Best-effort: a non-zero exit is logged, not fatal. Never put secrets here.
     setup_commands: list[str] = Field(default_factory=list)

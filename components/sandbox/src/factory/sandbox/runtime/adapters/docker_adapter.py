@@ -65,6 +65,12 @@ class DockerAdapter:
 
         cmd = ["docker", "run", "-d", "--name", container_name,
                "--label", "factory.sandbox=true"]
+        if platform := config.get("platform"):
+            cmd.extend(["--platform", platform])
+        if cpus := config.get("cpus"):
+            cmd.extend(["--cpus", str(cpus)])
+        if memory_mb := config.get("memory_mb"):
+            cmd.extend(["--memory", f"{memory_mb}m"])
         if policy_id := config.get("env_vars", {}).get("MCP_POLICY_ID"):
             cmd.extend(["--label", f"factory.workload={policy_id}"])
         cmd.extend(build_mount_args(config))

@@ -34,6 +34,8 @@ def build_provision_context(
             "entrypoint": p.entrypoint, "container_name": p.container_name,
             "replace_existing": p.replace_existing,
             "env_vars": p.env_vars,
+            "platform": p.platform, "cpus": p.cpus,
+            "memory_mb": p.memory_mb,
         })
         cfg.instance_type = "docker"
         setup_commands = list(p.setup_commands)
@@ -44,6 +46,11 @@ def build_provision_context(
             "health_check_url": p.health_check_url,
             "container_name": p.container_name,
             "shell": p.shell,
+            "platform": p.platform, "cpus": p.cpus,
+            "memory_mb": p.memory_mb,
+            "device_target": (
+                p.device_target.model_dump() if p.device_target else None
+            ),
         })
     elif cfg.ami_id:
         metadata["ami_id"] = cfg.ami_id

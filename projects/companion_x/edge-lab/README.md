@@ -24,6 +24,16 @@ replace an existing `edge-lab` container. The Sandbox runtime currently
 keeps its environment registry in memory, so restart the MCP server only
 after terminating the container or recover it by Docker name.
 
+The existing Sandbox profile registry is the source of device configuration.
+This profile requests a Linux ARM64 container and records `iphone` as the
+intended device family with `linux_proxy` fidelity. The generic profile fields
+`cpus` and `memory_mb` can apply a resource envelope once a specific device
+model and limits are chosen. The profile does not turn Docker into iOS or
+reproduce Apple silicon, the Neural Engine, radios, energy use, or thermal
+behavior. Reprovision after changing the YAML; an already running container
+keeps its original Docker settings. Use `docker inspect` to record the actual
+image, platform, CPU quota, and memory limit in each experiment's evidence.
+
 These instructions target the Companion-X MCP server running directly on the
 host. The separate Companion-X Compose security overlay selects LocalStack
 and does not mount this profile directory; it does not use this setup.

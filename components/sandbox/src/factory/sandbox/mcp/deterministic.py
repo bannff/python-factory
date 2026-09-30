@@ -40,6 +40,10 @@ class ProfileInfo(StrictModel):
     image: str
     ports: dict[str, str]  # host:container, mirrors SandboxProfile.ports
     health_check_url: str | None = None
+    platform: str | None = None
+    cpus: float | None = None
+    memory_mb: int | None = None
+    device_target: dict[str, str | None] | None = None
 
 
 class ProfilesResult(StrictModel):
@@ -134,6 +138,11 @@ def register(mcp: Any, runtime: "SandboxRuntime") -> None:
             profiles[name] = ProfileInfo(
                 image=profile.image, ports=profile.ports,
                 health_check_url=profile.health_check_url,
+                platform=profile.platform, cpus=profile.cpus,
+                memory_mb=profile.memory_mb,
+                device_target=(
+                    profile.device_target.model_dump() if profile.device_target else None
+                ),
             )
         return ok(ProfilesResult(profiles=profiles))
 
