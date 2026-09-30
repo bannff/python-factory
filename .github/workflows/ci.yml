@@ -230,8 +230,17 @@ jobs:
       - name: Install core dependencies
         run: uv lock --check && uv sync --frozen
       - name: Run machine_learning property/contract tests
+        # The -k selector plus explicit --ignore of the four modules whose
+        # tests spawn real lightgbm/ncps subprocesses (ml-group deps, absent
+        # from the core venv by design). Everything else heavy self-skips via
+        # pytest.importorskip on ubuntu; a new heavy module in the selector
+        # fails collection loudly — fail-closed by design.
         run: |
           uv run pytest components/machine_learning/test -q \
+            --ignore=components/machine_learning/test/factory/machine_learning/test_can_inference_contract.py \
+            --ignore=components/machine_learning/test/factory/machine_learning/test_transfer_learning_durability.py \
+            --ignore=components/machine_learning/test/factory/machine_learning/test_inference_registry.py \
+            --ignore=components/machine_learning/test/factory/machine_learning/test_openmp_runtime_contract.py \
             -k "properties or property or contract or registry or split or curriculum or projection"
       - name: Pyright ratchet (HEAD errors must not exceed BASE)
         # Same ratchet philosophy as the guardian's file_size_mode='ratchet':
