@@ -29,7 +29,7 @@ SECURITY_AGENTS: list[dict] = [
             "General-purpose security analyst. Runs threat models, code "
             "scans, and recon. Has shell + code execution (HITL-gated)."
         ),
-        "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "model": "",
         "system_prompt": (
             "You are a security analyst agent for the Companion-X platform.\n\n"
             "You have MCP brick tools (security.analyze, security.threat_model, "
@@ -51,7 +51,7 @@ SECURITY_AGENTS: list[dict] = [
             "security outputs. Creates eval suites, adds test cases, "
             "and scores results."
         ),
-        "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "model": "",
         "system_prompt": (
             "You are an evaluation agent. Use the evals brick MCP "
             "tools to create evaluation suites, add test cases, and "
@@ -67,7 +67,7 @@ SECURITY_AGENTS: list[dict] = [
             "Agent that checks applications against security policies "
             "and compliance frameworks (SOC2, HIPAA, PCI-DSS)."
         ),
-        "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "model": "",
         "system_prompt": (
             "You are a compliance checking agent. Given an "
             "application's security posture and configuration, "
