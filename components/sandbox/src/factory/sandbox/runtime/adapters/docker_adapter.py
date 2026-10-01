@@ -67,7 +67,7 @@ class DockerAdapter(DockerPeerNetworkMixin, DockerProvisionMixin, DockerFileOpsM
         peer_network = self._peer_network_for_container(env_id)
         _run(["docker", "rm", "-f", env_id], timeout=30)
         if peer_network is not None:
-            self.remove_empty_owned_peer_network(peer_network["network_name"])
+            self._remove_empty_owned_peer_network(peer_network["network_name"])
         if env_id in self._containers:
             self._containers[env_id]["status"] = "terminated"
         logger.info("Terminated container %s", env_id)
