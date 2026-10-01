@@ -3,7 +3,13 @@
 **Updated:** 2026-10-01 (America/Los_Angeles)
 **Working checkout:** `/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/python-factory-edge-model-catalog`
 **Branch:** `chore/python-factory-edge-model-catalog`
-**Remote state:** PR [#88](https://github.com/bannff/python-factory/pull/88) is open; merge is pending required checks. See Linear ENG-173 for current tracking.
+**Remote state:** PR [#88](https://github.com/bannff/python-factory/pull/88) **MERGED** (squash, 2026-10-01T16:18:13Z) as `a2cbdafb` on `main`. All required checks green on `b3ce473c` (analyze, checks/Guardian ratchet, core-tests, can-tests, frontend-tests, ml-static, GitGuardian). See Linear ENG-173 for current tracking.
+
+### Publication record (2026-10-01)
+
+- Pushed `b3ce473c` — refactor: split oversized sandbox/dataset/evals modules under the Guardian 200-line ratchet (65 files, +4567/−4151). Dissolved `test_secret_mounts.py` (930), `test_peer_network.py` (531), `test_uds_mount.py` (513) into cohesive sibling suites with shared helper modules; completed the interrupted sandbox source splits (DockerAdapter → provision/peer-network/file-ops mixins; orphan sweep → discovery/recheck/sweeper; runtime → file-ops/inventory mixins); fixed Evals CI failures (`server.call_tool` invocation, `importorskip` for optional openevals/agentevals SDKs, no real Bedrock client construction). No suppressions; Guardian ratchet 0 violations.
+- Local verification at push: Sandbox 359 passed; Dataset 661 passed / 54 skipped (11 pre-existing `cantools`-env failures in the CAN lane, untouched by this PR; the can-tests CI lane passes); Evals 408 passed / 8 skipped; Companion-X 496 passed / 25 subtests (2 launcher-test failures were an ambient `MCP_LOCAL_AUTH=false` leaking from the operator shell, not code).
+- Auto-merge (squash) enabled by `bannff`; completed after checks passed. Feature branch may be deleted; the checkout remains as an experiment workspace.
 
 ## Current program state
 
