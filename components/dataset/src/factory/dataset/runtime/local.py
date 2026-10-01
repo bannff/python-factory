@@ -3,15 +3,9 @@
 from __future__ import annotations
 
 import json
-import os
 import re
-import subprocess
-import sys
 import uuid
 from pathlib import Path
-
-import factory.dataset
-
 from .artifact_utils import require_artifact_path, verify_artifact
 from .atomic_io import read_bytes_no_follow
 from .contracts import (
@@ -26,6 +20,7 @@ from .helpers import _file_uri, _now, _sha256  # noqa: F401 — backward-compat 
 # Backward-compat re-export — canonical home is materializer.py
 from .materializer import LocalDatasetMaterializer  # noqa: F401
 from .recipe import path_from_uri
+from .local_executor import LocalDatasetExecutor
 
 _JOB_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}\Z")
 
@@ -184,25 +179,3 @@ def _request_digest(request: DatasetGenerationRequest) -> str:
     return _sha256(request_content)
 
 
-class LocalDatasetExecutor:
-    """Detached subprocess dispatcher for the local durable worker."""
-
-    def __init__(self, root: Path) -> None:
-        self.root = root
-
-    def submit(self, job_id: str) -> None:
-        src_dir = Path(factory.dataset.__file__).parent.parent.parent
-        env = os.environ.copy()
-        env["PYTHONPATH"] = os.pathsep.join(
-            [str(src_dir)] + [p for p in env.get("PYTHONPATH", "").split(os.pathsep) if p]
-        )
-        log_path = self.root / "jobs" / f"{job_id}.log"
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(log_path, "a", buffering=1) as log_file:
-            subprocess.Popen(
-                [sys.executable, "-m", "factory.dataset", str(self.root), job_id],
-                stdout=log_file,
-                stderr=log_file,
-                start_new_session=True,
-                env=env,
-            )
