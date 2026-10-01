@@ -1,0 +1,1352 @@
+{
+  "artifacts_sha256": {
+    "fault-corpus-spec.md": "8cfd4f1c3436c0749fcde412e37e094cbb415a0e62e5442816106c329728b19c",
+    "fault-corpus-v1.json": "d910bbdebfe5dc05c2badda50e0d787f922420453f00f629f4157e584618a189",
+    "fault_corpus.py": "f930d36c828c19b32a686cfb2afa136da9f593e3433e9b50931bc035123f9d6d",
+    "policy-v1.json": "3ff8a7658580aea0dd47ccf3f6ac2da7cee7c637d8766415d6af0875372893d2",
+    "protocol.md": "05de14d83f2968d0f74afa2fdfde957d737891bf9e7d1522c14fbcc2f70e1ff4",
+    "records.py": "9df3787e55c5cd54fa239f2e4c73427568d26f63fd65ebb8ecb562e3d892ee0e",
+    "reducer.py": "c8dee724fd8787c67e9ea09643928c4d6663d8a7b4e2f61b56c8d479253e7a57",
+    "results.md": "541169f51b233f2af11f6cfabdbca87615cf82c3747538c6c0c6c09d1e5e2489",
+    "run_baseline.py": "3e5ef6ae9a88a423b08422740f15f201b5e66f83230d52bdb32d3dbc696e3b7a"
+  },
+  "cases": [
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-local-eligible-p0",
+        "canonical_state_bytes": 1374,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-local-eligible-p0",
+            "reason": "winner",
+            "task_id": "task-local-eligible"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-local-eligible-p0",
+            "task_id": "task-local-eligible"
+          }
+        ],
+        "selected_peer": "local-eligible-p0",
+        "state": "completed",
+        "state_digest": "d94eceedb4a7439c56f2cf08d9da184c2f327a528de5ea1b0fd081527a34dba5",
+        "task_revision": 0
+      },
+      "case_id": "local-eligible",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-local-eligible-p0",
+        "canonical_state_bytes": 1374,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-local-eligible-p0",
+            "reason": "winner",
+            "task_id": "task-local-eligible"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-local-eligible-p0",
+            "task_id": "task-local-eligible"
+          }
+        ],
+        "selected_peer": "local-eligible-p0",
+        "state": "completed",
+        "state_digest": "d94eceedb4a7439c56f2cf08d9da184c2f327a528de5ea1b0fd081527a34dba5",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.2051,
+        "p95_ms": 0.2216
+      },
+      "replay_equal": true,
+      "replay_orders": 5040,
+      "split": "development",
+      "topology": 1,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 931,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "99d51c28f8833d5214c0891f9317ba46a3feb0d3a63247b4f7e9f350d451367d",
+        "task_revision": 0
+      },
+      "case_id": "remote-eligible",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-remote-eligible-p1",
+        "canonical_state_bytes": 1383,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-remote-eligible-p1",
+            "reason": "winner",
+            "task_id": "task-remote-eligible"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-remote-eligible-p1",
+            "task_id": "task-remote-eligible"
+          }
+        ],
+        "selected_peer": "remote-eligible-p1",
+        "state": "completed",
+        "state_digest": "8f2b307f1f5e82ae80d8e1d68022acb09cd045ee28087067dd4b4991dcda3bb8",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.2094,
+        "p95_ms": 0.2365
+      },
+      "replay_equal": true,
+      "replay_orders": 5040,
+      "split": "development",
+      "topology": 2,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 934,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "b71eb1156bf7fe76d152f9f0029b455a481f8407ef75a10fda403f9c40fbc623",
+        "task_revision": 0
+      },
+      "case_id": "stale-capability",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 1189,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-stale-capability-p1",
+            "reason": "expired_capability",
+            "task_id": "task-stale-capability"
+          }
+        ],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "43ee982681a67ba14b039f83c3ba13bd879769912a6b12aeaf437a74b2051e60",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.1422,
+        "p95_ms": 0.165
+      },
+      "replay_equal": true,
+      "replay_orders": 720,
+      "split": "development",
+      "topology": 2,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 940,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "25229e418b13dcade258f962ebf13e1c27a356f5074038936c3f44e7bcd1bbc5",
+        "task_revision": 0
+      },
+      "case_id": "duplicate-delivery",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-duplicate-delivery-p1",
+        "canonical_state_bytes": 1410,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-duplicate-delivery-p1",
+            "reason": "winner",
+            "task_id": "task-duplicate-delivery"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-duplicate-delivery-p1",
+            "task_id": "task-duplicate-delivery"
+          }
+        ],
+        "selected_peer": "duplicate-delivery-p1",
+        "state": "completed",
+        "state_digest": "41c23fa950d9da0eed2ba2c97587c9486997db54ab651508a8ca7562ffa29605",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.2639,
+        "p95_ms": 0.2895
+      },
+      "replay_equal": true,
+      "replay_orders": 32,
+      "split": "development",
+      "topology": 2,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-claim-race-p0",
+        "canonical_state_bytes": 1338,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-claim-race-p0",
+            "reason": "winner",
+            "task_id": "task-claim-race"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-claim-race-p0",
+            "task_id": "task-claim-race"
+          }
+        ],
+        "selected_peer": "claim-race-p0",
+        "state": "completed",
+        "state_digest": "34083c19a3fcfb1f242de4df3be70b1d5b93c11f843d52e726109202cfc1851e",
+        "task_revision": 0
+      },
+      "case_id": "claim-race",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-claim-race-p0",
+        "canonical_state_bytes": 1569,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-claim-race-p0",
+            "reason": "winner",
+            "task_id": "task-claim-race"
+          },
+          {
+            "claim_id": "claim-claim-race-p1",
+            "reason": "loser",
+            "task_id": "task-claim-race"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-claim-race-p0",
+            "task_id": "task-claim-race"
+          }
+        ],
+        "selected_peer": "claim-race-p0",
+        "state": "completed",
+        "state_digest": "5208d7dfaec8540336f43f86f22d8fbcb35d460b0ba9f85e586fe5a73c3419d8",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.299,
+        "p95_ms": 0.3322
+      },
+      "replay_equal": true,
+      "replay_orders": 32,
+      "split": "development",
+      "topology": 2,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 925,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "0091a84e75bdad4f1c79fafb57c02c66fd0976596f36d9ef8c054e3a40f81e33",
+        "task_revision": 0
+      },
+      "case_id": "expired-claim",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 1337,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-expired-claim-p1",
+            "reason": "expired_claim",
+            "task_id": "task-expired-claim"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "losing_claim",
+            "result_id": "result-expired-claim-p1",
+            "task_id": "task-expired-claim"
+          }
+        ],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "096113ba7ddbd735f2c72a5a1e12246489a3bf960205570ad89051768b3a66a0",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.1722,
+        "p95_ms": 0.1922
+      },
+      "replay_equal": true,
+      "replay_orders": 5040,
+      "split": "development",
+      "topology": 2,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 988,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "7a7f16053dadfe344060b54c284b9b8e6323b27f98d42c69aabadff69ce86f9c",
+        "task_revision": 0
+      },
+      "case_id": "peer-loss",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-peer-loss-p2",
+        "canonical_state_bytes": 1647,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-peer-loss-p1",
+            "reason": "unauthorized_device",
+            "task_id": "task-peer-loss"
+          },
+          {
+            "claim_id": "claim-peer-loss-p2",
+            "reason": "winner",
+            "task_id": "task-peer-loss"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-peer-loss-p2",
+            "task_id": "task-peer-loss"
+          }
+        ],
+        "selected_peer": "peer-loss-p2",
+        "state": "completed",
+        "state_digest": "8128cf6bf854a6af21396f54719cb7f0b8c0eee30e670d0a7c21346efeb65325",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.272,
+        "p95_ms": 0.296
+      },
+      "replay_equal": true,
+      "replay_orders": 32,
+      "split": "development",
+      "topology": 4,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 1069,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "d77c4ea8ceca4722534b214f4607a897f6ca2d999d73ba8fd6a56fd25d5e489a",
+        "task_revision": 0
+      },
+      "case_id": "peer-rejoin",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-peer-rejoin-p2",
+        "canonical_state_bytes": 1743,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-peer-rejoin-p1",
+            "reason": "expired_capability",
+            "task_id": "task-peer-rejoin"
+          },
+          {
+            "claim_id": "claim-peer-rejoin-p2",
+            "reason": "winner",
+            "task_id": "task-peer-rejoin"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-peer-rejoin-p2",
+            "task_id": "task-peer-rejoin"
+          }
+        ],
+        "selected_peer": "peer-rejoin-p2",
+        "state": "completed",
+        "state_digest": "0cff9ce3ba34887bd71483fd703acd9335ac9e4655ff598d745401e2dfe0ddd3",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.3571,
+        "p95_ms": 0.3797
+      },
+      "replay_equal": true,
+      "replay_orders": 32,
+      "split": "development",
+      "topology": 4,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 925,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "f0011a0f81b18b39b195603459b2da7a7b6167a70d59be1cd9fd56c534f138b5",
+        "task_revision": 0
+      },
+      "case_id": "cross-session",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 1344,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-cross-session-p1",
+            "reason": "winner",
+            "task_id": "task-cross-session"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "unknown_claim",
+            "result_id": "result-cross-session-p1",
+            "task_id": "task-cross-session"
+          }
+        ],
+        "selected_peer": "cross-session-p1",
+        "state": "active",
+        "state_digest": "fa57a3e96dbb8d57198f14961338ed428e2c15e021406da22e6d8f78d8779de3",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.1671,
+        "p95_ms": 0.1753
+      },
+      "replay_equal": true,
+      "replay_orders": 5040,
+      "split": "development",
+      "topology": 4,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 934,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "5560269eb4c06f29c02b124b2d72dc382bc14fb85cfb2b39f334e90031b013cc",
+        "task_revision": 0
+      },
+      "case_id": "same-id-conflict",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": null,
+        "claim_decisions": [],
+        "error": "same_id_different_payload",
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "integrity_error",
+        "state_digest": null,
+        "task_revision": null
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.0584,
+        "p95_ms": 0.0611
+      },
+      "replay_equal": true,
+      "replay_orders": 5040,
+      "split": "development",
+      "topology": 4,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 935,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "cc931108ed7fa5ae45444198d69304e5afbeb9847e9bdfb2ecf6917341efbab6",
+        "task_revision": 0
+      },
+      "case_id": "post-expiry-replay",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-post-expiry-replay-p1",
+        "canonical_state_bytes": 1410,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-post-expiry-replay-p1",
+            "reason": "winner",
+            "task_id": "task-post-expiry-replay"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-post-expiry-replay-p1",
+            "task_id": "task-post-expiry-replay"
+          }
+        ],
+        "selected_peer": "post-expiry-replay-p1",
+        "state": "completed",
+        "state_digest": "0e84085b721ded43ca29c9e060f4e88f9cc11f47ffb873ef120cb02e2f8fdc34",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.1989,
+        "p95_ms": 0.215
+      },
+      "replay_equal": true,
+      "replay_orders": 5040,
+      "split": "development",
+      "topology": 2,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 1018,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "17a1d2b6ac220057fb1bc87171ff707c333650f8fa53394eeb6ee6bce80360e0",
+        "task_revision": 1
+      },
+      "case_id": "reclaim-after-expiry",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-reclaim-after-expiry-p2",
+        "canonical_state_bytes": 1765,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-reclaim-after-expiry-p1",
+            "reason": "stale_task_revision",
+            "task_id": "task-reclaim-after-expiry"
+          },
+          {
+            "claim_id": "claim-reclaim-after-expiry-p2",
+            "reason": "winner",
+            "task_id": "task-reclaim-after-expiry"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-reclaim-after-expiry-p2",
+            "task_id": "task-reclaim-after-expiry"
+          }
+        ],
+        "selected_peer": "reclaim-after-expiry-p2",
+        "state": "completed",
+        "state_digest": "1d32f899278d4637e2f85318eaa7cc6eb560a8c3cd3e4f48741c41dacaba4da7",
+        "task_revision": 1
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.2731,
+        "p95_ms": 0.2932
+      },
+      "replay_equal": true,
+      "replay_orders": 32,
+      "split": "development",
+      "topology": 4,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 985,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "44d8f1c33c6c777045d989b17e3503418d330a8dd1d255dbd40ea1da32ef22cd",
+        "task_revision": 0
+      },
+      "case_id": "capability-unavailable-transition",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-capability-unavailable-transition-p2",
+        "canonical_state_bytes": 1917,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-capability-unavailable-transition-p1",
+            "reason": "unavailable_capability",
+            "task_id": "task-capability-unavailable-transition"
+          },
+          {
+            "claim_id": "claim-capability-unavailable-transition-p2",
+            "reason": "winner",
+            "task_id": "task-capability-unavailable-transition"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-capability-unavailable-transition-p2",
+            "task_id": "task-capability-unavailable-transition"
+          }
+        ],
+        "selected_peer": "capability-unavailable-transition-p2",
+        "state": "completed",
+        "state_digest": "08aaa8f8617eaddccc3ae8ea24d411dadbf11142afe33450f28bd8203971e55f",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.3172,
+        "p95_ms": 0.3463
+      },
+      "replay_equal": true,
+      "replay_orders": 32,
+      "split": "development",
+      "topology": 4,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 967,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "30931f87d5a55b544943c61be5122c056d16640ec9b49dbe24e6570e98ac9680",
+        "task_revision": 0
+      },
+      "case_id": "claim-withdrawal-transition",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-claim-withdrawal-transition-p2",
+        "canonical_state_bytes": 1833,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-claim-withdrawal-transition-p1",
+            "reason": "withdrawn",
+            "task_id": "task-claim-withdrawal-transition"
+          },
+          {
+            "claim_id": "claim-claim-withdrawal-transition-p2",
+            "reason": "winner",
+            "task_id": "task-claim-withdrawal-transition"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-claim-withdrawal-transition-p2",
+            "task_id": "task-claim-withdrawal-transition"
+          }
+        ],
+        "selected_peer": "claim-withdrawal-transition-p2",
+        "state": "completed",
+        "state_digest": "a963a0d88b870b00b2e38894a21929cf7d1dc658015ed8710f967fee22e1a714",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.2736,
+        "p95_ms": 0.2982
+      },
+      "replay_equal": true,
+      "replay_orders": 32,
+      "split": "development",
+      "topology": 4,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 1045,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "783269452bb52f0d780dd4d3a3da8b8af1c07591c8096c0afb266533c4019c92",
+        "task_revision": 1
+      },
+      "case_id": "late-completion-revision-race",
+      "competing_completed_result_proposals": 1,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-late-completion-revision-race-p1",
+        "canonical_state_bytes": 2073,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-late-completion-revision-race-p1",
+            "reason": "winner",
+            "task_id": "task-late-completion-revision-race"
+          },
+          {
+            "claim_id": "claim-late-completion-revision-race-p2",
+            "reason": "stale_task_revision",
+            "task_id": "task-late-completion-revision-race"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-late-completion-revision-race-p1",
+            "task_id": "task-late-completion-revision-race"
+          },
+          {
+            "reason": "stale_task_revision",
+            "result_id": "result-late-completion-revision-race-p2",
+            "task_id": "task-late-completion-revision-race"
+          }
+        ],
+        "selected_peer": "late-completion-revision-race-p1",
+        "state": "completed",
+        "state_digest": "857b1c8729342882b6d1c21343abfe7310415746cdcd97bbb57ead542e91e1e5",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.3215,
+        "p95_ms": 0.3448
+      },
+      "replay_equal": true,
+      "replay_orders": 32,
+      "split": "development",
+      "topology": 4,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 1123,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "6453dce3e0d72521e157afdc7e78948d4d07a28dd6d09f816c0941db8fa8bf00",
+        "task_revision": 0
+      },
+      "case_id": "membership-interrupted-rejoin",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-membership-interrupted-rejoin-p1",
+        "canonical_state_bytes": 1879,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-membership-interrupted-rejoin-p1",
+            "reason": "membership_interrupted",
+            "task_id": "task-membership-interrupted-rejoin"
+          },
+          {
+            "claim_id": "claim-membership-interrupted-rejoin-p1-fresh",
+            "reason": "winner",
+            "task_id": "task-membership-interrupted-rejoin"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-membership-interrupted-rejoin-p1",
+            "task_id": "task-membership-interrupted-rejoin"
+          }
+        ],
+        "selected_peer": "membership-interrupted-rejoin-p1",
+        "state": "completed",
+        "state_digest": "2a08792f9c2ad35eeab409a769e20fee7d91caa3170e8f80d742fc4a0d20e3a3",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.3053,
+        "p95_ms": 0.34
+      },
+      "replay_equal": true,
+      "replay_orders": 32,
+      "split": "development",
+      "topology": 4,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 953,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "90d5578d81c7bad8bbca7dbc78b4c1c94334ad4354e901c5a8b57a5dda933abf",
+        "task_revision": 0
+      },
+      "case_id": "delayed-result-recording",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-delayed-result-recording-p1",
+        "canonical_state_bytes": 1464,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-delayed-result-recording-p1",
+            "reason": "winner",
+            "task_id": "task-delayed-result-recording"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-delayed-result-recording-p1",
+            "task_id": "task-delayed-result-recording"
+          }
+        ],
+        "selected_peer": "delayed-result-recording-p1",
+        "state": "completed",
+        "state_digest": "f26b25f04988cc51545523f1fb6eef8fcf9589f908cb1b72caaf160f7d8bf5b4",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.2011,
+        "p95_ms": 0.2154
+      },
+      "replay_equal": true,
+      "replay_orders": 5040,
+      "split": "development",
+      "topology": 2,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 955,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "13dcd9630d08e55bd6466b8955fc54e77c537163ab5027cc7b08ab7ef54d0490",
+        "task_revision": 0
+      },
+      "case_id": "delayed-claim-recording",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-delayed-claim-recording-p1",
+        "canonical_state_bytes": 1455,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-delayed-claim-recording-p1",
+            "reason": "winner",
+            "task_id": "task-delayed-claim-recording"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-delayed-claim-recording-p1",
+            "task_id": "task-delayed-claim-recording"
+          }
+        ],
+        "selected_peer": "delayed-claim-recording-p1",
+        "state": "completed",
+        "state_digest": "bcbd7c2f5429bffe8e16493bba0bade855ab72fe454a0f4e8833960322302319",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.2166,
+        "p95_ms": 0.2264
+      },
+      "replay_equal": true,
+      "replay_orders": 5040,
+      "split": "development",
+      "topology": 2,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 979,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "0679183f8f9f5380375eafff6fd63c05ddb4644e9a5957ed3f4fe849b3ed5f27",
+        "task_revision": 0
+      },
+      "case_id": "result-before-claim-persistence",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 1507,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-result-before-claim-persistence-p1",
+            "reason": "winner",
+            "task_id": "task-result-before-claim-persistence"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "claim_not_recorded_at_completion",
+            "result_id": "result-result-before-claim-persistence-p1",
+            "task_id": "task-result-before-claim-persistence"
+          }
+        ],
+        "selected_peer": "result-before-claim-persistence-p1",
+        "state": "active",
+        "state_digest": "6e4261153e475eb23d3a165f28c6355c7cb212040ae62b36c5421d9424cb8d9c",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.1728,
+        "p95_ms": 0.183
+      },
+      "replay_equal": true,
+      "replay_orders": 5040,
+      "split": "development",
+      "topology": 2,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 1111,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "8bff09ad1c943980acd428bf75504cd70e31ba86c11eee17420a3575968e1c41",
+        "task_revision": 0
+      },
+      "case_id": "claim-issued-while-absent",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 1579,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-claim-issued-while-absent-p1",
+            "reason": "unauthorized_at_issue",
+            "task_id": "task-claim-issued-while-absent"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "losing_claim",
+            "result_id": "result-claim-issued-while-absent-p1",
+            "task_id": "task-claim-issued-while-absent"
+          }
+        ],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "de9196a6a663483b7e6a2583b8b26e653de73e4d38fd1f0993b9ee8482e984a1",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.1936,
+        "p95_ms": 0.2139
+      },
+      "replay_equal": true,
+      "replay_orders": 32,
+      "split": "development",
+      "topology": 2,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 940,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "0d8dfa66a210098430b8856644e5f38f7d58df514e4af623cbbdca8666247471",
+        "task_revision": 0
+      },
+      "case_id": "unavailable-remote",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 1203,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-unavailable-remote-p1",
+            "reason": "unavailable_capability",
+            "task_id": "task-unavailable-remote"
+          }
+        ],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "181021986f313b38fb5a83f9a6048b1f9181eb3a80a3357eb1204c7dabfc89d1",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.1389,
+        "p95_ms": 0.1475
+      },
+      "replay_equal": true,
+      "replay_orders": 720,
+      "split": "held-out",
+      "topology": 2,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 1212,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "unknown_claim",
+            "result_id": "result-result-owner-mismatch-p0",
+            "task_id": "task-result-owner-mismatch"
+          }
+        ],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "db0157591f93c1db99f7dadc242af6b33f71f8bf9331605b1f57fbc867b98e87",
+        "task_revision": 0
+      },
+      "case_id": "result-owner-mismatch",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 1488,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-result-owner-mismatch-p1",
+            "reason": "winner",
+            "task_id": "task-result-owner-mismatch"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "worker_mismatch",
+            "result_id": "result-result-owner-mismatch-p0",
+            "task_id": "task-result-owner-mismatch"
+          }
+        ],
+        "selected_peer": "result-owner-mismatch-p1",
+        "state": "active",
+        "state_digest": "feb1d636f055c7e612a72d6e47bb30323807c428b05b4932199185d6b32c10a7",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.2092,
+        "p95_ms": 0.2316
+      },
+      "replay_equal": true,
+      "replay_orders": 32,
+      "split": "held-out",
+      "topology": 2,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 928,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "b7cee7c68a32afb58964041935f3651ddeeadf6258926b4c08b4df5d04deaa9b",
+        "task_revision": 0
+      },
+      "case_id": "three-way-race",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-three-way-race-p1",
+        "canonical_state_bytes": 1852,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-three-way-race-p1",
+            "reason": "winner",
+            "task_id": "task-three-way-race"
+          },
+          {
+            "claim_id": "claim-three-way-race-p2",
+            "reason": "loser",
+            "task_id": "task-three-way-race"
+          },
+          {
+            "claim_id": "claim-three-way-race-p3",
+            "reason": "loser",
+            "task_id": "task-three-way-race"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-three-way-race-p1",
+            "task_id": "task-three-way-race"
+          }
+        ],
+        "selected_peer": "three-way-race-p1",
+        "state": "completed",
+        "state_digest": "577539e7fa460898a6a32e78a5a3a84078e6f754df06c9c6c5e05e8ecdc9c785",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.4045,
+        "p95_ms": 0.4359
+      },
+      "replay_equal": true,
+      "replay_orders": 32,
+      "split": "held-out",
+      "topology": 4,
+      "unsafe_routes": 0
+    },
+    {
+      "accepted_stale_claims": 0,
+      "baseline": {
+        "accepted_result_count": 0,
+        "accepted_result_id": null,
+        "canonical_state_bytes": 1054,
+        "claim_decisions": [],
+        "error": null,
+        "result_decisions": [],
+        "selected_peer": null,
+        "state": "abstained",
+        "state_digest": "f8bcf71dfde088e2e23bc70acc683187a98a23de7062af8af311b7c5298c4a94",
+        "task_revision": 0
+      },
+      "case_id": "lost-peer-historical-completion",
+      "competing_completed_result_proposals": 0,
+      "coordinator": {
+        "accepted_result_count": 1,
+        "accepted_result_id": "result-lost-peer-historical-completion-p1",
+        "canonical_state_bytes": 1602,
+        "claim_decisions": [
+          {
+            "claim_id": "claim-lost-peer-historical-completion-p1",
+            "reason": "winner",
+            "task_id": "task-lost-peer-historical-completion"
+          }
+        ],
+        "error": null,
+        "result_decisions": [
+          {
+            "reason": "accepted",
+            "result_id": "result-lost-peer-historical-completion-p1",
+            "task_id": "task-lost-peer-historical-completion"
+          }
+        ],
+        "selected_peer": "lost-peer-historical-completion-p1",
+        "state": "completed",
+        "state_digest": "d69451190154bd47fced24ecf685d824a4e8450641005cc0a455546256dda218",
+        "task_revision": 0
+      },
+      "duplicate_accepted_results": 0,
+      "latency": {
+        "p50_ms": 0.2239,
+        "p95_ms": 0.244
+      },
+      "replay_equal": true,
+      "replay_orders": 32,
+      "split": "held-out",
+      "topology": 4,
+      "unsafe_routes": 0
+    }
+  ],
+  "corpus_sha256": "d910bbdebfe5dc05c2badda50e0d787f922420453f00f629f4157e584618a189",
+  "latency_repetitions_per_case": 100,
+  "platform": "macOS-26.4-arm64-arm-64bit-Mach-O",
+  "policy_sha256": "3ff8a7658580aea0dd47ccf3f6ac2da7cee7c637d8766415d6af0875372893d2",
+  "policy_version": "policy-v1",
+  "python": "3.14.7",
+  "replay_count_requested": 32,
+  "run_id": "edge-mesh-fault-baseline-v1",
+  "run_kind": "local-synthetic-policy-rehearsal",
+  "seed": 20260930,
+  "summary": {
+    "accepted_stale_claims": 0,
+    "canonical_state_bytes_range": [
+      1189,
+      2073
+    ],
+    "claims_issued_while_absent_rejected": 1,
+    "competing_completed_result_proposals": 1,
+    "coordinator_abstained": 4,
+    "coordinator_accepted_seeded_results": 16,
+    "duplicate_accepted_results": 0,
+    "held_out_accepted_seeded_results": 2,
+    "held_out_cases": 4,
+    "integrity_fail_closed": 1,
+    "local_only_abstained": 22,
+    "local_only_accepted_seeded_results": 2,
+    "logical_failover_seeded_result_accepted": 2,
+    "process_latency_p50_ms_range": [
+      0.0584,
+      0.4045
+    ],
+    "process_latency_p95_ms_range": [
+      0.0611,
+      0.4359
+    ],
+    "reclaim_seeded_result_accepted": 1,
+    "replay_failures": 0,
+    "replay_permutations": 47216,
+    "unsafe_routes": 0
+  },
+  "unavailable": [
+    "mesh_bytes",
+    "database_growth",
+    "radio_energy",
+    "device_energy",
+    "device_cpu",
+    "device_memory",
+    "sdk_peer_latency",
+    "device_recovery_time",
+    "actual_worker_execution_count",
+    "trusted_clock_or_signature_provenance"
+  ]
+}

@@ -4,7 +4,10 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from pydantic import ValidationError
+
 from .run_artifacts import json_safe_copy
+from .edge_model_evidence import EdgeModelEvidence
 from .run_record_contract import (
     EVALUATION_RUN_RECORD_KIND,
     SCHEMA_VERSION,
@@ -101,6 +104,12 @@ def _verify_record(pointer: dict[str, Any], record: dict[str, Any]) -> None:
         _reject("pointer_mismatch")
     if not isinstance(record.get("summary"), dict):
         _reject("malformed_summary")
+    artifacts = record.get("artifacts")
+    if isinstance(artifacts, dict) and "edge_model_evidence" in artifacts:
+        try:
+            EdgeModelEvidence.model_validate(artifacts["edge_model_evidence"])
+        except ValidationError:
+            _reject("invalid_edge_model_evidence")
     if kind == EVALUATION_RUN_RECORD_KIND:
         try:
             reason = validate_evaluation_run(record)
@@ -136,4 +145,8 @@ def verify_record_pointer(
         result["artifact_refs"] = json_safe_copy(record["artifact_refs"])
     if "artifacts" in record:
         result["artifacts"] = json_safe_copy(record["artifacts"])
+        if isinstance(record["artifacts"], dict):
+            evidence = record["artifacts"].get("edge_model_evidence")
+            if evidence is not None:
+                result["edge_model_evidence"] = json_safe_copy(evidence)
     return result

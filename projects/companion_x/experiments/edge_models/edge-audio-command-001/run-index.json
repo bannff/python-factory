@@ -1,0 +1,134 @@
+{
+  "dataset_brick": {
+    "artifacts": {
+      "test": {
+        "digest": "4a50c3d5275182d9a285a5e05de8b6aa5ff1efbddf5c1e4af4ef2dda3b25fb2e",
+        "job_id": "79c31a8b-4430-4be2-949a-c7160e1d79db"
+      },
+      "train": {
+        "digest": "e1e7c067d07dbfddf57e259982d0ae5d731ebbe4f428de77a76afbf0c29f6609",
+        "job_id": "93fa0c3f-0173-4a87-81ec-5cf22b9e19ca"
+      },
+      "validation": {
+        "digest": "60ab6b532561ba9174d4beb830eeb383844dc34f4b798622cc311cafb2e2176c",
+        "job_id": "dde9ca3f-f993-4046-838a-d7b68c981d4d"
+      }
+    },
+    "definition_sha256": "6c8162301f0f32ccd78942287276806f98df14bdd281e3f254e5dc209bd70b0d",
+    "external_validation": {
+      "group_disjoint": true,
+      "split_counts": {
+        "test": 1277,
+        "train": 5615,
+        "validation": 1108
+      }
+    },
+    "generic_quality_results_passed": false,
+    "identity": "edge-audio-keywords",
+    "quality_note": "Built-in conversation quality checks fail for ML records; externally validated generic artifacts completed and resolved.",
+    "registration_manifest_sha256": "7484d40fb5a1ad2db1211429d1e9c4d816faa6c2fbb0c880c8d5b1a7ab17655c",
+    "version": "1"
+  },
+  "decision": "revise",
+  "device_and_mesh_validation": "not_run",
+  "evidence_bundle": {
+    "attachment_id": "24d3838f-9f91-404b-9b14-b7c847778ac9",
+    "filename": "edge-model-pilots-evidence-v2.zip",
+    "issue": "https://linear.app/ditto/issue/ENG-173/edge-device-multi-model-family-experimentation",
+    "scope": "Frozen source/materialized ML JSONL, Dataset definitions/manifests, runners, metrics and small derived artifacts; no raw media or pretrained weights.",
+    "sha256": "703ebbebc270784866c1f5fce75cb7d2d84373fcaa2509d2cd9eac17dc227bd6"
+  },
+  "experiment_id": "edge-audio-command-001",
+  "issue": "https://linear.app/ditto/issue/ENG-173/edge-device-multi-model-family-experimentation",
+  "models": [
+    {
+      "held_out": {
+        "accuracy": 0.6460454189506656,
+        "balanced_accuracy": 0.7129537680679686,
+        "confusion_rows_true_cols_pred": [
+          [
+            108,
+            11,
+            33
+          ],
+          [
+            16,
+            141,
+            14
+          ],
+          [
+            219,
+            159,
+            576
+          ]
+        ],
+        "go_recall": 0.7105263157894737,
+        "macro_f1": 0.5839756094002168,
+        "other_word_false_trigger_rate": 0.39622641509433965,
+        "other_word_false_triggers_go_or_stop": 378,
+        "stop_recall": 0.8245614035087719
+      },
+      "model_sha256": "cf5edf7a664369931036108afcf582e4187005f95c0f2e5a71e18cf076bd4249",
+      "name": "MFCC + logistic",
+      "serialized_bytes": 2357
+    },
+    {
+      "held_out": {
+        "accuracy": 0.8026624902114331,
+        "balanced_accuracy": 0.7454439295303247,
+        "confusion_rows_true_cols_pred": [
+          [
+            99,
+            2,
+            51
+          ],
+          [
+            4,
+            128,
+            39
+          ],
+          [
+            131,
+            25,
+            798
+          ]
+        ],
+        "go_recall": 0.6513157894736842,
+        "macro_f1": 0.7215596509653103,
+        "other_word_false_trigger_rate": 0.16352201257861634,
+        "other_word_false_triggers_go_or_stop": 156,
+        "stop_recall": 0.7485380116959064
+      },
+      "model_sha256": "40aa7c5d8502e9390ed5c62493c7bb43ae8f62b1e3d48214dff82e5b8d938ec5",
+      "name": "tiny depthwise CNN",
+      "parameters": 1043,
+      "selected_epoch": 9,
+      "serialized_bytes": 13429
+    }
+  ],
+  "run": {
+    "artifact_manifest_sha256": "e26dde0b2e4ff7d85fc358422f42cbf84664e08481f96eaf28b235b6be3f586a",
+    "results_sha256": "ffdca9e7fefe145c901c5f6e3c5cb2424e71f81abb02e5ec300b86bca4828fa0",
+    "seed": 41,
+    "selection": "No probability threshold was tuned: both models use three-class argmax. CNN epoch selected by validation macro-F1 only; test evaluated once after selection. Logistic model uses fixed settings.",
+    "source_sha256": "23fd28ecb9c867045146e5ff39e3e7c7ed6e0780f933a1a1b3cec94acc29b5fe",
+    "trainer": "standalone CPU PyTorch/scikit-learn pilot; Dataset brick used for registration, not training"
+  },
+  "schema_version": 1,
+  "source_dataset": {
+    "archive_sha256": "49650f2341b26d886b46b3f4fb8fed59e30300b17550f1ee4a768b3106cf93a0",
+    "archive_url": "https://storage.googleapis.com/download.tensorflow.org/data/mini_speech_commands.zip",
+    "cohort_counts": {
+      "test": 1277,
+      "train": 5615,
+      "validation": 1108
+    },
+    "license_as_tutorial_describes": "CC BY",
+    "name": "mini Speech Commands",
+    "speaker_disjoint": true,
+    "split_sha256": "58454c7f670d12fbdb8669e54bc90f02f6d78b16fd4d1be1b5f23678f0c899c2",
+    "url": "https://www.tensorflow.org/tutorials/audio/simple_audio"
+  },
+  "status": "exploratory_lab_pilot",
+  "target_device": "iPhone; exact model and iOS version pending"
+}

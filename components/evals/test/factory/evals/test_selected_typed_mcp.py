@@ -25,8 +25,8 @@ def reset_state():
 
 def _run(name: str, arguments: dict):
     server = create_server()
-    tool = asyncio.run(server.get_tool(name))
-    return asyncio.run(tool.run(arguments)).structured_content
+    result = asyncio.run(server.call_tool(name, arguments))
+    return result.structured_content
 
 
 def test_selected_tools_publish_v1_envelopes_from_a_fresh_server() -> None:

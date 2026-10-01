@@ -2,77 +2,27 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, computed_field, field_validator
 
-from .base import (  # noqa: F401 — re-export for backward compat
-    DatasetExecutionPolicy, DatasetFallbackRecord, DatasetInputRef,
-    DatasetProvenanceRecord, DatasetQualityResults, DatasetSnapshotRef,
-    DatasetToolSchemaSnapshotRef, _normalize_digest, _require_non_empty,
-)
 from .approval_models import DatasetApprovalBinding
-from .scenario_models import ScenarioPackGenerationInput, ScenarioPackLineage
+from .base import (  # noqa: F401 — re-export for backward compat
+    DatasetExecutionPolicy,
+    DatasetFallbackRecord,
+    DatasetInputRef,
+    DatasetProvenanceRecord,
+    DatasetQualityResults,
+    DatasetSnapshotRef,
+    DatasetToolSchemaSnapshotRef,
+    _normalize_digest,
+)
 from .blueprint_models import DatasetBlueprintBinding, DatasetBlueprintLineage
+from .scenario_models import ScenarioPackGenerationInput, ScenarioPackLineage
+from .generation_request import DatasetGenerationRequest
 
 
-class DatasetGenerationRequest(BaseModel):
-    """A versioned declarative request for a dataset bundle."""
-    recipe_uri: str
-    recipe_digest: str
-    input_artifacts: list[DatasetInputRef] = Field(default_factory=list)
-    context_snapshot: DatasetSnapshotRef
-    tool_schema_snapshot: DatasetToolSchemaSnapshotRef
-    requested_views: list[str] = Field(default_factory=lambda: ["default"], min_length=1, max_length=10)
-    execution_policy: DatasetExecutionPolicy = Field(default_factory=DatasetExecutionPolicy)
-    scenario_generation: ScenarioPackGenerationInput | None = None
-    blueprint_binding: DatasetBlueprintBinding | None = None
-    approval_binding: DatasetApprovalBinding | None = None
-    idempotency_key: str | None = None
-    schema_version: str = "1.0"
-
-    @field_validator("recipe_uri")
-    @classmethod
-    def _validate_recipe_uri(cls, value: str) -> str:
-        return _require_non_empty(value, "Dataset recipe URI")
-
-    @field_validator("recipe_digest")
-    @classmethod
-    def _validate_recipe_digest(cls, value: str) -> str:
-        return _normalize_digest(value, "dataset recipe")
-
-    @field_validator("requested_views")
-    @classmethod
-    def _validate_requested_views(cls, value: list[str]) -> list[str]:
-        cleaned: list[str] = []
-        for view in value:
-            name = view.strip()
-            if not name:
-                raise ValueError("Requested dataset view must be non-empty")
-            if name in cleaned:
-                raise ValueError("Requested dataset views must be unique")
-            cleaned.append(name)
-        return cleaned
-
-    @computed_field(return_type=str)
-    @property
-    def context_snapshot_uri(self) -> str:
-        return self.context_snapshot.uri
-
-    @computed_field(return_type=str)
-    @property
-    def context_snapshot_digest(self) -> str:
-        return self.context_snapshot.digest
-
-    @computed_field(return_type=str)
-    @property
-    def tool_schema_snapshot_uri(self) -> str:
-        return self.tool_schema_snapshot.uri
-
-    @computed_field(return_type=str)
-    @property
-    def tool_schema_snapshot_digest(self) -> str:
-        return self.tool_schema_snapshot.digest
 
 
 class DatasetRecipeStage(BaseModel):
@@ -84,7 +34,10 @@ class DatasetRecipe(BaseModel):
     version: str
     schema_version: str = "1.0"
     stages: list[DatasetRecipeStage] = Field(min_length=1)
-    record_schema: Literal["conversation", "can_frame", "can_artifact", "generic"] = "conversation"
+    record_schema: Literal[
+        "conversation", "can_frame", "can_artifact", "generic",
+        "edge_sensor_window", "edge_routing_example",
+    ] = "conversation"
 
 
 class DatasetJobReceipt(BaseModel):
@@ -98,6 +51,10 @@ class DatasetArtifactRef(BaseModel):
     manifest_uri: str
     digest: str
     schema_version: str
+    record_schema: Literal[
+        "conversation", "can_frame", "can_artifact", "generic",
+        "edge_sensor_window", "edge_routing_example",
+    ] = "conversation"
     available_views: list[str] = Field(min_length=1, max_length=10)
     view_schema_versions: dict[str, str] = Field(default_factory=dict)
     training_uri: str | None = None
@@ -118,6 +75,10 @@ class DatasetJobStatus(BaseModel):
 class DatasetManifest(BaseModel):
     """Reproducibility metadata for one immutable dataset bundle."""
     schema_version: str
+    record_schema: Literal[
+        "conversation", "can_frame", "can_artifact", "generic",
+        "edge_sensor_window", "edge_routing_example",
+    ] = "conversation"
     dataset_uri: str | None = None
     manifest_uri: str | None = None
     training_uri: str | None = None
@@ -125,6 +86,7 @@ class DatasetManifest(BaseModel):
     recipe_uri: str
     recipe_digest: str
     input_artifacts: list[DatasetInputRef]
+    allowed_local_roots: tuple[Path, ...] = Field(default_factory=tuple)
     context_snapshot: DatasetSnapshotRef
     tool_schema_snapshot: DatasetToolSchemaSnapshotRef
     execution_policy: DatasetExecutionPolicy
@@ -179,6 +141,7 @@ class DatasetStageCheckpoint(BaseModel):
     quality_results: DatasetQualityResults
     scenario_lineage: ScenarioPackLineage | None = None
     checkpoint_digest: str | None = None
+    allowed_local_roots_digest: str | None = None
     fallback: DatasetFallbackRecord | None = None
     created_at: datetime
 

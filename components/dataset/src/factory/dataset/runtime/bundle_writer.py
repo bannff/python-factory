@@ -16,6 +16,29 @@ from .contracts import (
 from .helpers import _file_uri, _now, _sha256, _write_immutable
 from .recipe import records_content
 
+_ROUTING_VIEWS = frozenset({"train", "validation", "test"})
+
+
+def _routing_view_contents(records: list, requested_views: list[str]) -> dict[str, bytes]:
+    """Build disjoint split bytes before any routing bundle path is written."""
+    from .edge_routing_contracts import EdgeRoutingExample
+
+    requested = set(requested_views)
+    if "train" not in requested or not requested.issubset(_ROUTING_VIEWS):
+        raise ValueError("Routing views must include train and use only train/validation/test")
+    routing_records = [EdgeRoutingExample.model_validate(record) for record in records]
+    views: dict[str, bytes] = {}
+    for split in requested_views:
+        selected = [record for record in routing_records if record.split == split]
+        if not selected:
+            raise ValueError(f"Routing views require records in requested {split} split")
+        views[split] = records_content(selected, record_schema="edge_routing_example")
+    return views
+
+
+def _training_view_name(record_schema: str, requested_views: list[str]) -> str:
+    return "train" if record_schema == "edge_routing_example" else requested_views[0]
+
 
 def write_bundle(
     store,
@@ -30,6 +53,24 @@ def write_bundle(
     final_fallback: DatasetFallbackRecord | None,
 ) -> DatasetArtifactRef:
     """Write immutable dataset, views, manifest, and sidecar."""
+    routing_views: dict[str, bytes] = {}
+    if recipe.record_schema == "edge_sensor_window":
+        from .quality import evaluate_quality
+
+        actual_quality = evaluate_quality(
+            records,
+            record_schema="edge_sensor_window",
+            allowed_local_roots=request.allowed_local_roots,
+        )
+        if not actual_quality.passed or actual_quality != final_quality_results:
+            raise ValueError("Edge sensor bundle quality changed before publication")
+    if recipe.record_schema == "edge_routing_example":
+        from .quality import evaluate_quality
+
+        actual_quality = evaluate_quality(records, record_schema="edge_routing_example")
+        if not actual_quality.passed or actual_quality != final_quality_results:
+            raise ValueError("Routing bundle quality and trusted provenance must pass")
+        routing_views = _routing_view_contents(records, request.requested_views)
     source_content = records_content(records, record_schema=recipe.record_schema)
     dataset_digest = _sha256(source_content)
     bundle_dir = store.artifacts_dir / job_id
@@ -42,17 +83,20 @@ def write_bundle(
     training_uri = ""
     for requested_view in request.requested_views:
         view_name = re.sub(r"[^A-Za-z0-9_.-]", "_", requested_view)
-        view_path = bundle_dir / f"view-{view_name}-{dataset_digest}{suffix}"
-        _write_immutable(view_path, source_content)
+        view_content = routing_views.get(requested_view, source_content)
+        view_digest = _sha256(view_content)
+        view_path = bundle_dir / f"view-{view_name}-{view_digest}{suffix}"
+        _write_immutable(view_path, view_content)
         available_views.append(requested_view)
         view_schema_versions[requested_view] = recipe.schema_version
-        if not training_uri:
+        if requested_view == _training_view_name(recipe.record_schema, request.requested_views):
             training_uri = _file_uri(view_path)
     artifact = DatasetArtifactRef(
         dataset_uri=_file_uri(dataset_path),
         manifest_uri="",
         digest=dataset_digest,
         schema_version=recipe.schema_version,
+        record_schema=recipe.record_schema,
         available_views=available_views,
         view_schema_versions=view_schema_versions,
         training_uri=training_uri,
@@ -65,11 +109,13 @@ def write_bundle(
         blueprint_lineage = build_blueprint_lineage(blueprint, request.blueprint_binding)
     manifest = DatasetManifest(
         schema_version=recipe.schema_version,
+        record_schema=recipe.record_schema,
         dataset_uri=artifact.dataset_uri,
         dataset_digest=artifact.digest,
         recipe_uri=request.recipe_uri,
         recipe_digest=request.recipe_digest,
         input_artifacts=request.input_artifacts,
+        allowed_local_roots=request.allowed_local_roots,
         context_snapshot=request.context_snapshot,
         tool_schema_snapshot=request.tool_schema_snapshot,
         execution_policy=request.execution_policy,

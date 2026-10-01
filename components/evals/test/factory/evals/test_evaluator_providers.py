@@ -100,7 +100,7 @@ def _fake_judge_factory(score: float, comment: str = "because"):
 
 
 def test_langchain_provider_maps_judge_result(monkeypatch) -> None:
-    import openevals.llm as oe
+    oe = pytest.importorskip("openevals.llm")
     monkeypatch.setattr(langchain_provider, "get_judge_model", lambda: object())
     monkeypatch.setattr(oe, "create_llm_as_judge", _fake_judge_factory(0.8))
     provider = langchain_provider.LangChainProvider()
@@ -113,7 +113,7 @@ def test_langchain_provider_maps_judge_result(monkeypatch) -> None:
 
 
 def test_langchain_provider_low_score_fails(monkeypatch) -> None:
-    import openevals.llm as oe
+    oe = pytest.importorskip("openevals.llm")
     monkeypatch.setattr(langchain_provider, "get_judge_model", lambda: object())
     monkeypatch.setattr(oe, "create_llm_as_judge", _fake_judge_factory(0.2))
     evaluator, = langchain_provider.LangChainProvider().build(["correctness"])
@@ -128,7 +128,7 @@ def test_langchain_provider_rejects_unknown() -> None:
 # -- langchain_trajectory (agentevals) with a fake judge --------------------
 
 def test_trajectory_provider_abstains_without_trajectory(monkeypatch) -> None:
-    import agentevals.trajectory.llm as ae
+    ae = pytest.importorskip("agentevals.trajectory.llm")
     monkeypatch.setattr(langchain_trajectory, "get_judge_model", lambda: object())
     monkeypatch.setattr(
         ae, "create_trajectory_llm_as_judge",
@@ -142,7 +142,7 @@ def test_trajectory_provider_abstains_without_trajectory(monkeypatch) -> None:
 
 
 def test_trajectory_provider_scores_with_trajectory(monkeypatch) -> None:
-    import agentevals.trajectory.llm as ae
+    ae = pytest.importorskip("agentevals.trajectory.llm")
     monkeypatch.setattr(langchain_trajectory, "get_judge_model", lambda: object())
     monkeypatch.setattr(
         ae, "create_trajectory_llm_as_judge",
@@ -165,7 +165,7 @@ def test_trajectory_provider_available_lists_new_names() -> None:
 
 
 def test_trajectory_match_is_deterministic_and_sdk_scoped(monkeypatch) -> None:
-    import agentevals.trajectory.match as am
+    am = pytest.importorskip("agentevals.trajectory.match")
 
     captured: dict[str, str] = {}
 
@@ -196,7 +196,7 @@ def test_trajectory_match_is_deterministic_and_sdk_scoped(monkeypatch) -> None:
 
 
 def test_trajectory_match_abstains_without_reference(monkeypatch) -> None:
-    import agentevals.trajectory.match as am
+    am = pytest.importorskip("agentevals.trajectory.match")
     monkeypatch.setattr(
         am, "create_trajectory_match_evaluator",
         lambda **_k: (lambda **_kk: {"score": True, "comment": ""}),
@@ -219,7 +219,7 @@ def test_trajectory_custom_requires_rubric(monkeypatch) -> None:
 # -- langchain custom (openevals) with a fake judge -------------------------
 
 def test_langchain_custom_maps_and_requires_rubric(monkeypatch) -> None:
-    import openevals.llm as oe
+    oe = pytest.importorskip("openevals.llm")
     monkeypatch.setattr(langchain_provider, "get_judge_model", lambda: object())
     monkeypatch.setattr(oe, "create_llm_as_judge", _fake_judge_factory(0.9, "ok"))
     provider = langchain_provider.LangChainProvider()

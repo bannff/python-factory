@@ -1,11 +1,27 @@
-"""Sandbox target profiles — one container at a time.
+"""Sandbox workload profiles for Docker container configuration.
 
-Maps profile names to Docker container configs. Only one sandbox
-runs at a time. Provision auto-terminates the previous one.
+Legacy profile-only provisioning uses one container; selecting a device preset
+creates a separate named container for each target.
 """
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from .adapters.secret_mounts import SecretRef
+from .peer_network import PeerNetworkSpec
+
+
+class DeviceTarget(BaseModel):
+    """Device being approximated; Docker execution remains Linux."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    family: Literal["iphone", "ipad", "android_phone", "android_tablet", "other"]
+    model: str | None = None
+    os_version: str | None = None
+    fidelity: Literal["linux_proxy"] = "linux_proxy"
 
 
 class SandboxProfile(BaseModel):
@@ -13,7 +29,7 @@ class SandboxProfile(BaseModel):
 
     # Fail loud on typo'd keys in hand-authored profile YAML — a silently
     # ignored key would yield a container that is up but missing tooling.
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
 
     name: str
     image: str
@@ -22,11 +38,30 @@ class SandboxProfile(BaseModel):
     health_check_url: str | None = None
     health_check_timeout: int = 60
     container_name: str = "factory-sandbox"
+    replace_existing: bool = True
     shell: str = "/bin/sh"
     env_vars: dict[str, str] = Field(default_factory=dict)
+    # Docker launch envelope. Limits bound the container; they do not emulate
+    # a phone's SoC, operating system, radios, or power behavior.
+    platform: Literal["linux/amd64", "linux/arm64"] | None = None
+    cpus: float | None = Field(default=None, gt=0)
+    memory_mb: int | None = Field(default=None, gt=0)
+    device_target: DeviceTarget | None = None
     # Commands run once, in order, right after provision (e.g. install tooling).
     # Best-effort: a non-zero exit is logged, not fatal. Never put secrets here.
     setup_commands: list[str] = Field(default_factory=list)
+    # Host-trusted symbolic names only. Source paths are configured by the
+    # Sandbox server process and resolved transiently before Docker launch.
+    secret_refs: list[SecretRef] = Field(default_factory=list)
+    # Optional shared, Sandbox-owned Docker bridge for separate peer devices.
+    peer_network: PeerNetworkSpec | None = None
+
+    @field_validator("secret_refs")
+    @classmethod
+    def unique_secret_refs(cls, refs: list[SecretRef]) -> list[SecretRef]:
+        if len(refs) != len(set(refs)):
+            raise ValueError("secret_refs must not contain duplicates")
+        return refs
 
 
 BUILTIN_PROFILES: dict[str, SandboxProfile] = {

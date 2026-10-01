@@ -22,8 +22,8 @@ def isolated_ui_explorer(monkeypatch):
 
 
 def _run(name: str, arguments: dict):
-    tool = asyncio.run(create_server().get_tool(name))
-    return asyncio.run(tool.run(arguments)).structured_content
+    result = asyncio.run(create_server().call_tool(name, arguments))
+    return result.structured_content
 
 
 def test_ui_tools_publish_flat_v1_envelopes_and_share_one_explorer() -> None:

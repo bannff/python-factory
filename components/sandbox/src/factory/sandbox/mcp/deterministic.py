@@ -1,60 +1,16 @@
 """Typed deterministic contract MCP tools for the Sandbox brick."""
 from __future__ import annotations
-
 from typing import TYPE_CHECKING, Any
-
-from pydantic import Field
-
 from factory.mcp_utils.interface import deterministic, ok
 from factory.mcp_utils.runtime.tool_result import ToolResult
-from .contracts import EmptyInput, StrictModel
+from .contracts import EmptyInput
+from .deterministic_models import (
+    CapabilitiesResult, ConfigSchemaResult, DevicePresetInfo, DevicePresetsResult,
+    HealthResult, LiveLaunchInfo, LiveLaunchesResult, ProfileInfo, ProfilesResult,
+)
 from ..core import COMPONENT_NAME, COMPONENT_VERSION
-
 if TYPE_CHECKING:
     from ..runtime.runtime import SandboxRuntime
-
-
-class CapabilitiesResult(StrictModel):
-    name: str
-    version: str
-    tools: dict[str, list[str]]
-    adapters: list[str]
-    features: list[str]
-
-
-class HealthResult(StrictModel):
-    healthy: bool
-    adapter: dict[str, Any]
-    store: dict[str, Any]
-    active_environments: int = Field(ge=0)
-    discovered_environments: int = Field(ge=0)
-    advisory: str | None = None
-
-
-class ConfigSchemaResult(StrictModel):
-    type: str
-    properties: dict[str, dict[str, Any]]
-
-
-class ProfileInfo(StrictModel):
-    image: str
-    ports: dict[str, str]  # host:container, mirrors SandboxProfile.ports
-    health_check_url: str | None = None
-
-
-class ProfilesResult(StrictModel):
-    profiles: dict[str, ProfileInfo]
-
-
-class LiveLaunchInfo(StrictModel):
-    policy_id: str
-    env_id: str
-    status: str
-
-
-class LiveLaunchesResult(StrictModel):
-    launches: list[LiveLaunchInfo]
-
 
 def register(mcp: Any, runtime: "SandboxRuntime") -> None:
     """Register typed deterministic contract tools."""
@@ -69,6 +25,7 @@ def register(mcp: Any, runtime: "SandboxRuntime") -> None:
                 "deterministic": [
                     "sandbox.get_capabilities", "sandbox.health_check",
                     "sandbox.describe_config_schema", "sandbox.list_profiles",
+                    "sandbox.list_device_presets",
                     "sandbox.list_environments", "sandbox.generate_cfn_from_recon",
                     "sandbox.validate_manifest", "sandbox.list_live_launch_ids",
                     "sandbox_get_dashboard_summary",
@@ -134,8 +91,33 @@ def register(mcp: Any, runtime: "SandboxRuntime") -> None:
             profiles[name] = ProfileInfo(
                 image=profile.image, ports=profile.ports,
                 health_check_url=profile.health_check_url,
+                platform=profile.platform, cpus=profile.cpus,
+                memory_mb=profile.memory_mb,
+                device_target=(
+                    profile.device_target.model_dump() if profile.device_target else None
+                ),
             )
         return ok(ProfilesResult(profiles=profiles))
+
+    @mcp.tool(name="sandbox.list_device_presets")
+    @deterministic(input_model=EmptyInput, output_model=DevicePresetsResult)
+    def list_device_presets() -> ToolResult[DevicePresetsResult]:
+        """List validated device targets and their Linux proxy envelopes."""
+        from ..runtime.device_presets import (
+            list_device_presets as _names,
+            resolve_device_preset,
+        )
+
+        presets: dict[str, DevicePresetInfo] = {}
+        for name in _names():
+            try:
+                presets[name] = DevicePresetInfo.model_validate(
+                    resolve_device_preset(name).model_dump()
+                )
+            except (ValueError, OSError, KeyError):
+                # An invalid user YAML must not hide the rest of the catalog.
+                continue
+        return ok(DevicePresetsResult(presets=presets))
 
     @mcp.tool(name="sandbox.list_live_launch_ids")
     @deterministic(input_model=EmptyInput, output_model=LiveLaunchesResult)

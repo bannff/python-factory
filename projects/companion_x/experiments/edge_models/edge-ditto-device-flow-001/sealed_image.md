@@ -1,0 +1,9 @@
+# ENG-202 sealed ARM64 N=2 image
+
+`sealed_image.py` builds a disposable image for the frozen N=2 Ditto SDK experiment. The builder copies only seven reviewed input files, `sealed_entrypoint.py`, `sealed_pins.json`, and a generated Dockerfile into a temporary context. It checks every reviewed file hash, including the fixed entrypoint, the scenario's independent digest and model/cohort parity, the ARM64 base image ID, and the installed Ditto SDK distribution digest before building. Docker resolves the local base image tag, so the builder verifies its image ID before and after the build. The temporary context is removed when the build command exits.
+
+The image has a fixed Python entrypoint. `preflight` validates the same inputs and SDK without opening a license or starting peers. `run` repeats preflight, requires the named license mount, and invokes the reviewed runner with fixed arguments. The only licensed output directory is `/evidence/run-001`. Other arguments fail before the runner starts.
+
+The generated `build-evidence.json` records the base and final image IDs, source and context hashes, scenario and SDK checks, preflight result, and profile digest. The host-local `edge-n2-sdk.yaml` profile uses the final `sha256:` image ID, `['run']`, the named Sandbox secret reference, an internal peer network, `replace_existing: false`, and no setup commands. These two generated files are ignored by Git. The repository `sealed_pins.json` contains reviewed content digests only. Build evidence is valid for its exact source revision and host image ID.
+
+Build only after the N=2 runner, scenario, protocol, model, and cohort are frozen and reviewed. If a source or SDK digest changes, the builder stops before creating an image or profile. The build and preflight use Docker networking `none`; a later licensed run requires the separate Sandbox peer-network and host evidence collector. A successful preflight does not claim a successful SDK peer run.

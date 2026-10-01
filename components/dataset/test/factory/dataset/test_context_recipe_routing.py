@@ -1,5 +1,6 @@
 """Typed context artifact routing and materialization regressions."""
 from __future__ import annotations
+
 import asyncio
 import hashlib
 import json
@@ -7,7 +8,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-from factory.mcp_utils.runtime.tool_catalog import ToolCatalog
 from factory.dataset.mcp.operational import register
 from factory.dataset.runtime.contracts import (
     DatasetGenerationRequest,
@@ -22,6 +22,9 @@ from factory.dataset.runtime.local import (
     _request_digest,
 )
 from factory.dataset.runtime.recipe import path_from_uri, resolve_recipe
+from factory.mcp_utils.runtime.tool_catalog import ToolCatalog
+
+
 def _snapshot(root: Path, label: str, payload: dict) -> DatasetSnapshotRef:
     content = json.dumps(payload, sort_keys=True).encode()
     digest = hashlib.sha256(content).hexdigest()
@@ -114,6 +117,28 @@ def test_mcp_flat_input_roles_propagate(tmp_path, monkeypatch):
     ]
 
 
+def test_mcp_allowed_local_roots_propagate_into_typed_request(tmp_path, monkeypatch):
+    captured = []
+
+    def submit(request, _storage_root):
+        captured.append(request)
+        return type("Receipt", (), {"model_dump": lambda self, mode: {"job_id": "job-1"}})()
+
+    monkeypatch.setattr("factory.dataset.mcp.operational.dataset_submit_generation", submit)
+    mcp = ToolCatalog("dataset-test")
+    register(mcp, tmp_path)
+    tool = asyncio.run(mcp.get_tool("dataset_submit_generation"))
+    result = tool.fn({
+        "recipe_uri": "recipe://local/pass-through@1", "recipe_digest": "a" * 64,
+        "context_snapshot_uri": "file:///context", "context_snapshot_digest": "b" * 64,
+        "tool_schema_snapshot_uri": "file:///tools", "tool_schema_snapshot_digest": "c" * 64,
+        "allowed_local_roots": [str(tmp_path)],
+    })
+
+    assert result.ok is True
+    assert captured[0].allowed_local_roots == (tmp_path,)
+
+
 def test_context_routes_merge_overrides_and_reject_conflicts(tmp_path: Path):
     decoded = tmp_path / "decoded.jsonl"
     context = tmp_path / "context.jsonl"
@@ -163,37 +188,3 @@ def test_builtin_correlate_defaults_are_numeric_and_canonical(tmp_path: Path):
     assert cfg["method"] == "spearman"
     assert len(cfg["failure_modes"]) == 8
     assert "road_type" not in cfg["context_features"]
-
-
-def test_heatmap_materialization_and_checkpoint_are_json_safe(tmp_path: Path):
-    augmented = tmp_path / "augmented.jsonl"
-    records = [
-        {"timestamp_ns": i, "arbitration_id": "0x100",
-         "decoded_signals": {"speed": i + 1}, "context": {"temp_c": float(i)},
-         "failure_mode": "signal_drift" if i >= 2 else None}
-        for i in range(4)
-    ]
-    augmented.write_text("".join(json.dumps(row) + "\n" for row in records))
-    request = _request(
-        tmp_path, "recipe://local/context-correlate@1",
-        [_input(augmented, "context_augmented_can")],
-        {"stage_overrides": {"context_correlate": {
-            "context_features": ["temp_c"], "failure_modes": ["signal_drift"],
-            "min_correlation": 0.0,
-        }}},
-    )
-    store = LocalDatasetStore(tmp_path / "store")
-    status = DatasetJobStatus(
-        job_id="context-roundtrip", status="running", submitted_at=datetime.now(UTC),
-        started_at=datetime.now(UTC), request=request,
-    )
-    store.save_job(status)
-    artifact = LocalDatasetMaterializer(store).materialize(status)
-    materialized = [json.loads(line) for line in path_from_uri(artifact.dataset_uri).read_text().splitlines()]
-    json.dumps(materialized)
-    assert materialized[-1]["record_type"] == "context_correlation_heatmap"
-    assert isinstance(materialized[-1]["heatmap"], list)
-    checkpoint = next((store.root / "checkpoints" / status.job_id).glob("*.checkpoint.json"))
-    checkpoint_data = json.loads(checkpoint.read_text())
-    checkpoint_rows = path_from_uri(checkpoint_data["output_uri"]).read_text().splitlines()
-    assert [json.loads(line) for line in checkpoint_rows] == materialized

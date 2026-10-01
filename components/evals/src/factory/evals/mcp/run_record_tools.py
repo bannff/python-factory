@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 from typing import Any
+
+from pydantic import ValidationError
+
 from factory.mcp_utils.interface import (
     JsonArray, JsonObject, ToolResult, get_service, operational,
     validate_protected_persistence,
@@ -10,6 +13,7 @@ from factory.mcp_utils.interface import (
 from .contracts.durable import RecordRunInput, RecordRunOutput
 from ..runtime.run_record_contract import build_record, document_id, projection_key, record_pointer, utc_timestamp
 from ..runtime.run_record_validation import validate_evaluation_run
+from ..runtime.edge_model_evidence import EdgeModelEvidence, validation_reason
 
 
 def _storage_payload(result: object) -> object | None:
@@ -42,6 +46,22 @@ def register(mcp: Any) -> None:
             payload["reviewer_tool_scope"] = reviewer_tool_scope
         if rubric_digest is not None:
             payload["rubric_digest"] = rubric_digest
+        artifact_payload = payload.get("artifacts")
+        if isinstance(artifact_payload, dict) and "edge_model_evidence" in artifact_payload:
+            try:
+                evidence = EdgeModelEvidence.model_validate(
+                    artifact_payload["edge_model_evidence"]
+                )
+            except ValidationError as exc:
+                return RecordRunOutput(
+                    persisted=False,
+                    reason=f"invalid edge_model_evidence: {validation_reason(exc)}",
+                    run_id=run_id,
+                )
+            payload["artifacts"] = {
+                **artifact_payload,
+                "edge_model_evidence": evidence.model_dump(mode="json"),
+            }
         try:
             validate_protected_persistence(payload)
         except ValueError:

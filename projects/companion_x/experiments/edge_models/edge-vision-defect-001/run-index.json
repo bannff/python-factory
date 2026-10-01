@@ -1,0 +1,111 @@
+{
+  "dataset_brick": {
+    "artifacts": {
+      "fold_0": {
+        "digest": "46d04a9b777bfbd67be995535a809ae3d458e84c81386d25df9863f8c8d9cd43",
+        "job_id": "63e10818-7123-4196-8d59-7469a6866dea"
+      },
+      "fold_1": {
+        "digest": "212036ec7f6f6dcb927b849a3d702038e147c4b34605a6b114f5215aacb37106",
+        "job_id": "20123f5c-654a-45fd-a1a0-7491663d1ea0"
+      },
+      "fold_2": {
+        "digest": "7181c075f0547970f0b66a8ac24f429e5f5a5c709d748563ddd440490adbca61",
+        "job_id": "4c9968dd-41d9-4c53-ba88-402816dc4d0c"
+      }
+    },
+    "definition_sha256": "69c9f22cd55f755dc74dfcd762d2af49225c62bf1ca34f215f0d228803fc6ad9",
+    "external_validation": {
+      "group_disjoint": true,
+      "split_counts": {
+        "fold_0": 135,
+        "fold_1": 136,
+        "fold_2": 128
+      }
+    },
+    "generic_quality_results_passed": false,
+    "identity": "edge-vision-kolektorsdd",
+    "quality_note": "Built-in conversation quality checks fail for ML records; externally validated generic artifacts completed and resolved.",
+    "registration_manifest_sha256": "5825c749afc6bbdee3009ef5bc0f4f73b0306bbe4f2afc72b139b26289b7f1bc",
+    "version": "1"
+  },
+  "decision": "revise",
+  "device_and_mesh_validation": "not_run",
+  "evidence_bundle": {
+    "attachment_id": "24d3838f-9f91-404b-9b14-b7c847778ac9",
+    "filename": "edge-model-pilots-evidence-v2.zip",
+    "issue": "https://linear.app/ditto/issue/ENG-173/edge-device-multi-model-family-experimentation",
+    "scope": "Frozen source/materialized ML JSONL, Dataset definitions/manifests, runners, metrics and small derived artifacts; no raw media or pretrained weights.",
+    "sha256": "703ebbebc270784866c1f5fce75cb7d2d84373fcaa2509d2cd9eac17dc227bd6"
+  },
+  "experiment_id": "edge-vision-defect-001",
+  "issue": "https://linear.app/ditto/issue/ENG-173/edge-device-multi-model-family-experimentation",
+  "models": [
+    {
+      "head_serialized_bytes": 4141,
+      "head_sha256": "1a96f2878763f2a441602e6a44027d4a656f3cfbfeb8cdbd9bf84ec48144d659",
+      "name": "grayscale statistics + logistic",
+      "out_of_fold": {
+        "auroc": 0.9044557747727777,
+        "average_precision": 0.7166579098627056,
+        "n": 399,
+        "positives": 52,
+        "threshold_0_5": {
+          "fn": 13,
+          "fp": 30,
+          "tn": 317,
+          "tp": 39
+        }
+      }
+    },
+    {
+      "backbone_weights_bytes": 10306551,
+      "head_serialized_bytes": 33645,
+      "head_sha256": "5afe0e6d31ad5d887c56f39b6bd5e3f8dd2b86112df773b8b3ba29d71896bb53",
+      "name": "frozen MobileNetV3 Small + logistic",
+      "out_of_fold": {
+        "auroc": 0.9106074041232542,
+        "average_precision": 0.7775944202902604,
+        "n": 399,
+        "positives": 52,
+        "threshold_0_5": {
+          "fn": 12,
+          "fp": 8,
+          "tn": 339,
+          "tp": 40
+        }
+      },
+      "weights_sha256": "047dcff4addef86ea5bc2eff13c9614dc11f47ab1160d0a71a25e7db994f4e1f"
+    }
+  ],
+  "paired_item_bootstrap_ap_difference_95pct": [
+    -0.08911526447403754,
+    0.05752514549537907,
+    0.2217388615948926
+  ],
+  "run": {
+    "evaluation": "3 official item-disjoint folds; no threshold or hyperparameter tuning; out-of-fold image metrics. All 50 production items contain a defect, so item-level classification is undefined.",
+    "manifest_sha256": "c80b3777f1ceee4d9434c32844f7a50911b7d5e0b0defab7674cd5398656c027",
+    "preprocessing": "grayscale repeated to RGB; resize 224x560; three 224x224 overlapping vertical crops; ImageNet normalization; mean+max pooled crop features",
+    "scores_sha256": "1d40be0952448245c413803368138d8d95341562f71242ce53706873a188ba8d",
+    "seed": 41,
+    "source_sha256": "c5267d4e3818faa8910237ba9240eccfca46a3538414ef94b9f3125515d055a8",
+    "trainer": "standalone CPU TorchVision/scikit-learn pilot; Dataset brick used for registration, not training"
+  },
+  "schema_version": 1,
+  "source_dataset": {
+    "archive_sha256": "65dc621693418585de9c4467d1340ea7958a6181816f0dc2883a1e8b61f9d4dc",
+    "dataset_records_sha256": "eea4e9462765eb07aa556a654469510e21099bdc559e0491fa0589c0e9cc4c2d",
+    "images": 399,
+    "items": 50,
+    "license": "CC BY-NC-SA 4.0; research only; commercial use requires owner contact",
+    "name": "KolektorSDD",
+    "official_split_file": "split.pyb",
+    "positive_images": 52,
+    "source": "https://www.vicos.si/resources/kolektorsdd/",
+    "split_group": "production item (kosXX)",
+    "split_sha256": "8ec637bf01be6d97254d9885abea9e5f32eda0387ebc356be24ab6bc0c3b0db2"
+  },
+  "status": "exploratory_lab_pilot",
+  "target_device": "iPhone; exact model and iOS version pending"
+}

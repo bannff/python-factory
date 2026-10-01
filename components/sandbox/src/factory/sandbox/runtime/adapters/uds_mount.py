@@ -9,7 +9,13 @@ orphan sweep reaps crashed/exited labeled containers.
 """
 from __future__ import annotations
 
+import fcntl
+import json
+import os
+import re
 import stat
+from contextlib import contextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -49,62 +55,23 @@ def proxy_env(config: dict[str, Any]) -> dict[str, str]:
 
 
 _WORKLOAD_LABEL = "factory.workload"
-_SWEEP_FORMAT = "{{.Names}}\t{{.Status}}\t{{.Labels}}"
-
-
-def _reason_from_status(status: str) -> str:
-    """Map a docker status string to the reap-reason enum."""
-    return "dead" if "dead" in status.lower() else "exited"
-
-
-def collect_reapable(run: _RunFn, label: str) -> list[dict[str, Any]]:
-    """List exited/dead labeled containers with their workload policy id.
-
-    CRITICAL: called BEFORE ``docker rm -f`` — removal erases labels, so the
-    reaper must capture ``factory.workload`` (and the reap reason) first.
-    Reuses ``discovery._parse_labels`` for label parsing (no duplication).
-    """
-    from ..discovery import _parse_labels
-
-    code, stdout, _ = run([
-        "docker", "ps", "-a", "--filter", f"label={label}",
-        "--filter", "status=exited", "--filter", "status=dead",
-        "--format", _SWEEP_FORMAT,
-    ])
-    if code != 0:
-        return []
-    reaped: list[dict[str, Any]] = []
-    for line in stdout.strip().splitlines():
-        parts = line.split("\t")
-        name = parts[0] if parts else ""
-        if not name:
-            continue
-        status = parts[1] if len(parts) > 1 else ""
-        labels = _parse_labels(parts[2] if len(parts) > 2 else "")
-        reaped.append({
-            "container_id": name,
-            "policy_id": labels.get(_WORKLOAD_LABEL),
-            "reason": _reason_from_status(status),
-        })
-    return reaped
+_SWEEP_FORMAT = "{{.ID}}\t{{.Status}}\t{{.Labels}}"
+_SECRET_EVIDENCE_HOLD_SECONDS = 600
+_EMPTY_NETWORK_GRACE_SECONDS = 120
+_FULL_CONTAINER_ID = re.compile(r"^[0-9a-f]{64}$")
+_OWNED_NETWORK = re.compile(r"^factory-sandbox-[a-z0-9-]+$")
+_RECHECK_FORMAT = (
+    "{{.Id}}\t{{.State.Status}}\t{{.State.FinishedAt}}\t"
+    "{{.State.StartedAt}}\t{{json .Config.Labels}}"
+)
 
 
 def sweep_orphans(
-    run: _RunFn, label: str = "factory.sandbox=true",
+    run: Callable[..., tuple[int, str, str]],
+    label: str = "factory.sandbox=true",
+    *, now: datetime | None = None,
 ) -> list[dict[str, Any]]:
-    """Reap exited/dead labeled containers; return the reaped list.
+    """Reap exited/dead labeled containers (delegates to orphan_sweeper)."""
+    from .orphan_sweeper import sweep_orphans as _sweep
 
-    Ordering matters: collect labels+reason BEFORE ``docker rm -f`` (removal
-    erases labels). Returns ``[{container_id, policy_id, reason}]`` — policy_id
-    is None for unlabeled (non-workload) orphans.
-    """
-    reaped = collect_reapable(run, label)
-    for item in reaped:
-        run(["docker", "rm", "-f", item["container_id"]], timeout=10)
-    return reaped
-
-
-__all__ = [
-    "CANONICAL_PROXY_SOCKET", "build_mount_args", "collect_reapable",
-    "proxy_env", "sweep_orphans", "validate_socket",
-]
+    return _sweep(run, label, now=now)

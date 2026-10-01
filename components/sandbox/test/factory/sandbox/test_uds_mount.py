@@ -1,34 +1,14 @@
-"""Tests for the workload UDS bind-mount helper."""
+"""Tests for the workload UDS bind-mount helper: socket validation and mount assembly."""
 
 from __future__ import annotations
 
-import shutil
-import socket
-import tempfile
 from pathlib import Path
 
 import pytest
 
-
 from factory.sandbox.runtime.adapters import uds_mount
 
-
-@pytest.fixture
-def short_tmp():
-    # macOS AF_UNIX paths cap at ~104 chars; pytest tmp_path is far too long.
-    directory = tempfile.mkdtemp(dir="/tmp")
-    try:
-        yield Path(directory)
-    finally:
-        shutil.rmtree(directory, ignore_errors=True)
-
-
-def _make_socket(directory: Path) -> str:
-    sock_path = str(directory / "mcp.sock")
-    server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    server.bind(sock_path)
-    server.listen(1)
-    return sock_path
+from ._uds_mount_helpers import _make_socket, short_tmp  # noqa: F401
 
 
 def test_validate_socket_accepts_real_socket(short_tmp: Path) -> None:
@@ -74,41 +54,3 @@ def test_proxy_env_forces_canonical_target(short_tmp: Path) -> None:
         "MCP_PROXY_SOCKET": uds_mount.CANONICAL_PROXY_SOCKET,
     }
     assert uds_mount.proxy_env({}) == {}
-
-
-_PS_LINES = (
-    "wl-1\tExited (0) 1 minute ago\t"
-    "factory.sandbox=true,factory.workload=workload:launch-1\n"
-    "plain\tDead\tfactory.sandbox=true\n"
-)
-
-
-def test_sweep_orphans_returns_reaped_list_with_policy_ids() -> None:
-    def fake_run(cmd, timeout=30):  # noqa: ANN001
-        if cmd[:3] == ["docker", "ps", "-a"]:
-            return 0, _PS_LINES, ""
-        return 0, "", ""
-
-    reaped = uds_mount.sweep_orphans(fake_run)
-    assert reaped == [
-        {"container_id": "wl-1", "policy_id": "workload:launch-1", "reason": "exited"},
-        {"container_id": "plain", "policy_id": None, "reason": "dead"},
-    ]
-
-
-def test_sweep_orphans_reads_labels_before_removal() -> None:
-    """CRITICAL: labels must be read (ps) BEFORE rm -f, else they vanish."""
-    calls: list[list[str]] = []
-
-    def fake_run(cmd, timeout=30):  # noqa: ANN001
-        calls.append(cmd)
-        if cmd[:3] == ["docker", "ps", "-a"]:
-            return 0, _PS_LINES, ""
-        return 0, "", ""
-
-    uds_mount.sweep_orphans(fake_run)
-    ps_idx = next(i for i, c in enumerate(calls) if c[:3] == ["docker", "ps", "-a"])
-    rm_idx = next(i for i, c in enumerate(calls) if c[:3] == ["docker", "rm", "-f"])
-    assert ps_idx < rm_idx, "labels/status read must precede rm -f"
-    assert ["docker", "rm", "-f", "wl-1"] in calls
-    assert ["docker", "rm", "-f", "plain"] in calls

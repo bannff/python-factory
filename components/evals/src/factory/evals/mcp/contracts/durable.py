@@ -94,3 +94,4 @@ class VerifyRecordPointerOutput(_Output):
     evaluators_used: list[str] | None = None
     artifact_refs: list[str] | None = None
     artifacts: dict[str, Any] | None = None
+    edge_model_evidence: dict[str, Any] | None = None

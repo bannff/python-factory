@@ -6,6 +6,8 @@ only injects params the prompt references — both good and bad outputs scored
 """
 from __future__ import annotations
 
+import pytest
+
 from factory.evals.runtime.adapters.evaluator_providers.langchain_provider import (
     _ensure_evidence,
 )
@@ -28,9 +30,14 @@ def test_injected_block_has_no_reference_placeholder():
     assert "{reference_outputs}" not in _ensure_evidence("bare rubric")
 
 
-def test_trajectory_custom_injects_outputs_when_missing():
+def test_trajectory_custom_injects_outputs_when_missing(monkeypatch):
+    pytest.importorskip("agentevals.trajectory.llm")
     from factory.evals.runtime.adapters.evaluator_providers.langchain_trajectory import (
         LangChainTrajectoryProvider,
+    )
+    monkeypatch.setattr(
+        "factory.evals.runtime.adapters.evaluator_providers.langchain_trajectory.get_judge_model",
+        lambda: object(),
     )
     # Build a custom trajectory evaluator with a bare rubric; its prompt must
     # carry {outputs} so the trajectory reaches the judge (no Bedrock call here).

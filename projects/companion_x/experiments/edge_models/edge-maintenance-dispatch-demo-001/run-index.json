@@ -1,0 +1,21 @@
+{
+  "evidence_sha256": {
+    "cohort": "5cae03aa99132cbaa646f8e78187414649972c3635d268b49843e8f9f6438fbf",
+    "dispatch_runner": "3571677184bfe7744e89bbb1fcaa7808a22ba90671e63bb5917254744f372361",
+    "dispatch_summary": "1d3fbb56a19b670905a5c480aa33fa9b13e02494800bb32193b632e20778e3bf",
+    "inference_result": "721fae93108fcbd4ee1be5035c5b989670d6b8a5d677275195792b5cdfa98a8c",
+    "model": "58128c57716e9643ba18922b2281511c29722df4d4871ed264cf4037eb5755fe",
+    "run_manifest": "f540f70d03b65d1726dd1a9830e106cc8c859b5ee41d649c65b05ed673d3f38e",
+    "session_db": "65e2a060d02428d782006616f2f01ffb9ee2e6894e387d80cada6ee410de44d1"
+  },
+  "experiment_id": "edge-maintenance-dispatch-demo-001",
+  "notes": "One trained sensor model plus deterministic dispatch policy; two logical workers in a single container. Not Ditto peer or multimodal evidence.",
+  "protocol": "protocol.md",
+  "results": "results.md",
+  "run_id": "run-001",
+  "run_manifest": "../../../../../../runs/edge-maintenance-dispatch-demo-001/run-001/run-manifest.json",
+  "runner": "dispatch_demo.py",
+  "schema_version": 1,
+  "source_model_experiment": "edge-lab-model-smoke-001",
+  "status": "passed_container_rehearsal"
+}
