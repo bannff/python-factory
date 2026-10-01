@@ -1,23 +1,23 @@
 # Protocol: edge-ditto-device-flow-001
 
-**Status:** Planned, 29 September 2026. No SDK integration result has been
-measured. A single-container Linux rehearsal environment named `edge-lab` is
-defined but has not produced a run. This protocol tests the field path: local
-input → model inference → typed observation → Ditto SDK local store →
-subscribed peer. It does not export inference records as files or require
-cloud connectivity.
+**Status:** N=2 runner implemented, 30 September 2026. No licensed SDK integration
+result has been measured. The `edge-lab` Linux base image imports Ditto
+Python SDK `5.2.0.dev0` but has not produced a peer run. This protocol tests the
+field path: local input → model inference → typed observation → Ditto SDK local
+store → subscribed peer. It does not export inference records as files or
+require cloud connectivity.
 
 ## Single-container Linux rehearsal
 
-Build and provision the [edge-lab environment](../../../edge-lab/README.md)
-through Companion-X Sandbox. Begin with two separate peer processes inside
-that container, each opening its own SDK handle and using a separate
+Build a sealed derivative of the [edge-lab base image](../../../edge-lab/README.md)
+as described below. Its reviewed entrypoint starts two separate peer processes
+inside one container, each opening its own SDK handle and using a separate
 persistence directory and loopback TCP port. This stage establishes that the
 SDK wheel loads in Linux and rehearses local writes, restart persistence, and
 explicit TCP peer sync with one shared test database ID. Its topology and run
 outputs must be recorded using the same manifest and artifact rules below.
-An authorized offline license is supplied at run time, never baked into the
-image or profile. Model inference and N=4/N=8 runs follow only after the
+An authorized offline license is supplied through a protected mount at run time,
+never baked into the image or profile. N=4/N=8 runs follow only after the
 two-peer path is measured.
 
 Peers inside one container share a network namespace. Record that limitation
@@ -102,14 +102,96 @@ fixture directly.
 
 ## Companion-X execution and evidence
 
-Implement a checked-in runner for this experiment that owns peer processes,
-model input replay, topology, cleanup, and raw measurements. Give it a typed,
-versioned scenario manifest and a stable run ID; it must write per-peer logs,
-database directories, prediction records, environment/version details, and a
-machine-readable result manifest to an isolated artifact directory. Hash those
-outputs and link them from `run-index.json`. Summarize deviations and the
-pursue/revise/stop decision in `results.md`. Do not treat a live dashboard or
-in-memory tracker as the only evidence.
+The checked-in N=2 harness is `run.py`, with a strict manifest in
+`scenario-n2.json` (schema version 2). It pins both the file and embedded payload hashes for the
+cataloged FD001 logistic scorer and cohort, plus the approved installed
+`dittolive-ditto` distribution digest
+`d7dfdea1ba6c0a02fd772e923a5cc46362b036e49d4c05371622d63a21bb3990`.
+That SDK digest was measured from the current `edge-lab` container's 38
+hashable installed distribution files on 30 September 2026. A changed image
+or SDK build requires a reviewed scenario revision before a run can pass.
+Supply the cataloged model and cohort files by path to `sealed_image.py`; they
+are not copied into Git. Build only after review freezes `run.py`, `peer.py`,
+`contracts.py`, this protocol, `scenario-n2.json`, and the fixed entrypoint.
+The [sealed image guide](sealed_image.md) describes the allowlisted build
+context, source/SDK pins, license-free preflight, and generated host-local
+`edge-n2-sdk` Sandbox profile. Its image has a fixed entrypoint and `run`
+command. No upload, interactive execute, arbitrary file download, or raw
+Docker copy is available through the secret-enabled Sandbox environment.
+
+Provide the authorized offline license as the named `ditto-offline-license`
+secret reference, whose protected host file is mounted at
+`/run/secrets/ditto-offline-license`. Never place its bytes in a command,
+environment variable, profile, repository file, or evidence artifact. Provision
+the generated profile through Companion-X Sandbox on the current code; confirm
+its exact image ID, internal network, ARM64 platform, one CPU, 512 MiB limit,
+secret marker, and no setup commands before launch. The entrypoint runs the
+frozen loopback scenario and writes only `/evidence/run-001`.
+
+After the container exits, a trusted host-side collector validates its build
+pin and Docker provenance, copies only the declared manifest/index/peer
+projections, verifies their hashes and schema, and removes the container even
+when collection fails. This collector is a host operation outside Sandbox MCP.
+Invoke `collect_sealed.py` with the full 64-hex `--container-id`, generated
+`--build-evidence`, frozen `--scenario`, cataloged `--model` and `--cohort`,
+and a new `--output` directory. It validates model/cohort bytes against the
+build and recomputes predictions before publishing four evidence files. Keep
+the caller's host model/cohort files available until collection finishes.
+Do not read container logs or copy the entire evidence directory. A passing
+license-free preflight and copied files alone do not establish SDK sync; the
+validated run manifest must show both real peers passed persistence, exact
+replay, and convergence. The container must be explicitly removed if a trusted
+collector cannot run. The Sandbox orphan sweep has no automatic production
+scheduler; its ten-minute evidence hold applies only when a sweep is invoked.
+
+The runner verifies the complete cohort's prediction parity before starting
+either child process. Each child opens the fixed offline-license secret at run
+time, writes and queries its local observation, closes and reopens its own
+store, replays the same stable ID, then subscribes and syncs over its declared
+static TCP neighbor. Peer stores are isolated temporary directories and are
+removed after the run; only per-peer content digests are retained so
+SDK-private state or credentials cannot enter the artifact directory. The
+runner writes sanitized prediction projections, environment/version details,
+and a machine-readable result manifest, captures but discards raw process
+output, and links artifact hashes from `run-index.json`. The FD001 cohort has
+no source-event timestamp, so the runner records that omission rather than
+inventing one. Its ground-truth RUL label is evaluation data and is not synced
+in the production-shaped Ditto observation. A run is not evidence until both
+real SDK child processes pass
+persistence, exact replay, and two-peer convergence. Pure contract tests do
+not set that status. Record the pursue/revise/stop decision in `results.md`;
+do not treat a live dashboard or in-memory tracker as the only evidence.
+
+The N=2 scenario is checked against an independent, reviewed content digest,
+so replacing the model and cohort together with self-consistent hashes fails
+preflight. The parent snapshots the scenario and both artifacts into a private
+temporary directory before validation and passes those snapshots to both peer
+processes. Peer IDs are constrained to safe lowercase path components. Each
+peer reports a digest of its installed Ditto distribution files; the parent
+independently computes the same digest and requires it and both peer reports to
+match the approved scenario pin. The parent also stages read-only copies of
+`run.py`, `peer.py`, and `contracts.py`; children execute the staged peer and
+contracts code. Source and staged code hashes must still match their prelaunch
+values after the children finish, and those prelaunch values are written to the
+index. A code change during execution produces `integrity_failed`, without a
+passing manifest. The manifest records the SDK digest alongside the artifact
+pins. Worker output must
+contain exactly one strict JSON result marker with no duplicate keys. These
+checks establish provenance of the local inputs and installed SDK bits, while
+the live run remains necessary to establish actual SDK sync behavior.
+
+The frozen N=2 policy requires at least 20 observations per latency metric,
+zero write failures, no more than 10 MiB peak measured database growth per
+peer, and no more than 10 MiB SDK raw stream bytes sent or received per peer.
+Its exploratory p95 ceilings are 100 ms selected-row inference, 500 ms first
+local write/query, 10 s peer delivery, and 15 s end to end. Two selected rows
+cannot satisfy the 20-sample floor, even if both functional peers pass.
+The end-to-end interval includes the deliberate close/reopen, exact replay,
+subscription, and convergence cycle; peer delivery includes process startup
+skew and polling. These are rehearsal-cycle measurements, not steady-state
+field inference-to-delivery or phone battery/thermal evidence. Report the
+functional result, each performance gate, metric availability, and the
+`eng184_closure_ready` decision separately.
 
 Expose new, narrow start/status/cancel/result MCP tools through Companion-X at
 run boundaries. Its Workflow brick can coordinate dataset, training, peer-run,
@@ -121,18 +203,54 @@ brick for frozen input definitions and partitions, the ML brick for supported
 training and model references, and the Evals brick for terminal gate outcomes
 with artifact hashes.
 
-Companion-X Sandbox has a local `edge-lab` workload profile and a separate
-device-preset catalog. Restart its MCP process on the current Sandbox code with
-`SANDBOX_ADAPTER=docker` and `SANDBOX_PROFILES_DIR` pointing to the profile
-directory. List presets with `sandbox.list_device_presets`, then provision a
-Linux proxy with `sandbox.provision(profile="edge-lab", device_preset="iphone-15")`.
-The selected preset applies a repeatable resource budget and creates a distinct
-container; it does not run iOS. Sandbox provides upload/execute/terminate for
-each environment. The checked-in experiment runner, not Sandbox, owns peer
-processes, SDK stores, topology, and evidence. Multiple preset containers do
-not establish typed network edges or a Ditto mesh by themselves. Keep the
-single-container two-peer gate above as the first SDK check; use separate
-containers only after that path is measured and the runner supports them.
+Companion-X Sandbox has a separate device-preset catalog. Restart its MCP
+process on the current Sandbox code with `SANDBOX_ADAPTER=docker` and
+`SANDBOX_PROFILES_DIR` pointing to the profile directory. Select the generated
+`edge-n2-sdk` profile for this first licensed rehearsal; its fixed resource
+budget is a Linux ARM64 proxy, not an iOS simulator. The checked-in runner owns
+peer processes, SDK stores, topology, and evidence. For separate containers,
+use a shared internal Sandbox peer network with a unique alias per device; the
+distributed peer mode below connects those aliases. The single-container
+loopback gate is not evidence of distinct device networking.
+
+## Separate Sandbox-container N=2 mode
+
+`peer.py` accepts explicit `--mode distributed` for one peer process in each
+of two distinct Sandbox containers. This is configuration support, not
+evidence that the containers have run or synced. Keep `run.py`'s default
+loopback rehearsal unchanged. Provision both containers with the same Sandbox
+`peer_network.network_id`, distinct `peer_network.alias` values, and the same
+declared internal port; set the Sandbox peer network's `internal: true` to
+remove its default external route. Before calling the run offline-only, verify
+that the two aliases resolve and reach each other while an external endpoint
+is unreachable. Bind each Ditto listener to `0.0.0.0`; connect to the other
+container's Sandbox DNS alias and internal port. Configure each process with
+that peer's own ID and `--listen-port`, plus the counterpart's
+`--neighbor-host` and `--neighbor-port`:
+
+```sh
+python peer.py \
+  --scenario /tmp/edge-ditto-device-flow-001/scenario-n2.json \
+  --model /tmp/edge-ditto-device-flow-001/model.json \
+  --cohort /tmp/edge-ditto-device-flow-001/cohort.json \
+  --stores /var/lib/edge-ditto-device-flow-001 \
+  --peer-id sensor-peer-a \
+  --mode distributed \
+  --listen-interface 0.0.0.0 \
+  --listen-port 24225 \
+  --neighbor-host edge-peer-b \
+  --neighbor-port 24225
+```
+
+Run the counterpart with `--peer-id sensor-peer-b` and `--neighbor-host
+edge-peer-a`. Supply the offline license only through the protected secret
+mount. Each peer emits a strict result projection whose topology records mode,
+listen interface/port, and neighbor hostname/port. Hostnames and ports are
+topology metadata; token contents and secret paths are excluded. Collect one
+sanitized `EDGE_DITTO_RESULT` record per container and combine it with the
+Sandbox peer-network metadata when preparing a reviewed run manifest. This mode
+does not add cloud connectivity, host-published ports, or device-radio
+emulation.
 
 ## iPhone stage
 
@@ -145,13 +263,23 @@ phone-class resource gate.
 
 ## SDK source and prerequisites
 
-The local `getditto/ditto` checkout at `d89fb3480838` includes
-`sdks/python/tests/sync/conftest.py`, which connects two real SDK peers with
-separate stores and explicit loopback TCP ports. The public `dittolive-ditto`
-preview wheel for Apple Silicon bundles `libdittoffi`, so this macOS stage can
-run without full Xcode. Python 3.12 and `uv` are available on this host; the
-wheel is not installed. Pin and verify its version/hash before use. SDK sync
-requires an authorized offline license supplied outside the experiment record;
-none is configured in the current shell. The iPhone stage requires an iOS build;
-a simulator can rehearse functional behavior, while a physical iPhone is
-required to clear the phone-class resource and radio gate.
+The Ditto Python SDK test suite's loopback fixture connects two real SDK peers
+with separate stores and explicit TCP ports. The current `edge-lab` image
+imports version `5.2.0.dev0`; this runner has not exercised that SDK yet. The
+authorized offline license token is the remaining prerequisite for the first
+peer run and must stay outside experiment records. The iPhone stage requires
+an iOS build; a simulator can rehearse functional behavior, while a physical
+iPhone is required to clear the phone-class resource and radio gate.
+
+For Ditto employees, `Projects/ditto/crates/ditto-dev-licenser/README.md`
+documents the production Portal path: sign in with a `ditto.com` account,
+create a database, request addition to the Ditto admin group in `#it-helpdesk`
+if the offline-token section is not available, then generate the token in the
+Portal's **Offline license token** section. The internal
+[Ditto discussion notes](https://app.notion.com/p/35f9d9829a328029b21dffd0a49f92b8?pvs=204)
+also identify that Portal section and confirm offline mode needs the database
+ID plus the offline token. Use Portal issuance for this run; do not invoke the
+local `ditto-dev-licenser generate` signer or `keygen` flow. Save the token
+only to the protected host-side file configured by the Sandbox secret mount;
+never put it in the profile, command line, environment dump, repository, or
+run artifacts.

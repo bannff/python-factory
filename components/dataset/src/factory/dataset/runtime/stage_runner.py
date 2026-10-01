@@ -6,8 +6,11 @@ from pathlib import Path
 from typing import Any
 
 from .contracts import (
-    DatasetFallbackRecord, DatasetGenerationRequest, DatasetProvenanceRecord,
-    DatasetQualityResults, DatasetStageCheckpoint,
+    DatasetFallbackRecord,
+    DatasetGenerationRequest,
+    DatasetProvenanceRecord,
+    DatasetQualityResults,
+    DatasetStageCheckpoint,
 )
 from .helpers import _config_digest, _sha256
 from .ports import DatasetStagePort
@@ -15,7 +18,8 @@ from .quality import evaluate_quality
 from .recipe import records_content
 from .scenario_errors import ScenarioGenerationError
 from .scenario_models import (
-    ScenarioPackGenerationInput, ScenarioPackLineage,
+    ScenarioPackGenerationInput,
+    ScenarioPackLineage,
 )
 from .validation import dispatch_validator
 
@@ -29,9 +33,13 @@ def run_stage_loop(
            DatasetFallbackRecord | None, list[DatasetStageCheckpoint]]:
     """Execute recipe stages, resuming from checkpoints where possible."""
     record_schema = getattr(recipe, "record_schema", "conversation")
+    allowed_local_roots = request.allowed_local_roots
     stage_versions: dict[str, str] = {}
     stage_lineage: list[DatasetStageCheckpoint] = []
-    final_quality = evaluate_quality(records)
+    final_quality = evaluate_quality(
+        records, record_schema=record_schema,
+        allowed_local_roots=allowed_local_roots,
+    )
     final_provenance = DatasetProvenanceRecord(materializer="local-recipe", job_id=job_id)
     final_fallback: DatasetFallbackRecord | None = None
     current_content = (
@@ -72,6 +80,7 @@ def run_stage_loop(
             records = _load_checkpoint_records(
                 checkpoint, record_schema, checkpoints.root, job_id,
                 require_digest=request.scenario_generation is not None,
+                allowed_local_roots=allowed_local_roots,
             )
             if request.scenario_generation is not None:
                 _validate_scenario_stage(
@@ -98,7 +107,10 @@ def run_stage_loop(
         fallback = _extract_fallback(stage, request)
         final_fallback = fallback or final_fallback
         provenance = DatasetProvenanceRecord(materializer="local-recipe", job_id=job_id)
-        quality = evaluate_quality(records)
+        quality = evaluate_quality(
+            records, record_schema=record_schema,
+            allowed_local_roots=allowed_local_roots,
+        )
         checkpoint = checkpoints.save(
             stage_name=recipe_stage.name, stage_index=index, input_digest=input_digest,
             records=records, schema_version=recipe.schema_version,
@@ -107,6 +119,7 @@ def run_stage_loop(
             tool_schema_snapshot_digest=tool_digest, provenance=provenance,
             quality_results=quality, fallback=fallback, record_schema=record_schema,
             scenario_lineage=scenario_lineage,
+            allowed_local_roots=allowed_local_roots,
         )
         final_quality, final_provenance = quality, provenance
         stage_versions[recipe_stage.name] = checkpoint.adapter_version
@@ -177,9 +190,11 @@ def _load_checkpoint_records(
     job_id: str,
     *,
     require_digest: bool,
+    allowed_local_roots: tuple[Path, ...] = (),
 ) -> list[Any]:
     from .checkpoint_integrity import (
-        checked_output_path, validate_checkpoint_metadata,
+        checked_output_path,
+        validate_checkpoint_metadata,
     )
     output_path = checked_output_path(checkpoint, checkpoint_root, record_schema)
     from .atomic_io import read_bytes_no_follow
@@ -195,5 +210,6 @@ def _load_checkpoint_records(
     validated = list(dispatch_validator(records, record_schema=record_schema))
     validate_checkpoint_metadata(
         checkpoint, validated, job_id=job_id, require_digest=require_digest,
+        record_schema=record_schema, allowed_local_roots=allowed_local_roots,
     )
     return validated

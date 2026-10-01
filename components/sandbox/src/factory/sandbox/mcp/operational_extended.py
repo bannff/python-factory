@@ -41,7 +41,10 @@ def _transfer_result(
 def register(mcp: Any, runtime: "SandboxRuntime") -> None:
     """Register typed stateful sandbox operations."""
 
-    @mcp.tool(name="sandbox.execute")
+    @mcp.tool(
+        name="sandbox.execute",
+        telemetry_excluded_argument_fields=("command",),
+    )
     @operational(input_model=SandboxCommandRequest, output_model=SandboxCommandResult)
     @op_kind("shell")
     async def execute(

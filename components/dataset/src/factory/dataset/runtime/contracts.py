@@ -1,19 +1,27 @@
 """Typed public contracts for dataset generation jobs and bundles."""
 from __future__ import annotations
 
+import os
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, computed_field, field_validator
 
-from .base import (  # noqa: F401 — re-export for backward compat
-    DatasetExecutionPolicy, DatasetFallbackRecord, DatasetInputRef,
-    DatasetProvenanceRecord, DatasetQualityResults, DatasetSnapshotRef,
-    DatasetToolSchemaSnapshotRef, _normalize_digest, _require_non_empty,
-)
 from .approval_models import DatasetApprovalBinding
-from .scenario_models import ScenarioPackGenerationInput, ScenarioPackLineage
+from .base import (  # noqa: F401 — re-export for backward compat
+    DatasetExecutionPolicy,
+    DatasetFallbackRecord,
+    DatasetInputRef,
+    DatasetProvenanceRecord,
+    DatasetQualityResults,
+    DatasetSnapshotRef,
+    DatasetToolSchemaSnapshotRef,
+    _normalize_digest,
+    _require_non_empty,
+)
 from .blueprint_models import DatasetBlueprintBinding, DatasetBlueprintLineage
+from .scenario_models import ScenarioPackGenerationInput, ScenarioPackLineage
 
 
 class DatasetGenerationRequest(BaseModel):
@@ -21,6 +29,13 @@ class DatasetGenerationRequest(BaseModel):
     recipe_uri: str
     recipe_digest: str
     input_artifacts: list[DatasetInputRef] = Field(default_factory=list)
+    allowed_local_roots: tuple[Path, ...] = Field(
+        default_factory=tuple,
+        description=(
+            "Caller-authorized local roots for referenced edge sensor payload files. "
+            "Paths are compared lexically before no-follow reads."
+        ),
+    )
     context_snapshot: DatasetSnapshotRef
     tool_schema_snapshot: DatasetToolSchemaSnapshotRef
     requested_views: list[str] = Field(default_factory=lambda: ["default"], min_length=1, max_length=10)
@@ -54,6 +69,23 @@ class DatasetGenerationRequest(BaseModel):
             cleaned.append(name)
         return cleaned
 
+    @field_validator("allowed_local_roots", mode="before")
+    @classmethod
+    def _validate_allowed_local_roots(cls, value: Any) -> tuple[str, ...]:
+        """Keep a canonical lexical allowlist without probing filesystem paths."""
+        if value is None:
+            return ()
+        roots: list[Path] = []
+        for item in value:
+            root = Path(item)
+            if not root.is_absolute() or ".." in root.parts:
+                raise ValueError("Allowed local roots must be absolute paths without traversal")
+            normalized = Path(os.path.abspath(root))
+            if normalized in roots:
+                raise ValueError("Allowed local roots must be unique")
+            roots.append(normalized)
+        return tuple(str(root) for root in roots)
+
     @computed_field(return_type=str)
     @property
     def context_snapshot_uri(self) -> str:
@@ -84,7 +116,10 @@ class DatasetRecipe(BaseModel):
     version: str
     schema_version: str = "1.0"
     stages: list[DatasetRecipeStage] = Field(min_length=1)
-    record_schema: Literal["conversation", "can_frame", "can_artifact", "generic"] = "conversation"
+    record_schema: Literal[
+        "conversation", "can_frame", "can_artifact", "generic",
+        "edge_sensor_window", "edge_routing_example",
+    ] = "conversation"
 
 
 class DatasetJobReceipt(BaseModel):
@@ -98,6 +133,10 @@ class DatasetArtifactRef(BaseModel):
     manifest_uri: str
     digest: str
     schema_version: str
+    record_schema: Literal[
+        "conversation", "can_frame", "can_artifact", "generic",
+        "edge_sensor_window", "edge_routing_example",
+    ] = "conversation"
     available_views: list[str] = Field(min_length=1, max_length=10)
     view_schema_versions: dict[str, str] = Field(default_factory=dict)
     training_uri: str | None = None
@@ -118,6 +157,10 @@ class DatasetJobStatus(BaseModel):
 class DatasetManifest(BaseModel):
     """Reproducibility metadata for one immutable dataset bundle."""
     schema_version: str
+    record_schema: Literal[
+        "conversation", "can_frame", "can_artifact", "generic",
+        "edge_sensor_window", "edge_routing_example",
+    ] = "conversation"
     dataset_uri: str | None = None
     manifest_uri: str | None = None
     training_uri: str | None = None
@@ -125,6 +168,7 @@ class DatasetManifest(BaseModel):
     recipe_uri: str
     recipe_digest: str
     input_artifacts: list[DatasetInputRef]
+    allowed_local_roots: tuple[Path, ...] = Field(default_factory=tuple)
     context_snapshot: DatasetSnapshotRef
     tool_schema_snapshot: DatasetToolSchemaSnapshotRef
     execution_policy: DatasetExecutionPolicy
@@ -179,6 +223,7 @@ class DatasetStageCheckpoint(BaseModel):
     quality_results: DatasetQualityResults
     scenario_lineage: ScenarioPackLineage | None = None
     checkpoint_digest: str | None = None
+    allowed_local_roots_digest: str | None = None
     fallback: DatasetFallbackRecord | None = None
     created_at: datetime
 

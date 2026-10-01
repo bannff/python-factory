@@ -7,7 +7,7 @@ WORKDIR /work
 COPY requirements.lock /tmp/requirements.lock
 RUN python -m pip install --no-cache-dir --require-hashes \
         -r /tmp/requirements.lock \
-    && python -c "import ditto" \
+    && python -c "import cbor2, ditto; from PIL import Image; print('edge-lab runtime imports OK:', Image.__version__)" \
     && mkdir -p /work/runs
 
 CMD ["sleep", "infinity"]

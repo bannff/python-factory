@@ -4,19 +4,26 @@ from __future__ import annotations
 from typing import ClassVar, Literal
 
 from pydantic import Field, StrictBool, StrictInt, StrictStr
-from ...runtime.contracts import (
-    DatasetExecutionPolicy, DatasetInputRef, DatasetProvenanceRecord,
-    DatasetQualityResults, DatasetSnapshotRef, DatasetToolSchemaSnapshotRef,
-)
 
+from ...runtime.approval_models import DatasetApprovalBinding
+from ...runtime.blueprint_models import DatasetBlueprintBinding
+from ...runtime.contracts import (
+    DatasetExecutionPolicy,
+    DatasetInputRef,
+    DatasetProvenanceRecord,
+    DatasetQualityResults,
+    DatasetSnapshotRef,
+    DatasetToolSchemaSnapshotRef,
+)
 from .base import InputDTO, OutputDTO
 from .nested import ArtifactReferenceOutput
 from .resolved_artifact import ResolvedArtifactOutput
-from ...runtime.blueprint_models import DatasetBlueprintBinding
-from ...runtime.approval_models import DatasetApprovalBinding
 from .scenario_outputs import (
-    ScenarioAssumptionOutput, ScenarioLineageOutput, ScenarioPackOutput,
-    ScenarioPackRefOutput, ScenarioSourceOutput,
+    ScenarioAssumptionOutput,
+    ScenarioLineageOutput,
+    ScenarioPackOutput,
+    ScenarioPackRefOutput,
+    ScenarioSourceOutput,
 )
 
 
@@ -37,6 +44,10 @@ class SubmitGenerationInput(InputDTO):
     input_artifact_uris: list[StrictStr] | None = None
     input_artifact_digests: list[StrictStr] | None = None
     input_artifact_roles: list[StrictStr] | None = None
+    allowed_local_roots: list[StrictStr] = Field(
+        default_factory=list,
+        description="Absolute local roots authorized for edge sensor payload reads.",
+    )
     scenario_pack_identity: StrictStr | None = None
     scenario_pack_version: StrictStr | None = None
     scenario_pack_uri: StrictStr | None = None
@@ -86,6 +97,10 @@ class ArtifactOutput(OutputDTO):
     manifest_uri: StrictStr | None = None
     digest: StrictStr | None = None
     schema_version: StrictStr | None = None
+    record_schema: Literal[
+        "conversation", "can_frame", "can_artifact", "generic",
+        "edge_sensor_window", "edge_routing_example",
+    ] | None = None
     available_views: list[StrictStr] | None = None
     view_schema_versions: dict[StrictStr, StrictStr] | None = None
     training_uri: StrictStr | None = None
@@ -123,6 +138,7 @@ class GenerationRequestOutput(OutputDTO):
     recipe_uri: StrictStr
     recipe_digest: StrictStr
     input_artifacts: list[InputArtifactOutput]
+    allowed_local_roots: list[StrictStr]
     context_snapshot: SnapshotOutput
     tool_schema_snapshot: ToolSchemaSnapshotOutput
     requested_views: list[StrictStr]

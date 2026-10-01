@@ -11,6 +11,7 @@ from factory.mcp_utils.interface import ok, operational
 from factory.mcp_utils.runtime.tool_result import ToolResult
 
 from ..runtime.models import SandboxConfig
+from ..runtime.peer_network import PeerNetworkSpec
 from .conversions import to_mcp_environment
 from .models import (
     SandboxEnvironmentRequest, SandboxProvisionRequest, SandboxProvisionResult,
@@ -35,6 +36,7 @@ def register(mcp: Any, runtime: "SandboxRuntime") -> None:
         device_preset: str | None = Field(
             default=None, pattern=r"^[a-z0-9][a-z0-9_-]{0,127}$",
         ),
+        peer_network: PeerNetworkSpec | None = None,
     ) -> ToolResult[SandboxProvisionResult]:
         """Provision a sandbox environment."""
         environment = await runtime.provision(
@@ -44,6 +46,7 @@ def register(mcp: Any, runtime: "SandboxRuntime") -> None:
             ),
             profile=profile,
             device_preset=device_preset,
+            peer_network=peer_network,
         )
         return ok(SandboxProvisionResult(
             environment=to_mcp_environment(environment), profile=profile,

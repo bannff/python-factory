@@ -20,7 +20,9 @@ class ToolCatalog:
         self._prompts: dict[str, CatalogPrompt] = {}
 
     def tool(
-        self, name: str | None = None, *, description: str | None = None, **_: Any,
+        self, name: str | None = None, *, description: str | None = None,
+        telemetry_excluded_argument_fields: frozenset[str] = frozenset(),
+        **_: Any,
     ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         def register(fn: Callable[..., Any]) -> Callable[..., Any]:
             public_name = name or fn.__name__
@@ -28,6 +30,7 @@ class ToolCatalog:
                 raise ValueError(f"duplicate tool: {public_name}")
             self._tools[public_name] = CatalogTool(
                 public_name, description or _description(fn), fn,
+                frozenset(telemetry_excluded_argument_fields),
             )
             return fn
         return register
@@ -71,6 +74,9 @@ class ToolCatalog:
             raise TypeError("tool must expose callable fn and string name")
         self._tools[name] = CatalogTool(
             name, str(getattr(tool, "description", "") or ""), fn,
+            frozenset(getattr(
+                tool, "telemetry_excluded_argument_fields", frozenset(),
+            )),
         )
 
     def tool_map(self) -> dict[str, CatalogTool]:
@@ -93,6 +99,7 @@ class ToolCatalog:
         brick_name, tool_name = catalog_identity(self.name, name)
         value = await invoke_native_tool(
             brick_name, tool_name, tool.fn, arguments or {},
+            excluded_argument_fields=tool.telemetry_excluded_argument_fields,
         )
         from mcp.types import CallToolResult, TextContent
         structured = (

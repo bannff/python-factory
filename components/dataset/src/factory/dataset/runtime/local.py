@@ -4,14 +4,16 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
+import re
 import subprocess
 import sys
 import uuid
+from pathlib import Path
 
 import factory.dataset
 
-from .artifact_utils import require_artifact_path, verify_artifact, verify_manifest_path
+from .artifact_utils import require_artifact_path, verify_artifact
+from .atomic_io import read_bytes_no_follow
 from .contracts import (
     DatasetArtifactRef,
     DatasetGenerationRequest,
@@ -19,12 +21,18 @@ from .contracts import (
     DatasetJobStatus,
     DatasetManifest,
 )
-from .helpers import _file_uri, _now, _sha256
-from .atomic_io import read_bytes_no_follow
-from .recipe import path_from_uri
+from .helpers import _file_uri, _now, _sha256  # noqa: F401 — backward-compat re-export
 
 # Backward-compat re-export — canonical home is materializer.py
 from .materializer import LocalDatasetMaterializer  # noqa: F401
+from .recipe import path_from_uri
+
+_JOB_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}\Z")
+
+
+def _require_job_id(job_id: str) -> None:
+    if not isinstance(job_id, str) or _JOB_ID.fullmatch(job_id) is None:
+        raise ValueError("Dataset job ID is invalid")
 
 
 class LocalDatasetStore:
@@ -51,14 +59,25 @@ class LocalDatasetStore:
         return receipt, True
 
     def get_job(self, job_id: str) -> DatasetJobStatus | None:
+        _require_job_id(job_id)
         path = self.jobs_dir / f"{job_id}.json"
         try:
             content = read_bytes_no_follow(path)
         except FileNotFoundError:
             return None
-        return DatasetJobStatus.model_validate_json(content)
+        status = DatasetJobStatus.model_validate_json(content)
+        if status.job_id != job_id:
+            raise ValueError("Dataset job identity differs from its file")
+        if status.artifact is not None:
+            if status.status != "completed":
+                raise ValueError("Only a completed dataset job may expose an artifact")
+            self._verified_artifact(status)
+        elif status.status == "completed":
+            raise ValueError("Completed dataset job has no artifact")
+        return status
 
     def save_job(self, status: DatasetJobStatus) -> None:
+        _require_job_id(status.job_id)
         self._write_json(self.jobs_dir / f"{status.job_id}.json", status.model_dump(mode="json"))
 
     def claim_job(self, job_id: str) -> DatasetJobStatus:
@@ -94,6 +113,11 @@ class LocalDatasetStore:
         status = self.get_job(job_id)
         if not status or status.status != "completed" or not status.artifact:
             return None
+        return status.artifact
+
+    def _verified_artifact(self, status: DatasetJobStatus) -> DatasetArtifactRef:
+        if status.artifact is None:
+            raise ValueError("Completed dataset job has no artifact")
         reference_path = path_from_uri(status.artifact.dataset_uri).with_suffix(".ref.json")
         require_artifact_path(path_from_uri(status.artifact.dataset_uri), reference_path, self.artifacts_dir)
         try:
@@ -103,7 +127,12 @@ class LocalDatasetStore:
         artifact = DatasetArtifactRef.model_validate_json(reference_content)
         if artifact.dataset_uri != status.artifact.dataset_uri:
             raise ValueError("Dataset artifact reference does not belong to this job")
-        verify_artifact(artifact, self.manifests_dir, self.artifacts_dir, request=status.request)
+        verify_artifact(
+            artifact, self.manifests_dir, self.artifacts_dir,
+            request=status.request, expected_job_id=status.job_id,
+        )
+        if artifact != status.artifact:
+            raise ValueError("Dataset artifact reference differs from completed job")
         return artifact
 
     def resolve_manifest(self, dataset_uri: str) -> DatasetManifest | None:

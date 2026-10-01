@@ -14,8 +14,47 @@ from uuid import uuid4
 from .models import SandboxConfig
 
 
+_LOCAL_IMAGE_ID = re.compile(r"sha256:[0-9a-f]{64}\Z")
+_INTERACTIVE_EXECUTABLES = {"sh", "bash", "dash", "ash", "zsh", "fish", "env"}
+
+
+def validate_secret_launch(image: Any, command: Any) -> None:
+    """Require a locally pinned image and fixed Docker CMD arguments."""
+    if not isinstance(image, str) or _LOCAL_IMAGE_ID.fullmatch(image) is None:
+        raise ValueError("Secret profiles require a local image ID (sha256:<64 hex>)")
+    if command is None:
+        raise ValueError("Secret profiles require a trusted fixed entrypoint")
+    if not _safe_fixed_argv(command):
+        raise ValueError("Secret profiles require fixed nonempty command args")
+    if _uses_shell_or_eval(command):
+        raise ValueError("Secret profiles require a fixed noninteractive command")
+
+
+def validate_secret_image_entrypoint(entrypoint: Any) -> None:
+    """Require an absolute, noninteractive executable baked into the pinned image."""
+    if not _safe_fixed_argv(entrypoint) or not entrypoint[0].startswith("/"):
+        raise ValueError("Secret mount requires a trusted fixed image ENTRYPOINT")
+    if _uses_shell_or_eval(entrypoint):
+        raise ValueError("Secret mount requires a trusted fixed image ENTRYPOINT")
+
+
+def _safe_fixed_argv(argv: Any) -> bool:
+    return isinstance(argv, (list, tuple)) and bool(argv) and all(
+        isinstance(arg, str) and arg.strip() and arg == arg.strip()
+        for arg in argv
+    )
+
+
+def _uses_shell_or_eval(argv: list[str] | tuple[str, ...]) -> bool:
+    executable = argv[0].rsplit("/", 1)[-1]
+    return executable in _INTERACTIVE_EXECUTABLES or any(
+        arg in {"-c", "--eval"} for arg in argv
+    )
+
+
 def build_provision_context(
     cfg: SandboxConfig, profile: str | None, device_preset: str | None = None,
+    peer_network: Any | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
     """Return ``(adapter_config, metadata, setup_commands)`` for ``cfg``.
 
@@ -30,9 +69,20 @@ def build_provision_context(
     setup_commands: list[str] = []
     if device_preset is not None and not profile:
         raise ValueError("A device_preset requires a sandbox profile")
+    if peer_network is not None and not profile:
+        raise ValueError("A peer_network requires a sandbox profile")
     if profile:
         from .profiles import resolve_profile
         p = resolve_profile(profile)
+        from .peer_network import validate_peer_network
+
+        selected_peer_network = validate_peer_network(
+            peer_network if peer_network is not None else p.peer_network,
+        )
+        if selected_peer_network is not None and selected_peer_network.internal and p.ports:
+            raise ValueError(
+                "Internal peer networks cannot publish profile ports to the host"
+            )
         preset = None
         if device_preset is not None:
             from .device_presets import (
@@ -65,6 +115,28 @@ def build_provision_context(
             "platform": p.platform, "cpus": p.cpus,
             "memory_mb": p.memory_mb,
         })
+        if selected_peer_network is not None:
+            adapter_config["peer_network"] = selected_peer_network.model_dump()
+            metadata["peer_network"] = selected_peer_network.public_metadata()
+        if p.secret_refs:
+            if p.replace_existing:
+                raise ValueError(
+                    "Sandbox profiles with secret_refs must not replace existing containers"
+                )
+            if selected_peer_network is None or not selected_peer_network.internal:
+                raise ValueError(
+                    "Sandbox profiles with secret_refs require an internal peer network"
+                )
+            validate_secret_launch(p.image, p.entrypoint)
+            if p.setup_commands:
+                raise ValueError(
+                    "Sandbox profiles with secret_refs cannot define setup_commands"
+                )
+            # The source paths exist only in this transient adapter config;
+            # profile and public runtime metadata retain symbolic names only.
+            from .adapters.secret_mounts import resolve_secret_mounts
+
+            adapter_config["secret_mounts"] = resolve_secret_mounts(p.secret_refs)
         cfg.instance_type = "docker"
         setup_commands = list(p.setup_commands)
         metadata.update({
@@ -80,6 +152,10 @@ def build_provision_context(
                 p.device_target.model_dump() if p.device_target else None
             ),
         })
+        if p.secret_refs:
+            # Durable but non-sensitive marker used to suppress command output
+            # after the environment is reloaded from its store.
+            metadata["secret_mounts_enabled"] = True
         if preset is not None:
             # A selected target is a new instance of the image recipe, never
             # a request to replace an existing container of the same profile.

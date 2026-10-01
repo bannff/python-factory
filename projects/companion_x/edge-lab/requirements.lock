@@ -5,3 +5,7 @@ dittolive-ditto==5.2.0.dev0 \
 cbor2==5.9.0 \
     --hash=sha256:4cd43d8fc374b31643b2830910f28177a606a7bc84975a62675dd3f2e320fc7b \
     --hash=sha256:ae6c706ac1d85a0b3cb3395308fd0c4d55e3202b4760773675957e93cdff45fc
+# PyPI release 12.3.0, CPython 3.12 manylinux_2_27/2_28 x86_64 and aarch64 wheels.
+pillow==12.3.0 \
+    --hash=sha256:d9c7f76c0673154f044e9d78c8655fb4213f6ca31a836df48b40fe5d187717b9 \
+    --hash=sha256:78cb2c6865a35ab8ff8b75fd122f6033b92a62c82801110e48ddd6c936a45d91

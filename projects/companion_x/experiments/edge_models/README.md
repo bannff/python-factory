@@ -34,12 +34,39 @@ must happen before submission, with their evidence recorded here. Use the ML
 brick's real trainer where supported; the `memory` backend is never result
 evidence.
 
-The current Dataset quality checks expect conversation `messages`. They
-report `passed=false` for these ML records even though all 11 generic jobs
-completed and the separately validated artifacts were resolved and compared
-record-for-record with their frozen inputs. Until the brick has native ML schemas
-and quality policies, treat the external validation manifest as the ML data
-check; keep the brick status visible in each run index.
+The earlier catalog pilots used Dataset's generic, pass-through recipe. Those
+historical jobs completed, but their conversation-oriented quality checks could
+report `passed=false`; separately validated artifacts were compared
+record-for-record with their frozen inputs. Dataset now has an explicit
+`edge_sensor_window` policy for versioned sensor examples. It checks schema,
+unique record IDs, required train/validation/test splits, group and input-digest
+split isolation, and the bytes behind each input reference. After no-follow
+SHA-256 verification, the referenced JSON payload is validated for ordered
+channels and timestamped samples, exact channel/sample shape, finite values,
+strictly increasing sample times, modality agreement, and an observation
+cutoff equal to the final sample timestamp. Labels carry separate provenance
+and a future horizon. Symlinked input paths, unsupported URI schemes,
+unreadable files, and hash mismatches fail closed. Materialization and
+checkpoint resume revalidate payload semantics; a bad payload or cross-split
+leak prevents publication. Keep the Dataset quality result visible in each
+run index.
+
+ENG-191 and ENG-192 track the new Dataset and Evals contracts. ENG-191's
+sample-level payload checks and fresh review are complete; its full Dataset
+suite passed (582 passed, 32 skipped). Evals accepts an
+`edge_model_evidence` envelope that records SHA-256 digests for the model,
+dataset and split, evaluator, and policy, together with the target, runtime,
+measured task/resource metrics, and explicitly unavailable measurements. The
+durable run-record path validates and preserves this envelope; its hashes are
+reproducibility references and do not by themselves prove that external files
+were retrieved or executed.
+
+ENG-185 and ENG-186 track iOS Simulator and Android Emulator compatibility.
+Current native-runner groundwork defines frozen scenario and result contracts
+and a host-toolchain preflight. A preflight reports availability and planned
+commands only; it explicitly records that no native run was performed. It is
+not evidence of app/SDK compatibility, model packaging, prediction parity, or
+device performance. No native app or SDK run is recorded in this catalog yet.
 
 Dataset job IDs and `file:` artifact URIs refer to this local lab store, so
 they are not portable endpoints. The [ENG-173 evidence bundle](https://linear.app/ditto/issue/ENG-173/edge-device-multi-model-family-experimentation)
@@ -71,6 +98,9 @@ A lab quality score only addresses the first gate.
 | [edge-tool-routing-001](edge-tool-routing-001/results.md) | Local typed-tool selection | Synthetic lab probe | Standalone MiniLM has 6/10 unsafe misroutes; guarded follow-up needs fresh holdout |
 | [edge-ditto-device-flow-001](edge-ditto-device-flow-001/protocol.md) | N-device model persistence and offline peer sync through the real Ditto SDK | Protocol ready; not run | Python SDK mesh gate, followed by physical iPhone verification |
 | [edge-lab-model-smoke-001](edge-lab-model-smoke-001/results.md) | Frozen sensor-model inference inside one `edge-lab` container | Functional gate passed | 100/100 decisions; 3.33e-16 maximum score error; Ditto gate remains separate |
+| [edge-maintenance-dispatch-demo-001](edge-maintenance-dispatch-demo-001/results.md) | Offline maintenance dispatch queue from edge sensor inference | Container rehearsal passed | 100 assets, 2 technician proposals, replay-safe task state; Ditto peers and multimodal data remain untested |
+| [edge-visual-quality-mesh-001](edge-visual-quality-mesh-001/protocol.md) | Tiny local vision model flags surface defects on an edge device; later coordinate review over Ditto | ARM64 `edge-lab` inference demonstrated; two-peer Ditto mesh pending | 135 held-out images scored, 6.3 KB model, 11.6 ms/image; AP 0.876; FPR 10.26% misses the pre-set 10% gate; [run results](edge-visual-quality-mesh-001/results.md) |
+| [edge-audio-device-demo-001](edge-audio-device-demo-001/results.md) | Offline WAV keyword proposals from a tiny trained CNN | ARM64 `edge-lab` inference demonstrated; iPhone and Ditto pending | 12 held-out clips, 12/12 PyTorch decision parity, p95 1.142 ms; 7/12 illustrative clips correct, so no voice-control promotion |
 
 ## Candidate coverage
 

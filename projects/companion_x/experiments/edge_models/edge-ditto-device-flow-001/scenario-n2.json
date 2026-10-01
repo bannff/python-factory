@@ -1,0 +1,41 @@
+{
+  "schema_version": 2,
+  "scenario_id": "edge-ditto-device-flow-001-n2-fd001",
+  "database_id": "b2c6f1fd-3951-4e90-ae33-cbda6a7a7102",
+  "sdk_distribution_sha256": "d7dfdea1ba6c0a02fd772e923a5cc46362b036e49d4c05371622d63a21bb3990",
+  "model": {
+    "kind": "fd001_scaled_logistic",
+    "file_sha256": "58128c57716e9643ba18922b2281511c29722df4d4871ed264cf4037eb5755fe",
+    "payload_sha256": "4fbdcf7c28c25712e3a5ed1934d9d2798234021b26f51cb4952f5f469c982f63"
+  },
+  "cohort": {
+    "kind": "fd001_official_test_endpoints",
+    "file_sha256": "5cae03aa99132cbaa646f8e78187414649972c3635d268b49843e8f9f6438fbf",
+    "payload_sha256": "69e1e8987e2a344177fa3d2ae3373dda92567d3f93b70b9da7b02549faf5c589",
+    "engine_ids": [1, 2]
+  },
+  "peers": [
+    {"peer_id": "sensor-peer-a", "device_id": "fd001-device-a", "engine_id": 1},
+    {"peer_id": "sensor-peer-b", "device_id": "fd001-device-b", "engine_id": 2}
+  ],
+  "topology": {
+    "transport": "static_tcp",
+    "edges": [["sensor-peer-a", "sensor-peer-b"]]
+  },
+  "sync_timeout_seconds": 45,
+  "metrics_policy": {
+    "schema_version": 1,
+    "min_samples_per_latency_metric": 20,
+    "p95_ms_ceilings": {
+      "selected_row_inference": 100,
+      "first_local_write_query": 500,
+      "peer_delivery": 10000,
+      "end_to_end": 15000
+    },
+    "max_write_failures": 0,
+    "max_db_growth_bytes": 10485760,
+    "max_sdk_raw_stream_bytes_sent": 10485760,
+    "max_sdk_raw_stream_bytes_received": 10485760,
+    "require_sdk_raw_stream_counters": true
+  }
+}

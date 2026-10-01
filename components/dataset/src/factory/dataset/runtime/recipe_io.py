@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from .contracts import DatasetGenerationRequest
 
 
-def load_records(request: "DatasetGenerationRequest", record_schema: str = "conversation") -> list[Any]:
+def load_records(request: DatasetGenerationRequest, record_schema: str = "conversation") -> list[Any]:
     """Read immutable JSONL inputs and validate canonical records.
 
     Iterates every ``input_artifact`` on the request, checks its
@@ -29,8 +29,8 @@ def load_records(request: "DatasetGenerationRequest", record_schema: str = "conv
     # Lazy import breaks the recipe <-> recipe_io circular dependency
     # while preserving the existing ``path_from_uri`` location in
     # ``recipe.py`` (used widely across the codebase).
-    from .recipe import path_from_uri
     from .atomic_io import read_bytes_no_follow
+    from .recipe import path_from_uri
 
     records: list[Any] = []
     for source in request.input_artifacts:
@@ -63,7 +63,10 @@ def records_content(records: list[Any], record_schema: str = "conversation") -> 
         ).encode()
     if record_schema != "conversation":
         return b"".join(
-            (json.dumps(r if isinstance(r, dict) else r, sort_keys=True) + "\n").encode()
+            (json.dumps(
+                r.model_dump(mode="json") if hasattr(r, "model_dump") else r,
+                sort_keys=True,
+            ) + "\n").encode()
             for r in records
         )
     return b"".join(

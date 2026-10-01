@@ -7,7 +7,10 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from .adapters.secret_mounts import SecretRef
+from .peer_network import PeerNetworkSpec
 
 
 class DeviceTarget(BaseModel):
@@ -26,7 +29,7 @@ class SandboxProfile(BaseModel):
 
     # Fail loud on typo'd keys in hand-authored profile YAML — a silently
     # ignored key would yield a container that is up but missing tooling.
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
 
     name: str
     image: str
@@ -47,6 +50,18 @@ class SandboxProfile(BaseModel):
     # Commands run once, in order, right after provision (e.g. install tooling).
     # Best-effort: a non-zero exit is logged, not fatal. Never put secrets here.
     setup_commands: list[str] = Field(default_factory=list)
+    # Host-trusted symbolic names only. Source paths are configured by the
+    # Sandbox server process and resolved transiently before Docker launch.
+    secret_refs: list[SecretRef] = Field(default_factory=list)
+    # Optional shared, Sandbox-owned Docker bridge for separate peer devices.
+    peer_network: PeerNetworkSpec | None = None
+
+    @field_validator("secret_refs")
+    @classmethod
+    def unique_secret_refs(cls, refs: list[SecretRef]) -> list[SecretRef]:
+        if len(refs) != len(set(refs)):
+            raise ValueError("secret_refs must not contain duplicates")
+        return refs
 
 
 BUILTIN_PROFILES: dict[str, SandboxProfile] = {

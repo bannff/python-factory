@@ -10,6 +10,7 @@ class CatalogTool:
     name: str
     description: str
     fn: Callable[..., Any]
+    telemetry_excluded_argument_fields: frozenset[str] = frozenset()
 
     @property
     def tool_name(self) -> str:

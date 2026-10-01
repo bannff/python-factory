@@ -41,7 +41,9 @@ async def _tool(runtime: MagicMock, name: str):
 
 @pytest.mark.asyncio
 async def test_execute_preserves_nonzero_exit_as_typed_data(runtime) -> None:
-    result = await (await _tool(runtime, "sandbox.execute")).fn(
+    tool = await _tool(runtime, "sandbox.execute")
+    assert tool.telemetry_excluded_argument_fields == frozenset({"command"})
+    result = await tool.fn(
         env_id="env-1", command="false",
     )
     assert isinstance(result, ToolResult)

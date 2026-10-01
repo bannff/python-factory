@@ -1,15 +1,20 @@
 """Immutable local stage checkpoint storage."""
 from __future__ import annotations
 
-from datetime import UTC, datetime
 import hashlib
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
-from ..checkpoint_integrity import checkpoint_metadata_digest
+from ..checkpoint_integrity import (
+    checkpoint_metadata_digest,
+    local_roots_policy_digest,
+)
 from ..contracts import (
-    DatasetFallbackRecord, DatasetProvenanceRecord, DatasetQualityResults,
+    DatasetFallbackRecord,
+    DatasetProvenanceRecord,
+    DatasetQualityResults,
     DatasetStageCheckpoint,
 )
 from ..scenario_models import ScenarioPackLineage
@@ -34,9 +39,11 @@ class LocalStageCheckpointStore:
         quality_results: DatasetQualityResults,
         fallback: DatasetFallbackRecord | None = None,
         record_schema: Literal[
-            "conversation", "can_frame", "can_artifact", "generic"
+            "conversation", "can_frame", "can_artifact", "generic",
+            "edge_sensor_window",
         ] = "conversation",
         scenario_lineage: ScenarioPackLineage | None = None,
+        allowed_local_roots: tuple[Path, ...] = (),
     ) -> DatasetStageCheckpoint:
         """Validate and atomically persist one immutable stage result."""
         from ..validation import dispatch_validator
@@ -55,7 +62,11 @@ class LocalStageCheckpointStore:
             ).encode()
         else:
             output_content = b"".join(
-                (json.dumps(item, sort_keys=True) + "\n").encode()
+                (json.dumps(
+                    item.model_dump(mode="json")
+                    if hasattr(item, "model_dump") else item,
+                    sort_keys=True,
+                ) + "\n").encode()
                 for item in validated
             )
         output_digest = _sha256(output_content)
@@ -74,6 +85,10 @@ class LocalStageCheckpointStore:
             context_snapshot_digest=context_snapshot_digest,
             tool_schema_snapshot_digest=tool_schema_snapshot_digest,
             provenance=provenance, quality_results=quality_results,
+            allowed_local_roots_digest=(
+                local_roots_policy_digest(allowed_local_roots)
+                if record_schema == "edge_sensor_window" else None
+            ),
             scenario_lineage=scenario_lineage, fallback=fallback,
             created_at=datetime.now(UTC),
         )

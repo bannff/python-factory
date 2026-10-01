@@ -2,22 +2,27 @@
 from __future__ import annotations
 
 from pathlib import Path
-
 from typing import Any
 
 from factory.mcp_utils.interface import ToolResult, operational
 
-from .contracts.lifecycle import (
-    CancelJobInput, GenerationOutput, JobInput, JobOutput,
-    PublishScenarioPackInput, SubmitGenerationInput,
-)
-from .contracts.scenario_outputs import ScenarioPackOutput
 from ..interface import (
-    dataset_cancel_job, dataset_get_job, dataset_publish_scenario_pack,
+    dataset_cancel_job,
+    dataset_get_job,
+    dataset_publish_scenario_pack,
     dataset_submit_generation,
 )
 from ..runtime.base import DatasetSnapshotRef, DatasetToolSchemaSnapshotRef
 from ..runtime.local_inputs import canonicalize_local_input
+from .contracts.lifecycle import (
+    CancelJobInput,
+    GenerationOutput,
+    JobInput,
+    JobOutput,
+    PublishScenarioPackInput,
+    SubmitGenerationInput,
+)
+from .contracts.scenario_outputs import ScenarioPackOutput
 
 
 def register(mcp: Any, storage_root: Path | None = None) -> None:
@@ -46,6 +51,7 @@ def register(mcp: Any, storage_root: Path | None = None) -> None:
         input_artifact_uris: list[str] | None = None,
         input_artifact_digests: list[str] | None = None,
         input_artifact_roles: list[str] | None = None,
+        allowed_local_roots: list[str] | None = None,
         scenario_pack_identity: str | None = None,
         scenario_pack_version: str | None = None, scenario_pack_uri: str | None = None,
         scenario_pack_digest: str | None = None, generator_adapter: str | None = None,
@@ -56,7 +62,9 @@ def register(mcp: Any, storage_root: Path | None = None) -> None:
     ) -> ToolResult[GenerationOutput]:
         """Accept a flat generation request and return its durable job receipt."""
         from ..runtime.contracts import (
-            DatasetExecutionPolicy, DatasetGenerationRequest, DatasetInputRef,
+            DatasetExecutionPolicy,
+            DatasetGenerationRequest,
+            DatasetInputRef,
         )
         from ..runtime.scenario_models import ScenarioPackGenerationInput, ScenarioPackRef
         context_snapshot = DatasetSnapshotRef(uri=context_snapshot_uri, digest=context_snapshot_digest)
@@ -87,6 +95,7 @@ def register(mcp: Any, storage_root: Path | None = None) -> None:
             )
         request = DatasetGenerationRequest(
             recipe_uri=recipe_uri, recipe_digest=recipe_digest, input_artifacts=input_artifacts,
+            allowed_local_roots=allowed_local_roots or (),
             context_snapshot=context_snapshot, tool_schema_snapshot=tool_snapshot,
             requested_views=views, execution_policy=DatasetExecutionPolicy(
                 fail_closed=fail_closed, retry_from_checkpoint_only=retry_from_checkpoint_only),

@@ -34,6 +34,37 @@ def test_catalog_preserves_typed_handler_and_metadata() -> None:
     assert not hasattr(tool, "run")
 
 
+def test_catalog_tool_excludes_registered_fields_from_telemetry_only(monkeypatch) -> None:
+    import asyncio
+
+    events = []
+    received = []
+    monkeypatch.setattr(
+        "factory.mcp_utils.runtime.native_v2_instrumentation.event_bus.publish",
+        events.append,
+    )
+    catalog = ToolCatalog("sandbox-brick")
+
+    @catalog.tool(
+        name="sandbox.execute",
+        telemetry_excluded_argument_fields=frozenset({"command"}),
+    )
+    def execute(command: str, cwd: str) -> dict[str, str]:
+        received.append((command, cwd))
+        return {"status": "ok"}
+
+    command = "secret-bearing-command-canary"
+    result = asyncio.run(catalog.call_tool(
+        "sandbox.execute", {"command": command, "cwd": "/workspace"},
+    ))
+
+    assert received == [(command, "/workspace")]
+    assert result.structured_content == {"status": "ok"}
+    start = next(event for event in events if event["phase"] == "start")
+    assert start["args_summary"] == {"cwd": "/workspace"}
+    assert command not in repr(events)
+
+
 def test_catalog_resources_and_prompts_preserve_native_contracts() -> None:
     import asyncio
     import json

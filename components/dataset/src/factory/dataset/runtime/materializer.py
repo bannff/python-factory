@@ -57,6 +57,10 @@ class LocalDatasetMaterializer:
             )
         if request.scenario_generation is not None and not quality.passed:
             raise ValueError("Scenario generation failed final quality validation")
+        if recipe.record_schema == "edge_sensor_window" and not quality.passed:
+            raise ValueError("Edge sensor dataset failed split leakage validation")
+        if recipe.record_schema == "edge_routing_example" and not quality.passed:
+            raise ValueError("Edge routing dataset failed quality validation")
         self._require_job_running(status.job_id)
         return write_bundle(
             self.store, records, request, recipe, status.job_id,

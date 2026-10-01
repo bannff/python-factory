@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from pathlib import Path
 from typing import Any
 
 from .contracts import DatasetQualityResults
@@ -106,8 +107,19 @@ def _max_message_length(records: list[Any]) -> str:
     return "passed"
 
 
-def evaluate_quality(records: list[Any]) -> DatasetQualityResults:
-    """Run quality checks on materialized conversation records."""
+def evaluate_quality(
+    records: list[Any], *, record_schema: str = "conversation",
+    allowed_local_roots: tuple[Path, ...] = (),
+) -> DatasetQualityResults:
+    """Run schema-specific quality checks; conversation remains the default."""
+    if record_schema == "edge_sensor_window":
+        from .quality_edge_sensor import evaluate_edge_sensor_quality
+        return evaluate_edge_sensor_quality(
+            records, allowed_local_roots=allowed_local_roots,
+        )
+    if record_schema == "edge_routing_example":
+        from .quality_edge_routing import evaluate_edge_routing_quality
+        return evaluate_edge_routing_quality(records)
     checks: dict[str, str] = {
         "record_count": _record_count(records),
         "schema": _schema_check(records),

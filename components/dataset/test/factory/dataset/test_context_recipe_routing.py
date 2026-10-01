@@ -1,5 +1,6 @@
 """Typed context artifact routing and materialization regressions."""
 from __future__ import annotations
+
 import asyncio
 import hashlib
 import json
@@ -7,7 +8,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-from factory.mcp_utils.runtime.tool_catalog import ToolCatalog
 from factory.dataset.mcp.operational import register
 from factory.dataset.runtime.contracts import (
     DatasetGenerationRequest,
@@ -22,6 +22,9 @@ from factory.dataset.runtime.local import (
     _request_digest,
 )
 from factory.dataset.runtime.recipe import path_from_uri, resolve_recipe
+from factory.mcp_utils.runtime.tool_catalog import ToolCatalog
+
+
 def _snapshot(root: Path, label: str, payload: dict) -> DatasetSnapshotRef:
     content = json.dumps(payload, sort_keys=True).encode()
     digest = hashlib.sha256(content).hexdigest()
@@ -112,6 +115,28 @@ def test_mcp_flat_input_roles_propagate(tmp_path, monkeypatch):
     assert [item.artifact_role for item in captured[0].input_artifacts] == [
         "decoded_can", "environment_context",
     ]
+
+
+def test_mcp_allowed_local_roots_propagate_into_typed_request(tmp_path, monkeypatch):
+    captured = []
+
+    def submit(request, _storage_root):
+        captured.append(request)
+        return type("Receipt", (), {"model_dump": lambda self, mode: {"job_id": "job-1"}})()
+
+    monkeypatch.setattr("factory.dataset.mcp.operational.dataset_submit_generation", submit)
+    mcp = ToolCatalog("dataset-test")
+    register(mcp, tmp_path)
+    tool = asyncio.run(mcp.get_tool("dataset_submit_generation"))
+    result = tool.fn({
+        "recipe_uri": "recipe://local/pass-through@1", "recipe_digest": "a" * 64,
+        "context_snapshot_uri": "file:///context", "context_snapshot_digest": "b" * 64,
+        "tool_schema_snapshot_uri": "file:///tools", "tool_schema_snapshot_digest": "c" * 64,
+        "allowed_local_roots": [str(tmp_path)],
+    })
+
+    assert result.ok is True
+    assert captured[0].allowed_local_roots == (tmp_path,)
 
 
 def test_context_routes_merge_overrides_and_reject_conflicts(tmp_path: Path):

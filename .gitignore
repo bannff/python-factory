@@ -186,19 +186,50 @@ adapters/*.safetensors
 # Experiment data (raw results, journals, caches)
 **/experiments/
 
-# Curated, versioned Companion-X edge-model research records. Generated data
-# and model artifacts remain ignored; only these document types are admitted.
+# Curated, versioned Companion-X edge-model research and reproducibility code.
+# Generated data and model artifacts remain ignored; admit explicit source files.
 !projects/companion_x/experiments/
 projects/companion_x/experiments/*
 !projects/companion_x/experiments/edge_models/
 projects/companion_x/experiments/edge_models/*
 !projects/companion_x/experiments/edge_models/README.md
+!projects/companion_x/experiments/edge_models/HANDOFF.md
 !projects/companion_x/experiments/edge_models/*/
 projects/companion_x/experiments/edge_models/*/*
 !projects/companion_x/experiments/edge_models/*/protocol.md
 !projects/companion_x/experiments/edge_models/*/results.md
 !projects/companion_x/experiments/edge_models/*/run-index.json
 !projects/companion_x/experiments/edge_models/*/run.py
+!projects/companion_x/experiments/edge_models/edge-routing-sdk-001/pydantic-wheelhouse.lock
+!projects/companion_x/experiments/edge_models/edge-routing-sdk-001/pydantic-wheelhouse/
+!projects/companion_x/experiments/edge_models/edge-routing-sdk-001/pydantic-wheelhouse/*.whl
+!projects/companion_x/experiments/edge_models/edge-visual-quality-mesh-001/model.py
+!projects/companion_x/experiments/edge_models/edge-visual-quality-mesh-001/train.py
+!projects/companion_x/experiments/edge_models/edge-visual-quality-mesh-001/model-fold0.json
+!projects/companion_x/experiments/edge_models/edge-visual-quality-mesh-001/manifest.py
+!projects/companion_x/experiments/edge_models/edge-visual-quality-mesh-001/prepare.py
+!projects/companion_x/experiments/edge_models/edge-visual-quality-mesh-001/peer.py
+!projects/companion_x/experiments/edge_models/edge-visual-quality-mesh-001/records.py
+!projects/companion_x/experiments/edge_models/edge-visual-quality-mesh-001/review.py
+!projects/companion_x/experiments/edge_models/edge-audio-device-demo-001/prepare.py
+!projects/companion_x/experiments/edge_models/edge-audio-device-demo-001/payload_layout.py
+!projects/companion_x/experiments/edge_models/edge-audio-device-demo-001/runtime.py
+!projects/companion_x/experiments/edge_models/edge-audio-device-demo-001/render.py
+!projects/companion_x/experiments/edge_models/edge-audio-device-demo-001/run_edge_lab.sh
+!projects/companion_x/experiments/edge_models/native_runner/*.py
+!projects/companion_x/experiments/edge_models/native_runner/fd001_bundle.md
+!projects/companion_x/experiments/edge_models/edge-routing-sdk-001/attestation.py
+!projects/companion_x/experiments/edge_models/edge-routing-sdk-001/attestation_schema.py
+!projects/companion_x/experiments/edge_models/edge-routing-sdk-001/collection_schema.py
+!projects/companion_x/experiments/edge_models/edge-routing-sdk-001/collect_sealed.py
+!projects/companion_x/experiments/edge_models/edge-ditto-device-flow-001/contracts.py
+!projects/companion_x/experiments/edge_models/edge-ditto-device-flow-001/peer.py
+!projects/companion_x/experiments/edge_models/edge-ditto-device-flow-001/scenario-n2.json
+!projects/companion_x/experiments/edge_models/edge-ditto-device-flow-001/sealed_image.py
+!projects/companion_x/experiments/edge_models/edge-ditto-device-flow-001/sealed_entrypoint.py
+!projects/companion_x/experiments/edge_models/edge-ditto-device-flow-001/sealed_pins.json
+!projects/companion_x/experiments/edge_models/edge-ditto-device-flow-001/sealed_image.md
+!projects/companion_x/experiments/edge_models/edge-ditto-device-flow-001/collect_sealed.py
 
 # ChromaDB local persistence (container-free memory adapter)
 chroma_memory/
@@ -232,6 +263,9 @@ frontends/next-dashboard/test_agent_delta.mjs
 # Generated agent review output and accidental mock-path artifacts
 /semantic-review/
 /MagicMock/
+
+# Generated profile pins a host-local sealed Docker image ID.
+/projects/companion_x/sandbox-profiles/edge-n2-sdk.yaml
 
 # Opencode plugin runtime — regeneratable vector index + ambient receipts
 .opencode/index/

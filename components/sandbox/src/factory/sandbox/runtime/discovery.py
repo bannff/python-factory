@@ -87,6 +87,8 @@ def discover_docker_envs() -> list[EnvironmentInfo]:
         labels = _parse_labels(parts[3] if len(parts) > 3 else "")
         is_managed = labels.get("factory.sandbox") == "true"
         device_metadata: dict[str, object] = {}
+        if labels.get("factory.sandbox.secret_output_suppressed") == "true":
+            device_metadata["secret_mounts_enabled"] = True
         if is_managed and "factory.sandbox.device_preset" in labels:
             from .device_presets import DeviceRunLabels
 
@@ -95,7 +97,7 @@ def discover_docker_envs() -> list[EnvironmentInfo]:
             except (KeyError, TypeError, ValueError):
                 pass  # Ignore malformed or partial labels from external containers.
             else:
-                device_metadata = {
+                device_metadata.update({
                     "profile": target.profile,
                     "device_preset": {
                         "name": target.device_preset,
@@ -109,7 +111,7 @@ def discover_docker_envs() -> list[EnvironmentInfo]:
                     "platform": target.platform,
                     "cpus": target.cpus,
                     "memory_mb": target.memory_mb,
-                }
+                })
                 if target.preset_sha256 is not None:
                     device_metadata["preset_sha256"] = target.preset_sha256
         status_str = parts[1].lower()
@@ -129,6 +131,7 @@ def discover_docker_envs() -> list[EnvironmentInfo]:
                     for key, value in labels.items()
                     if key in {
                         "factory.sandbox",
+                        "factory.sandbox.secret_output_suppressed",
                         "vuln.target",
                         "vuln.base_url",
                         "com.docker.compose.project",

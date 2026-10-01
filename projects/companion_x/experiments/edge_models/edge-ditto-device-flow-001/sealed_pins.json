@@ -1,0 +1,14 @@
+{
+  "entrypoint_sha256": "d96274d80d7f715a7afdf4c2a3fab6115fe363c333b33c1a98d69ef131ea5e94",
+  "files": {
+    "cohort.json": "5cae03aa99132cbaa646f8e78187414649972c3635d268b49843e8f9f6438fbf",
+    "contracts.py": "fa56cc742a0e4969e7f3ace25ffaa7b6b6110c5bf8835f86113449a17a5e6c55",
+    "model.json": "58128c57716e9643ba18922b2281511c29722df4d4871ed264cf4037eb5755fe",
+    "peer.py": "4cd5f446d8fdd6824415dbbca7218c60ae1ad29f1e36cd55b4821e8730769b0c",
+    "protocol.md": "9a4fa3cdf24b198b6890eba4f51a13515b2f755d01cf48ae85334c21632e03c2",
+    "run.py": "2bb3ea0d705cc9969f600f022a62c22a84b86f5abe8dbe3de225d5868d4547cf",
+    "scenario-n2.json": "7ab92f5afbf73da945f80b95153446a33aa512a1e7652954b7a970c9f17c44fc"
+  },
+  "schema_version": 1,
+  "sdk_distribution_sha256": "d7dfdea1ba6c0a02fd772e923a5cc46362b036e49d4c05371622d63a21bb3990"
+}

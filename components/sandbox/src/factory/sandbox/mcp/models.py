@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from .contracts import StrictModel
 from .nested_models import SandboxEnvironmentInfo
+from ..runtime.peer_network import PeerNetworkSpec
 
 
 class SandboxProvisionRequest(StrictModel):
@@ -19,6 +20,13 @@ class SandboxProvisionRequest(StrictModel):
     device_preset: str | None = Field(
         default=None, pattern=r"^[a-z0-9][a-z0-9_-]{0,127}$",
     )
+    peer_network: PeerNetworkSpec | None = None
+
+    @model_validator(mode="after")
+    def peer_network_requires_profile(self) -> "SandboxProvisionRequest":
+        if self.peer_network is not None and self.profile is None:
+            raise ValueError("peer_network requires a sandbox profile")
+        return self
 
 
 class SandboxProvisionResult(StrictModel):

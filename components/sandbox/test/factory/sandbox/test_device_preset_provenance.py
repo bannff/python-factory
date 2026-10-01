@@ -10,6 +10,7 @@ from factory.mcp_utils.runtime.tool_result import ToolResult
 from factory.sandbox.mcp.deterministic import register as register_deterministic
 from factory.sandbox.runtime import discovery
 from factory.sandbox.runtime.adapters import docker_adapter
+from factory.sandbox.runtime.device_presets import DeviceRunLabels
 from factory.sandbox.runtime.models import SandboxConfig
 from factory.sandbox.runtime.provision_context import build_provision_context
 
@@ -86,3 +87,31 @@ async def test_docker_labels_reconstruct_device_preset_after_restart(
     assert preset["fidelity"] == expected["device_preset"]["fidelity"]
     assert preset["proxy"] == expected["device_preset"]["proxy"]
     assert recovered[0].metadata["preset_sha256"] == expected["preset_sha256"]
+
+
+def test_discovery_preserves_secret_marker_with_device_preset(monkeypatch) -> None:
+    labels = DeviceRunLabels(
+        profile="edge-n2-sdk",
+        device_preset="iphone-15",
+        fidelity="linux_proxy",
+        platform="linux/arm64",
+        cpus=1.0,
+        memory_mb=512,
+    ).docker_labels()
+    labels.update({
+        "factory.sandbox": "true",
+        "factory.sandbox.secret_output_suppressed": "true",
+    })
+    line = "edge-n2-sdk\tUp 1 second\tjust now\t" + ",".join(
+        f"{key}={value}" for key, value in labels.items()
+    )
+    monkeypatch.setattr(
+        discovery, "_docker_ps_lines",
+        lambda args: [line] if args == ["--filter", "label=factory.sandbox=true"] else [],
+    )
+
+    recovered = discovery.discover_docker_envs()
+
+    assert len(recovered) == 1
+    assert recovered[0].metadata["secret_mounts_enabled"] is True
+    assert recovered[0].metadata["device_preset"]["name"] == "iphone-15"

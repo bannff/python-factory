@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "experiment_id": "edge-audio-device-demo-001",
+  "issue": "https://linear.app/ditto/issue/ENG-200",
+  "date": "2026-09-30",
+  "status": "official_final_arm64_demo_run",
+  "source_experiment": "edge-audio-command-001",
+  "repository_head": "2df3c46876fb7fa9c284451ba5e3950039228cd2",
+  "source_hashes": {
+    "archive": "49650f2341b26d886b46b3f4fb8fed59e30300b17550f1ee4a768b3106cf93a0",
+    "split": "58454c7f670d12fbdb8669e54bc90f02f6d78b16fd4d1be1b5f23678f0c899c2",
+    "checkpoint": "40aa7c5d8502e9390ed5c62493c7bb43ae8f62b1e3d48214dff82e5b8d938ec5",
+    "runner": "23fd28ecb9c867045146e5ff39e3e7c7ed6e0780f933a1a1b3cec94acc29b5fe"
+  },
+  "cohort": {
+    "policy": "4 clips/class from held-out test speakers; distinct speakers; SHA-256 ranked",
+    "test_only": true,
+    "speaker_distinct": true,
+    "clip_count": 12,
+    "class_counts": {
+      "go": 4,
+      "stop": 4,
+      "other": 4
+    },
+    "label_free_payload": true,
+    "payload_layout_validation_passed": true,
+    "wav_sha256": {
+      "clip-001": "3110669d29b496d8aa80b2c105153b49c1a7e567691a99f5d6e19de5f81b92fd",
+      "clip-002": "390fdb2daa19d549da2609a8860da85972161a9e6ba20470a7eb5a2cadf93896",
+      "clip-003": "49069573f9e88c08d3b8427612976a3969a081b357e1f4043b09da22a7fbe23a",
+      "clip-004": "4ddb72bc3fb277866c8f17cc7f232b9a5c23699fab03c905b70efd4be8f35fc0",
+      "clip-005": "a9e2ea82e3dd8fb87c3979cebc7eaa309bfcc4ae69157968b292bd734ae572e7",
+      "clip-006": "1bac4f1c7872c19eb87bac772dd29160198e048312339d145dd1b84a9a1129e7",
+      "clip-007": "01306594eecef10ad3114aa17b71f88ca75274f51ae908a1298c867f0c96a1a6",
+      "clip-008": "5a421967fb34d1aa2a009a6ca96446fd7ccce75debae7be46b743464a3aa4be1",
+      "clip-009": "ec01a535aed92c06278e2e9200dcaa05ab19e884439ac463b891ff8671000000",
+      "clip-010": "9dedc90d98f8800c11aa66ae6f6130e53f2e990d668be7660bd4d7780974d4bf",
+      "clip-011": "28c9ad4b5c1e0bd48c1d6e3af484677d8a31220a6904d6cd8edcd9e0d2924ae2",
+      "clip-012": "895cd2207a20673f4ba84fb52442774cd4de26708f6ed3d045439f938a8ef544"
+    }
+  },
+  "container": {
+    "image": "python-factory/edge-lab:local",
+    "image_id": "sha256:ea55631109384789e3dbe2b5d36cfd9aa3d83e32d4b98d6fc19e60b853c21348",
+    "platform": "linux/arm64",
+    "runtime_machine": "aarch64",
+    "network": "none",
+    "cpu_limit": 1,
+    "memory_limit_bytes": 536870912,
+    "memory_swap_limit_bytes": 536870912,
+    "read_only_root": true,
+    "removed_after_run_verified": true,
+    "python": "3.12.14",
+    "numpy": "2.4.4",
+    "inspect_summary": "image=sha256:ea55631109384789e3dbe2b5d36cfd9aa3d83e32d4b98d6fc19e60b853c21348 network=none nano_cpus=1000000000 memory_bytes=536870912 memory_swap_bytes=536870912 read_only=true"
+  },
+  "results": {
+    "parity_decisions": 12,
+    "parity_total": 12,
+    "max_probability_error": 3.1441450119018555e-06,
+    "demo_accuracy": 0.5833333333333334,
+    "confusion_rows_true_cols_pred": [
+      [
+        2,
+        0,
+        2
+      ],
+      [
+        0,
+        3,
+        1
+      ],
+      [
+        2,
+        0,
+        2
+      ]
+    ],
+    "latency_scope": "staged WAV file read, log-mel preprocessing, and model inference; excludes model load",
+    "latency_repeats_per_clip": 30,
+    "latency_samples": 360,
+    "p50_ms": 1.085979,
+    "p95_ms": 1.14215655,
+    "process_peak_rss_kib": 48000,
+    "model_parameters": 1043,
+    "model_export_bytes": 10918
+  },
+  "artifacts": {
+    "prepare.py": {
+      "path": "projects/companion_x/experiments/edge_models/edge-audio-device-demo-001/prepare.py",
+      "sha256": "9daa498949cc4b68503016d5e77a6848c7228598a004ff1aabe14a693c32256e",
+      "bytes": 7239
+    },
+    "payload_layout.py": {
+      "path": "projects/companion_x/experiments/edge_models/edge-audio-device-demo-001/payload_layout.py",
+      "sha256": "67e287050ea8c0bab3a436abcfc2ce87433a259467b54f3563f0a27e2b7b375e",
+      "bytes": 2282
+    },
+    "runtime.py": {
+      "path": "projects/companion_x/experiments/edge_models/edge-audio-device-demo-001/runtime.py",
+      "sha256": "b6715f3d10086acc5e17b353c14a9aff4878a75da5ac0103bb7d77a45bf319b9",
+      "bytes": 8484
+    },
+    "render.py": {
+      "path": "projects/companion_x/experiments/edge_models/edge-audio-device-demo-001/render.py",
+      "sha256": "7cb9a57548382bd229fb3756b19eff42bcf2811a9b27b2a1ee5be8f445f32f8d",
+      "bytes": 6463
+    },
+    "run_edge_lab.sh": {
+      "path": "projects/companion_x/experiments/edge_models/edge-audio-device-demo-001/run_edge_lab.sh",
+      "sha256": "99f3983a1dca53764cac11da52d24cb7f3b023a07e8cfe2639de8967c61f9337",
+      "bytes": 2209
+    },
+    "protocol.md": {
+      "path": "projects/companion_x/experiments/edge_models/edge-audio-device-demo-001/protocol.md",
+      "sha256": "99beb5612294fa67a486fcf6cb3aa9dd11d05fe80370ab4de11d4a9c775bfd0c",
+      "bytes": 3450
+    },
+    "results.md": {
+      "path": "projects/companion_x/experiments/edge_models/edge-audio-device-demo-001/results.md",
+      "sha256": "ea8f9e53fd75dd4a309b110c0e9d90f9c608d7b7cbd750269219bf827f5f8cde",
+      "bytes": 2562
+    },
+    "edge_models_README.md": {
+      "path": "projects/companion_x/experiments/edge_models/README.md",
+      "sha256": "f6859d077d2adb05eb6c69a6f13f094fd3a9b47438c0f0340965c9c50cce6962",
+      "bytes": 8619
+    },
+    "test_edge_audio_device_demo.py": {
+      "path": "projects/companion_x/test/test_edge_audio_device_demo.py",
+      "sha256": "da2d390b39d7d80805a1087c6e7e87e9a2e6606f441baf4420d841d2abd376ec",
+      "bytes": 6723
+    },
+    "source_archive": {
+      "path": "/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/mini_speech_commands.zip",
+      "sha256": "49650f2341b26d886b46b3f4fb8fed59e30300b17550f1ee4a768b3106cf93a0",
+      "bytes": 182082353
+    },
+    "source_split": {
+      "path": "/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/split.tsv",
+      "sha256": "58454c7f670d12fbdb8669e54bc90f02f6d78b16fd4d1be1b5f23678f0c899c2",
+      "bytes": 536291
+    },
+    "source_checkpoint": {
+      "path": "/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/tiny_dscnn.pt",
+      "sha256": "40aa7c5d8502e9390ed5c62493c7bb43ae8f62b1e3d48214dff82e5b8d938ec5",
+      "bytes": 13429
+    },
+    "prepare_manifest": {
+      "path": "/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/device_demo_final_20260930/prepare-manifest.json",
+      "sha256": "2a34d67bb3a71310aace69945b7c46a993fb53af9262dd63e6738240b3c57bb5",
+      "bytes": 1147
+    },
+    "exported_model": {
+      "path": "/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/device_demo_final_20260930/payload/model.npz",
+      "sha256": "634a58e171347322d16b7e6a7ac48a67c816945e4faf52e256549e070db94ec5",
+      "bytes": 10918
+    },
+    "label_free_cohort": {
+      "path": "/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/device_demo_final_20260930/payload/cohort.json",
+      "sha256": "ae470258d7531c63e4287bb262336fd9a91d29a6e9a4329e7cd3d669c3423a30",
+      "bytes": 1951
+    },
+    "private_truth": {
+      "path": "/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/device_demo_final_20260930/truth.json",
+      "sha256": "9a7d63d2d2fcf41c77af846a25b0de890ea8c0903895d718576eaf00deb50e88",
+      "bytes": 2307
+    },
+    "torch_reference": {
+      "path": "/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/device_demo_final_20260930/reference.json",
+      "sha256": "55237ebb2d928ebc421346e2af510ea6dafcee561f87212ac22f82525993864b",
+      "bytes": 2305
+    },
+    "arm64_predictions": {
+      "path": "/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/device_demo_final_20260930/arm64-predictions.json",
+      "sha256": "848b4cf41818a396bc273bfd7c057b60b6cea11be098bb61fe07e3dcc913105e",
+      "bytes": 10114
+    },
+    "container_inspect_summary": {
+      "path": "/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/device_demo_final_20260930/arm64-predictions.json.container.txt",
+      "sha256": "16df40adf62ebd958273a95fc21a4410e5dadae677999b295ea7f24c2790ccca",
+      "bytes": 178
+    },
+    "playable_demo": {
+      "path": "projects/companion_x/experiments/edge_models/edge-audio-device-demo-001/results/arm64-demo.html",
+      "sha256": "7588281cf6a09bb5277004383b643842f4ffadf2457a44c6b2735cee9414883f",
+      "bytes": 514118
+    },
+    "numpy_aarch64_wheel": {
+      "path": "/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/device_demo/wheels/numpy-2.4.4-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+      "sha256": "f9e75681b59ddaa5e659898085ae0eaea229d054f2ac0c7e563a62205a700121",
+      "bytes": 15670666
+    }
+  },
+  "local_playable_demo": "results/arm64-demo.html",
+  "execution_command": "projects/companion_x/experiments/edge_models/edge-audio-device-demo-001/run_edge_lab.sh /Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/device_demo_final_20260930/payload /Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/device_demo/wheels/numpy-2.4.4-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl /Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/device_demo_final_20260930/arm64-predictions.json",
+  "supersedes_provisional_output": "/Users/danielrodrigo/Documents/Codex/2026-09-29/onbo/work/edge_audio/device_demo",
+  "limits": [
+    "12-clip functional demonstration, not an accuracy estimate",
+    "Linux ARM64 proxy, not iPhone",
+    "No silence/background-noise class",
+    "No Ditto, power, thermal, or radio measurement"
+  ]
+}
