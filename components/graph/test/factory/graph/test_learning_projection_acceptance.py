@@ -73,7 +73,12 @@ def test_lesson_run_kb_chain_survives_graph_reconstruction(tmp_path) -> None:
                 encode_node_id("kb", TENANT, OWNER, "doc-1"),
                 encode_node_id("workflow-run", TENANT, OWNER, RUN),
             }
-            deadline = time.monotonic() + 3
+            # The projection chain (events_publish -> graph write) crosses an
+            # MCP invocation per hop and is polled, not awaited end-to-end.
+            # 3s proved flaky on CI runners once the graph suite entered the
+            # changed-brick selection; 30s keeps the poll semantics without
+            # timing out on slow runners.
+            deadline = time.monotonic() + 30
             while not expected <= {entity.id for entity in graph.find_entities(limit=100)} \
                     and time.monotonic() < deadline:
                 time.sleep(0.01)
