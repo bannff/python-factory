@@ -204,6 +204,30 @@ jobs:
       - name: Run Dataset tests with real MF4 and DBC backends
         run: uv run pytest components/dataset/test
 
+  # LangGraph-legacy dormancy lane: the dormant LangChain adapter must stay
+  # importable and its port-level contract tests green while the rollback
+  # path exists (GH #89 keep-don't-delete decision). Runs only when the
+  # group's files change, so the dormant route can't rot silently.
+  langgraph-legacy:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.12.0"
+      - name: Install deps with the dormant group
+        run: uv lock --check && uv sync --frozen --group langgraph-legacy --group core-test
+      - name: Verify both adapters import and select
+        run: |
+          uv run python -c "from factory.agent.runtime.adapters import create_chat_agent; print(type(create_chat_agent()).__name__)"
+          AGENT_RUNTIME_ADAPTER=langchain uv run python -c "from factory.agent.runtime.adapters import create_chat_agent; a = create_chat_agent(); assert type(a).__name__ == 'LangChainChatAgent', a"
+      - name: Run agent-brick contract tests under the dormant group
+        run: uv run pytest components/agent/test -q
+
   # ML static lane: pyright ratchet + hypothesis property tests over
   # components/machine_learning. Core deps only (`uv sync --frozen`, no ml
   # group) — the selected property/contract suites import no torch/mlx/mlflow,
