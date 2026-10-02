@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import pytest
-pytest.importorskip("langchain")
-pytest.importorskip("langgraph")
-pytest.importorskip("langchain_community")
+
+for _mod in ("langchain", "langgraph", "langchain_community"):
+    pytest.importorskip(_mod)
 
 from factory.agent.runtime.squad_contracts import SquadConfig
 from factory.agent.runtime.squad_runner import (
@@ -20,8 +20,7 @@ def _squad(tools, squad_id="rust-squad", allowlist=None) -> SquadConfig:
             "nodes": [{"id": "e", "type": "agent", "agent_id": "developer"}],
             "entry_points": ["e"],
         },
-        toolbelt={"tools": tools},
-        phone_home={"tool_allowlist": allowlist},
+        toolbelt={"tools": tools}, phone_home={"tool_allowlist": allowlist},
     )
 
 

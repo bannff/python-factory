@@ -11,8 +11,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 from ..runtime_contracts import RuntimeInvocation
 
 if TYPE_CHECKING:
-    # Dormant-runtime laziness: langchain SDK imports live inside the
-    # middleware (langgraph-legacy dependency-group).
+    # Dormant laziness: langchain imports live in the langgraph-legacy group.
     from langchain.agents.middleware import AgentMiddleware  # noqa: F401
 
 logger = logging.getLogger(__name__)
@@ -31,9 +30,7 @@ class SteerDelivery:
 
 class SteeringPort(Protocol):
     def ensure(self, request: RuntimeInvocation) -> str | None: ...
-    def write(
-        self, request: RuntimeInvocation, send_id: str, content: str,
-    ) -> SteerDelivery: ...
+    def write(self, request: RuntimeInvocation, send_id: str, content: str) -> SteerDelivery: ...
     def written(self, request: RuntimeInvocation) -> tuple[SteerDelivery, ...]: ...
     def consume(self, delivery: SteerDelivery) -> bool: ...
     def requeue_written(self, request: RuntimeInvocation) -> tuple[str, ...]: ...
@@ -54,9 +51,7 @@ class NullSteeringPort:
     def ensure(self, request: RuntimeInvocation) -> str | None:
         return None
 
-    def write(
-        self, request: RuntimeInvocation, send_id: str, content: str,
-    ) -> SteerDelivery:
+    def write(self, request: RuntimeInvocation, send_id: str, content: str) -> SteerDelivery:
         raise RuntimeError("steering is unavailable")
 
     def written(self, request: RuntimeInvocation) -> tuple[SteerDelivery, ...]:
@@ -70,8 +65,7 @@ class NullSteeringPort:
 
 
 try:
-    # Real middleware base when the dormant langgraph-legacy group is
-    # installed; duck-typed fallback keeps group-less collection alive.
+    # Real base with the langgraph-legacy group; object keeps group-less alive.
     from langchain.agents.middleware import AgentMiddleware as _MiddlewareBase
 except ImportError:  # pragma: no cover - exercised only without the group
     _MiddlewareBase = object  # type: ignore[misc,assignment]

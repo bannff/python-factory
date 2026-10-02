@@ -11,21 +11,17 @@ from factory.mcp_utils.interface import get_service
 from ..runtime_contracts import RuntimeInvocation
 
 if TYPE_CHECKING:
-    # Module-level import would pull the langchain SDK; the dormant
-    # langgraph-legacy deps must not be required at import time.
+    # Dormant laziness: langchain imports live in the langgraph-legacy group.
     from .langchain_steering import SteerDelivery
 
 
 def _process_default_model_id():
-    """Same env-driven default the LangChain runtime itself falls back to.
+    """Same env-driven default the LangChain runtime falls back to.
 
-    A managed-graph/background invocation (M7.6 dogfood loop, spawn_background)
-    carries an empty ``RuntimeInvocation.model_id`` today -- nothing populates
-    it from the manifest's frozen model. The model CLIENT layer already
-    tolerates this via ``LangChainModelCache.effective_id()``, but the
-    Session brick's own contract requires a concrete, non-empty model name
-    (by design -- session history/UI must always know what actually ran).
-    Reuse the identical fallback so this can never silently diverge from it.
+    Managed-graph/background invocations carry an empty
+    ``RuntimeInvocation.model_id`` today; the session brick requires a
+    concrete non-empty model (history/UI must know what ran). Reuse the
+    identical fallback so this can never silently diverge.
     """
     return os.environ.get("COMPANION_X_CHAT_MODEL", "us.anthropic.claude-sonnet-4-6")
 
@@ -33,24 +29,18 @@ def _process_default_model_id():
 def _default_project() -> str:
     """Project bound at chat-session creation (COMPANION_X_DEFAULT_PROJECT).
 
-    Devtools' binding chain requires every Session row to carry a project
-    (``session resolve_thread`` → ``validate_project``); chat-created rows
-    previously never set one, so ``devtools_list_dir`` et al. failed with
-    ``tool_execution_failed`` for every chat thread regardless of the
-    requested path. Empty/unset keeps the old unbound behavior (devtools
-    fails loudly rather than guessing a root).
+    Every Session row must carry a project or devtools calls fail with
+    ``tool_execution_failed``; empty/unset keeps the old unbound behavior.
     """
     return os.environ.get("COMPANION_X_DEFAULT_PROJECT", "").strip()
 
 
 class SessionSteeringMCP:
     """Resolve and settle steers through caller-bound native MCP only."""
-    def bind(self, request: RuntimeInvocation) -> RuntimeInvocation:
-        """Materialize the owner-scoped Session binding before graph selection.
 
-        Identified requests use durable Session authority. Unidentified local/test
-        paths retain their configured hints for backward compatibility.
-        """
+    def bind(self, request: RuntimeInvocation) -> RuntimeInvocation:
+        """Owner-scoped Session binding before graph selection: identified
+        requests use durable Session authority; local/test paths keep hints."""
         session = self._ensure_session(request)
         if session is None:
             return request
@@ -177,9 +167,7 @@ class SessionSteeringMCP:
         )
         if payload.get("ok") is True:
             return True
-        if payload.get("error") in {
-            "session_revision_conflict", "session_not_found",
-        }:
+        if payload.get("error") in {"session_revision_conflict", "session_not_found"}:
             return False
         raise RuntimeError("session steering settlement failed")
 
