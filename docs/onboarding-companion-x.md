@@ -21,10 +21,10 @@ currently the keystone gap — trajectory landing-zone format unbuilt) → bette
 | Action | Command |
 |---|---|
 | Sync env (workspace root) | `uv sync --frozen` (CI-exact) |
-| Sync with ML extras (Darwin arm64) | `uvx --from uv==0.12.0 uv sync --group ml --config-settings-package lightgbm:cmake.define.USE_OPENMP=OFF` (README "Darwin arm64 OpenMP Runtime Contract" — plain `uv sync --group ml` builds LightGBM with OpenMP and fails here) |
+| Sync with test + ML groups (Darwin arm64) | `uv sync --group core-test --group ml --group can-test --config-settings-package lightgbm:cmake.define.USE_OPENMP=OFF` (the config-setting is the README "Darwin arm64 OpenMP Runtime Contract" — without it LightGBM fails to build here) |
 | Add CAN test deps | append `--group can-test` |
-| Run project tests | `uv run pytest projects/companion_x/test -q` **with CI env vars** (below) |
-| Run one test | `uv run pytest projects/companion_x/test/test_main_composition_root.py -q` |
+| Run agent-brick tests | `MCP_LOCAL_AUTH=true MCP_LOCAL_AUTH_TOKEN=<16+ chars> MCP_PERMISSIONS_CONFIG_DIR=config/mcp_permissions WORKFLOW_CONFIG_DIR=projects/companion_x/config TELEMETRY_REQUIRED=0 uv run pytest components/agent/test -q` |
+| Run one test | `uv run pytest projects/companion_x/test/test_main_composition_root.py -q` (same env vars) |
 | Strict full suite (manual CI) | `uv run pytest` |
 | CI (authority): PR lane | `.github/workflows/ci.yml` — `core-tests` job: `uv lock --check && uv sync --frozen` + `config/core-test-requirements.txt` + guardian ratchet check + strict suites (`components/test`, `foreman`, `agent`, `blockchain`, `scripts/test`) + changed-brick tests |
 | CI: CAN lane | `can-tests` job: `uv sync --frozen --group can-test`, `uv run pytest components/dataset/test` |
@@ -93,24 +93,17 @@ invisible; treat hotspots as provisional.
 - <200 LOC/file enforced by `foreman_guardian_check` (blocking PR ratchet, file_size_mode='ratchet')
 - MCP tools: `@deterministic` / `@operational` / `@authoring` (gated); brick-name prefixes
 - Hypothesis property tests required for stateful bricks (`.agents/steering/hypothesis-testing.md`)
-- Issue tracking: `bd` (Beads) only, no markdown TODOs. **Local DB currently empty (0 issues) and `bd ready` errors with `table not found: issues`** — a broken/needs-init local Beads store (`.beads/dolt-server-config.yaml` untracked)
+- Issue tracking: GitHub Issues (bannff/python-factory) since 2026-09-29 — `bd` is deprecated (its local Dolt store was unreparable); no markdown TODOs
 - Zero `if domain == ...` — domain packs are data; trinary polymorphic params + registry-overlay merge is the blessed mechanism
-- Push protocol: `git pull --rebase && bd sync && git push`
+- Push protocol: `git pull --rebase && git push` (bd deprecated; issues live on GitHub)
 
-## Baseline test state (this machine, 2026-09-29)
+## Baseline test state (this machine — RESOLVED 2026-10-02)
 
-`uv run pytest projects/companion_x/test` with full local env: **7 passed, 4 failed.**
-
-1. `test_execution_engine_config.py` (both tests) — `WorkflowError: Missing settings.yaml in config_dir`.
-   **Root cause:** `.gitignore:89` ignores `projects/*/config/`, so
-   `projects/companion_x/config/settings.yaml` (the `WORKFLOW_CONFIG_DIR` target,
-   projects/companion_x/main.py:24) is untracked/per-machine and absent here. The
-   regression test correctly loads real project config and fails on the gap.
-   Only `config/auth/settings.yaml` (a `backend: memory` stub) exists.
-2. `test_lightgbm_api_restart.py`, `test_lnn_chronos_api_restart.py` — `MCPError(-32603)`
-   from a spawned two-PID API restart flow. Likely same missing-config root cause
-   (spawned API process reads `WORKFLOW_CONFIG_DIR` from `.env`, which doesn't exist
-   here yet); not further diagnosed. Heavy acceptance path (datasets, model passports).
+~~7 passed, 4 failed (2026-09-29)~~ — all four failures were the missing per-machine
+`projects/companion_x/config/settings.yaml` + absent `.env`. Both provisioned;
+with `uv sync --group core-test` + the CI env vars above, the agent-brick suite is
+**940 passed, 1 xfailed, 0 failed** (see Unknowns for the resolved detail).
+First-session checklist (below) now reflects the working command.
 
 ## Unknowns
 
