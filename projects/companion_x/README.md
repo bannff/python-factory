@@ -75,8 +75,8 @@ The `.env` in `projects/companion_x/` now matches the lightweight local stack:
 - `chromadb` KB and `amem` memory persisted locally on disk
 - `openrouter` as the default chat provider (`COMPANION_X_CHAT_MODEL=openrouter`, `OPENROUTER_MODEL=<vendor>/<model>`); `ollama/<model>` and bare Bedrock ids remain selectable
 - `FACTORY_API_PORT=8000`, matching the default local API port
-- Companion-X chat runs on LangChain/LangGraph over MCP v2 (Strands was retired for lacking MCP v2 support) and reaches MCP through the platform tool invoker with a curated tool set
-- Chat conversations persist across API restarts via the official LangGraph `AsyncSqliteSaver` checkpointer keyed by `agent_id-thread_id`; storage defaults to `./.storage/agent-checkpoints.db`, and durable session metadata lives in the `session` brick at `./.storage/sessions.db` (epic `python-factory-bp34j`)
+- Companion-X chat runs on the Strands Agents SDK over MCP v2 (route-flipped back from LangGraph in #89 — Strands regained MCP v2 support); the LangChain/LangGraph runtime is dormant, selectable via `AGENT_RUNTIME_ADAPTER=langchain` with deps in the `langgraph-legacy` group, and reaches MCP through the platform tool invoker with a curated tool set
+- Chat conversations persist across API restarts via the strands `SessionManager` over the `SqlSessionRepository` (storage-brick `SQLStore` port; backend-swappable to Postgres/Aurora) keyed by `agent_id-thread_id`; storage defaults to `./.storage/strands-sessions.db`, and durable session metadata lives in the `session` brick at `./.storage/sessions.db`
 
 Before starting the API, make sure Ollama is running and the local chat model is present:
 

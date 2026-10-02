@@ -6,7 +6,7 @@ Every capability in this repo is a *brick*: a self-contained Python package with
 
 - **50 components · 5 bases · 3 projects**, organised as a [Polylith](https://polylith.gitbook.io/polylith) monorepo (counts derive from `BRICKS_INDEX.yaml`).
 - **Companion-X** — the flagship project: a local-first AI cockpit with chat, sub-agents, autonomous goal loops, unified graph memory, a real terminal, schedules, skills, and artifacts. One Next.js frontend, one FastAPI backend, no containers required.
-- **Agent runtime**: LangChain 1.x + LangGraph 1.x over MCP v2, streamed to the UI through CopilotKit / AG-UI.
+- **Agent runtime**: Strands Agents SDK over MCP v2 (LangChain/LangGraph dormant behind `AGENT_RUNTIME_ADAPTER=langchain` + the `langgraph-legacy` group), streamed to the UI through CopilotKit / AG-UI.
 - **Built to be run by agents.** The repo ships its own governance MCP server (`foreman`), steering docs, and an execution ledger so an autonomous loop can build the next feature unattended.
 
 > **Status.** Companion-X is mid-way through absorbing the feature set of [KiroCrew](https://github.com/kirodotdev) as its acceptance list — 56 of 100 in-scope features live, 29 more scaffolded and awaiting live proof. Progress is tracked row-by-row in [`.kiro/specs/python-factory-bp34j-companion-crew-features/kirocrew-feature-map.md`](.kiro/specs/python-factory-bp34j-companion-crew-features/kirocrew-feature-map.md).
@@ -79,7 +79,7 @@ components/<brick>/
 
 | Layer | Owns | Does not |
 |---|---|---|
-| **Agent** brick | the intelligent runtime — personas, skills, tools, LangGraph graphs, sub-agents | durable process history |
+| **Agent** brick | the intelligent runtime — personas, skills, tools, strands graphs/agents, sub-agents | durable process history |
 | **Workflow** brick | durable attempts, budgets, retries, goal loops | reasoning |
 | **Capability** bricks | typed, bounded operations over MCP | planning |
 | **Evals** brick | frozen policies, evidence-bound scoring, promotion | letting agents grade themselves |
@@ -150,7 +150,7 @@ Ready-made [Kiro](https://kiro.dev) power definitions for both servers are in [`
 - **Delete the branch when the PR merges.** Squash merges leave old branches looking "ahead" forever; the only branch that should exist at rest is `main`.
 - Run `foreman_guardian_check` before every commit that touches `components/` or `bases/`.
 - Property-based tests (Hypothesis) are required for stateful bricks.
-- Prefer the framework primitive over a bespoke wrapper — if LangChain, LangGraph, or CopilotKit ships it, use it. If it genuinely doesn't, build it *and* document the gap.
+- Prefer the framework primitive over a bespoke wrapper — if Strands, LangGraph, or CopilotKit ships it, use it. If it genuinely doesn't, build it *and* document the gap.
 - Labels: one `status:*`, one `type:*`, any `brick:*`, at most one `agent:*` — see [`docs/labels.md`](docs/labels.md).
 
 ---

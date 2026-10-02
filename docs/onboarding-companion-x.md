@@ -1,4 +1,4 @@
-# Companion-X Onboarding — Orientation Map (2026-09-29)
+# Companion-X Onboarding — Orientation Map (updated 2026-10-02: Strands route flip, GH #89)
 
 Onboarding artifact per `repo-onboarding` skill. Observations cited to file/line; inferences marked.
 
@@ -70,12 +70,12 @@ root env satisfies companion_x tests; run them with plain `uv run` + the env var
 
 1. Browser → CopilotKit v2 chat sidebar (`selfManagedAgents` local registration, bd:python-factory-sopw)
 2. → Next BFF `/ag-ui/run` → AG-UI SSE stream → API `stream_chat` via `factory.agent.interface.get_chat_agent_stream` (CHAT_STREAMING-gated)
-3. → `agent` brick LangGraph runtime (`components/agent/.../adapters/langchain_runtime.py`, `langgraph_runtime.py`) — LangChain 1.3.17 / LangGraph 1.2.11 / MCP v2 (`mcp[cli]==2.1.1`), **zero Strands** (runtime truth, 2026-09-11)
+3. → `agent` brick **Strands runtime** (default, route flip GH #89, 2026-10-02: `components/agent/.../adapters/strands_chat.py` + `strands_runtime.py`) — strands-agents 1.56 / MCP v2 streamable HTTP. Dormant LangChain/LangGraph route selectable via `AGENT_RUNTIME_ADAPTER=langchain` (deps in `langgraph-legacy` group)
 4. → platform tool invoker reaches MCP aggregator → capability bricks (curated tool set)
 5. → persona selected via registry: `COMPANION_X_CHAT_AGENT_ID` (default `companion-x-default`, LOUD-FAIL on miss)
-6. Checkpoints: `AsyncSqliteSaver` at `./.storage/agent-checkpoints.db`; sessions in `session` brick `./.storage/sessions.db`
+6. Durable sessions: strands `SessionManager` over `SqlSessionRepository` at `./.storage/strands-sessions.db` (backend-swappable via `storage.sql.backend`); dormant LangGraph checkpoints at `./.storage/agent-checkpoints.db`; sessions in `session` brick `./.storage/sessions.db`
 
-Model factory: `components/agent/.../runtime/adapters/langchain_model.py` from
+Model factory: `components/agent/.../runtime/adapters/strands_model.py` (default) from
 `llm_gateway.resolve_chat_profile()` — `openrouter/<vendor>/<model>` | `ollama/<model>` | bare Bedrock id. Secrets by env-var *name* only.
 
 ## Active areas (6-week churn)
@@ -114,28 +114,31 @@ invisible; treat hotspots as provisional.
 
 ## Unknowns
 
-- `bd` local store needs init/repair (`bd ready` → `Error 1146: table not found: issues`; `bd stats` shows 0 total). `bd sync` may restore from remote.
-- Exact provisioning for `projects/companion_x/config/settings.yaml` (workflow engine registry: expected `langgraph` → `agent.execute_langgraph_attempt`/`cancel_langgraph_attempt` per the failing test assertions). Copying root `config/settings.yaml` is unverified — engine ids may differ.
-- `MCPError` in the two restart tests: same root cause as #1 or independent — needs `.env` provisioning and one run to confirm.
-- Whether `frontends/shared-renderer` is consumed by next-dashboard via workspace deps or published (build artifacts committed under `lib/`).
+- ~~`bd` local store needs init/repair~~ — RESOLVED (2026-09-29): issue tracking moved to GitHub Issues (bannff/python-factory); `bd` deprecated.
+- ~~Exact provisioning for `projects/companion_x/config/settings.yaml`~~ — RESOLVED: per-machine file now provisioned on this checkout (workflow engine registry present).
+- ~~`MCPError` in the two restart tests / baseline 7-of-11~~ — RESOLVED: `uv sync --group core-test` + provisioned config → agent-brick suite 940 passed (2026-10-02).
+- ~~Whether `frontends/shared-renderer` is consumed via workspace deps~~ — file-dep (`file:../shared-renderer`); `npm install` in next-dashboard after renderer changes.
+- Runtime truth is now **Strands** (GH #89 route flip, 2026-10-02). The dormant LangChain route remains selectable (`AGENT_RUNTIME_ADAPTER=langchain`, `langgraph-legacy` dependency-group) with a CI dormancy lane; deletion review at the retrospective (~1 quarter clean production).
 
 ## First-session checklist
 
 ```bash
-# 0. Beads
-bd sync   # restore issue DB
+# 0. Issues → GitHub (bannff/python-factory); bd is deprecated.
 
-# 1. Env (Darwin arm64)
-uvx --from uv==0.12.0 uv sync --group ml --group can-test \
+# 1. Env (Darwin arm64) — core-test group needed for agent-brick tests
+uv sync --group core-test --group ml --group can-test \
   --config-settings-package lightgbm:cmake.define.USE_OPENMP=OFF
 
 # 2. Project env files
 cp projects/companion_x/.env.example projects/companion_x/.env
 cp frontends/next-dashboard/.env.local.example frontends/next-dashboard/.env.local
-# + provision projects/companion_x/config/settings.yaml (see Unknowns)
+# settings.yaml ships as example; the live file is provisioned per-machine
+# (projects/*/config/ is gitignored).
 
 # 3. Run
 ./scripts/companion-x-ui.sh          # API :8000 + dashboard :3000
-uv run pytest projects/companion_x/test -q \  # with CI env vars
-  # expect 11/11 once config gap closed
+MCP_LOCAL_AUTH=true MCP_LOCAL_AUTH_TOKEN=<any-16+chars> \
+MCP_PERMISSIONS_CONFIG_DIR=config/mcp_permissions \
+WORKFLOW_CONFIG_DIR=projects/companion_x/config TELEMETRY_REQUIRED=0 \
+  uv run pytest components/agent/test -q   # 940 passed, 1 xfailed (2026-10-02)
 ```
