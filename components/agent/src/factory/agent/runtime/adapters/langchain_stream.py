@@ -5,8 +5,6 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-from langgraph.types import Command
-
 
 @dataclass
 class ToolChunkState:
@@ -31,6 +29,8 @@ async def graph_input(graph: Any, config: dict[str, Any], request: Any) -> Any:
         if tool_call_id not in replies:
             raise ValueError(f"missing frontend tool result for {tool_call_id or item.id}")
         resume[item.id] = replies[tool_call_id]
+    from langgraph.types import Command
+
     return Command(resume=resume)
 
 

@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 import asyncio
 import pytest
+pytest.importorskip("langchain")
 from langchain_core.messages import AIMessageChunk
 
 from factory.agent.runtime.adapters.langchain_runtime import LangChainAgentRuntime

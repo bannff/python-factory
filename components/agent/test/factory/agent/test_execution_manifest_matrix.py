@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import pytest
+pytest.importorskip("langchain")
+pytest.importorskip("langgraph")
+pytest.importorskip("langchain_community")
+
 from factory.agent.runtime.execution_manifest.prepare import (
     REGISTERED_GRAPH_IDS, prepare_registered_execution_manifest,
 )

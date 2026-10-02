@@ -45,4 +45,4 @@ def test_unset_config_falls_back_to_the_builtin_adapter(monkeypatch) -> None:
     monkeypatch.delenv("AGENT_RUNTIME_CONFIG", raising=False)
     monkeypatch.delenv("AGENT_RUNTIME_ADAPTER", raising=False)
 
-    assert load_runtime_selection().runtime_adapter_id == "langchain-langgraph"
+    assert load_runtime_selection().runtime_adapter_id == "strands"

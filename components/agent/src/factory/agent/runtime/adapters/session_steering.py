@@ -3,16 +3,20 @@ from __future__ import annotations
 
 import os
 from dataclasses import replace
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from factory.mcp_utils.interface import get_service
 
 from ..runtime_contracts import RuntimeInvocation
-from .langchain_steering import SteerDelivery
+
+if TYPE_CHECKING:
+    # Module-level import would pull the langchain SDK; the dormant
+    # langgraph-legacy deps must not be required at import time.
+    from .langchain_steering import SteerDelivery
 
 
-def _process_default_model_id() -> str:
+def _process_default_model_id():
     """Same env-driven default the LangChain runtime itself falls back to.
 
     A managed-graph/background invocation (M7.6 dogfood loop, spawn_background)
@@ -100,6 +104,8 @@ class SessionSteeringMCP:
         if payload is None:
             raise RuntimeError("session steer write failed")
         item = payload["steer"]
+        from .langchain_steering import SteerDelivery
+
         return SteerDelivery(
             tenant_id=item["tenant_id"], owner_id=item["owner_id"],
             session_id=item["session_id"], delivery_id=item["delivery_id"],
@@ -125,6 +131,8 @@ class SessionSteeringMCP:
         )
         if listed is None:
             return ()
+        from .langchain_steering import SteerDelivery
+
         return tuple(SteerDelivery(
             tenant_id=item["tenant_id"], owner_id=item["owner_id"],
             session_id=item["session_id"], delivery_id=item["delivery_id"],

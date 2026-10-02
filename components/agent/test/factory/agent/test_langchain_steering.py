@@ -5,6 +5,8 @@ from types import SimpleNamespace
 
 import pytest
 
+pytest.importorskip("langchain")
+
 from factory.agent.runtime.adapters.langchain_steering import (
     LangChainSteeringMiddleware, SteerDelivery, SteeringContext, SteeringRuntime,
 )

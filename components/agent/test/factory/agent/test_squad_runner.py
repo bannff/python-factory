@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import pytest
+pytest.importorskip("langchain")
+pytest.importorskip("langgraph")
+pytest.importorskip("langchain_community")
 
 from factory.agent.runtime.squad_contracts import SquadConfig
 from factory.agent.runtime.squad_runner import (

@@ -15,6 +15,8 @@ non-envelope results pass through unchanged.
 """
 import json
 
+import pytest
+pytest.importorskip("langchain")
 from langchain_core.messages import ToolMessage
 
 from factory.agent.runtime.adapters.langchain_stream import message_events

@@ -1,6 +1,9 @@
 from pathlib import Path
 
 import pytest
+pytest.importorskip("langchain")
+pytest.importorskip("langgraph")
+pytest.importorskip("langchain_community")
 
 from factory.agent.runtime.adapters.approval_policy_store import SqliteApprovalPolicyStore
 from factory.agent.runtime.approval_policy import (

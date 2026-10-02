@@ -1,6 +1,11 @@
 """Tests for the squad's local toolbelt (LangChain framework tools)."""
 from __future__ import annotations
 
+import pytest
+pytest.importorskip("langchain")
+pytest.importorskip("langgraph")
+pytest.importorskip("langchain_community")
+
 from factory.agent.runtime.adapters.local_toolbelt import (
     available_local_tools, build_local_toolbelt,
 )

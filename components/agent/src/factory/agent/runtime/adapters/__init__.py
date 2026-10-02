@@ -1,4 +1,9 @@
-"""Concrete Agent adapters and LangChain/LangGraph production factories."""
+"""Concrete Agent adapters and LangChain/LangGraph production factories.
+
+The langchain-langgraph adapter is dormant: strands is the default runtime;
+select the dormant adapter via ``AGENT_RUNTIME_ADAPTER=langchain``, whose
+deps live in the optional ``langgraph-legacy`` dependency-group.
+"""
 from __future__ import annotations
 
 import os
@@ -6,12 +11,9 @@ from typing import Any
 
 from factory.mcp_utils.interface import CapabilityScope
 
-from .langchain_chat import LangChainChatAgent
-from .langchain_runtime import LangChainAgentRuntime
-from .langgraph_runtime import LangGraphRuntime
 from .memory import MemoryAgentRuntime, MemoryChatAgent, MemorySwarmRuntime
 from .memory_graph import MemoryGraphRuntime, MemoryToolLoader
-from .session_agent_mcp import SessionAgentMCP
+from .strands_runtime import StrandsAgentRuntime, StrandsGraphRuntime
 from ..adapter_registry import (
     RuntimeAdapterFactory, get_runtime_adapter, register_runtime_adapter,
     registered_runtime_adapters,
@@ -20,10 +22,27 @@ from ..adapter_registry import (
 __all__ = [
     "LangChainAgentRuntime", "LangChainChatAgent", "LangGraphRuntime",
     "MemoryAgentRuntime", "MemoryChatAgent", "MemoryGraphRuntime",
-    "MemorySwarmRuntime", "MemoryToolLoader", "create_agent_adapter",
+    "MemorySwarmRuntime", "MemoryToolLoader", "StrandsAgentRuntime",
+    "StrandsGraphRuntime", "create_agent_adapter",
     "create_chat_agent", "create_graph_adapter", "create_runtime_pair",
     "create_swarm_adapter", "create_tool_loader",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    """PEP 562 lazy re-exports for the dormant langchain-langgraph
+    adapters: importing them pulls the langchain SDK, which lives in the
+    optional ``langgraph-legacy`` dependency-group."""
+    if name == "LangChainAgentRuntime":
+        from .langchain_runtime import LangChainAgentRuntime as _c
+        return _c
+    if name == "LangChainChatAgent":
+        from .langchain_chat import LangChainChatAgent as _c
+        return _c
+    if name == "LangGraphRuntime":
+        from .langgraph_runtime import LangGraphRuntime as _c
+        return _c
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def _scoped_client(
@@ -58,6 +77,8 @@ def _langchain_runtime(
         "COMPANION_X_CHECKPOINT_DB_PATH", "./.storage/agent-checkpoints.db",
     )
     from .approval_policy_store import SqliteApprovalPolicyStore
+    from .langchain_runtime import LangChainAgentRuntime
+    from .session_agent_mcp import SessionAgentMCP
     approval_store = SqliteApprovalPolicyStore(os.getenv(
         "COMPANION_X_APPROVAL_POLICY_DB_PATH", "./.storage/agent-approval.db",
     ))
@@ -70,8 +91,10 @@ def _langchain_runtime(
     )
 
 
-def _langchain_chat() -> LangChainChatAgent:
+def _langchain_chat() -> Any:
+    from .langchain_chat import LangChainChatAgent
     from .langchain_model import build_langchain_chat_model
+    from .session_agent_mcp import SessionAgentMCP
 
     model_id = os.getenv(
         "COMPANION_X_CHAT_MODEL", "us.anthropic.claude-sonnet-4-6",
@@ -84,35 +107,53 @@ def _langchain_chat() -> LangChainChatAgent:
     )
 
 
+def _langchain_graph() -> Any:
+    from .langgraph_runtime import LangGraphRuntime
+
+    return LangGraphRuntime(_langchain_runtime())
+
+
 def _ensure_registry() -> None:
     if "langchain-langgraph" not in registered_runtime_adapters():
         register_runtime_adapter(RuntimeAdapterFactory(
             adapter_id="langchain-langgraph",
             agent=_langchain_runtime,
             chat=_langchain_chat,
-            graph=lambda: LangGraphRuntime(_langchain_runtime()),
-            coordination=lambda: LangGraphRuntime(_langchain_runtime()),
+            graph=lambda: _langchain_graph(),
+            coordination=lambda: _langchain_graph(),
         ))
     if "strands" not in registered_runtime_adapters():
         register_runtime_adapter(RuntimeAdapterFactory(
             adapter_id="strands",
             agent=_strands_phase_2_agent,
             graph=_strands_phase_2_graph,
-            coordination=_strands_phase_2_coordination,
+            coordination=_strands_phase_2_graph,
             chat=_strands_chat,
         ))
 
 
+def _strands_runtime(parent_scope: CapabilityScope | None = None) -> Any:
+    from .strands_runtime import StrandsAgentRuntime, _default_approval_store
+
+    return StrandsAgentRuntime(
+        _scoped_client() if parent_scope is None else _scoped_client(parent_scope),
+        model_id=os.getenv(
+            "COMPANION_X_CHAT_MODEL", "us.anthropic.claude-sonnet-4-6",
+        ),
+        approval_store=_default_approval_store(),
+    )
+
+
 def _strands_phase_2_agent() -> Any:
-    raise NotImplementedError("strands agent runtime lands in phase 2/3 (issue #89)")
+    from .strands_runtime import StrandsAgentRuntime
+
+    return _strands_runtime()
 
 
 def _strands_phase_2_graph() -> Any:
-    raise NotImplementedError("strands graph runtime lands in phase 2/3 (issue #89)")
+    from .strands_runtime import StrandsGraphRuntime
 
-
-def _strands_phase_2_coordination() -> Any:
-    raise NotImplementedError("strands coordination runtime lands in phase 2/3 (issue #89)")
+    return StrandsGraphRuntime(_strands_runtime())
 
 
 def _strands_chat() -> Any:
@@ -132,14 +173,21 @@ def _strands_chat() -> Any:
 def _selected_adapter() -> Any:
     _ensure_registry()
     from ..runtime_selection import load_runtime_selection
-    return get_runtime_adapter(load_runtime_selection().runtime_adapter_id)
+    adapter_id = load_runtime_selection().runtime_adapter_id
+    # "langchain" is the documented escape-hatch alias for the dormant
+    # langchain-langgraph adapter.
+    if adapter_id == "langchain":
+        adapter_id = "langchain-langgraph"
+    return get_runtime_adapter(adapter_id)
 
 
 def create_runtime_pair(
     parent_scope: CapabilityScope | None = None,
     tool_names: set[str] | None = None,
-) -> tuple[LangChainAgentRuntime, LangGraphRuntime]:
+) -> tuple[Any, Any]:
     """Create a root runtime or one child narrowed from trusted authority."""
+    from .langgraph_runtime import LangGraphRuntime
+
     agents = _langchain_runtime(parent_scope, tool_names)
     return agents, LangGraphRuntime(agents)
 

@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import pytest
 
+pytest.importorskip("langchain")
+
 from factory.agent.runtime.adapters.langchain_tools import (
     bind_invocation, build_langchain_tools, reset_invocation,
 )

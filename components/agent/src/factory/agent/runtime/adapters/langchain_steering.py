@@ -6,12 +6,14 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 import logging
-from typing import Any, Protocol
-
-from langchain.agents.middleware import AgentMiddleware
-from langchain_core.messages import HumanMessage
+from typing import TYPE_CHECKING, Any, Protocol
 
 from ..runtime_contracts import RuntimeInvocation
+
+if TYPE_CHECKING:
+    # Dormant-runtime laziness: langchain SDK imports live inside the
+    # middleware (langgraph-legacy dependency-group).
+    from langchain.agents.middleware import AgentMiddleware  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +69,21 @@ class NullSteeringPort:
         return ()
 
 
-class LangChainSteeringMiddleware(AgentMiddleware):
+try:
+    # Real middleware base when the dormant langgraph-legacy group is
+    # installed; duck-typed fallback keeps group-less collection alive.
+    from langchain.agents.middleware import AgentMiddleware as _MiddlewareBase
+except ImportError:  # pragma: no cover - exercised only without the group
+    _MiddlewareBase = object  # type: ignore[misc,assignment]
+
+
+def _human_message(content: str, message_id: str | None) -> Any:
+    from langchain_core.messages import HumanMessage
+
+    return HumanMessage(content=content, id=message_id)
+
+
+class LangChainSteeringMiddleware(_MiddlewareBase):
     """Inject written steers before a model and settle only after it returns."""
 
     def __init__(self, port: SteeringPort) -> None:
@@ -87,13 +103,12 @@ class LangChainSteeringMiddleware(AgentMiddleware):
         context.injected.extend(deliveries)
         context.completions.extend(completions)
         messages = [
-            HumanMessage(content=item.content, id=item.send_id)
-            for item in deliveries
+            _human_message(item.content, item.send_id) for item in deliveries
         ]
-        messages.extend(HumanMessage(
-            content=(f"[Subagent completion event]\nRun {item.run_id}: "
-                     f"{item.outcome}.\n{item.summary}"),
-            id=f"completion-{item.run_id}",
+        messages.extend(_human_message(
+            f"[Subagent completion event]\nRun {item.run_id}: "
+            f"{item.outcome}.\n{item.summary}",
+            f"completion-{item.run_id}",
         ) for item in completions)
         return {"messages": messages}
 

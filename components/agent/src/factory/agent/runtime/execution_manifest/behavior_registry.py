@@ -1,7 +1,6 @@
 """Closed, framework-neutral implementation registry for replay evidence."""
 from __future__ import annotations
 
-from importlib.metadata import version
 from typing import Any
 
 from .canonical import canonical_bytes, sha256
@@ -10,7 +9,14 @@ from .descriptors import (
 )
 
 _ASSEMBLER_VERSION = "2"
-_LANGCHAIN_VERSION = version("langchain")
+
+
+def _langchain_version() -> str:
+    """Dormant-runtime laziness: langchain lives in langgraph-legacy."""
+    from importlib.metadata import version as _v
+    return _v("langchain")
+
+
 _BUILTINS = frozenset({
     "editor", "file_read", "file_write", "http_request", "python_repl",
     "retrieve", "shell", "think", "use_llm",
@@ -49,11 +55,12 @@ def freeze_local_tool(name: str) -> LocalToolDescriptor:
     if name not in _BUILTINS:
         raise ValueError(f"unknown local tool: {name!r}")
     implementation_id = f"langchain-tool:{name}"
+    implementation_version = _langchain_version()
     config = {"spec": name}
     return LocalToolDescriptor(
         name=name, implementation_id=implementation_id,
-        implementation_version=_LANGCHAIN_VERSION, config=config,
-        digest=_digest(name, implementation_id, _LANGCHAIN_VERSION, config),
+        implementation_version=implementation_version, config=config,
+        digest=_digest(name, implementation_id, implementation_version, config),
     )
 
 

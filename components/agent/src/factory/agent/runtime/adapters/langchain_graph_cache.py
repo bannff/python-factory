@@ -14,9 +14,6 @@ from ..personas import resolve_agent_config
 from ..steering_documents import apply_steering
 from ..runtime_contracts import RuntimeInvocation
 from .capability_policy import effective_persona_scope
-from .langchain_frontend_tools import build_frontend_tools, frontend_digest
-from .langchain_steering import SteeringContext, SteeringRuntime
-from .langchain_tools import build_langchain_tools
 
 
 class CompiledGraphCache:
@@ -24,7 +21,7 @@ class CompiledGraphCache:
 
     def __init__(
         self, capabilities: Any, approval_store: ApprovalPolicyStore,
-        recall_middleware: tuple[Any, ...], steering: SteeringRuntime,
+        recall_middleware: tuple[Any, ...], steering: Any,
         local_tools: list[Any],
     ) -> None:
         self._capabilities = capabilities
@@ -42,6 +39,11 @@ class CompiledGraphCache:
         effective = effective_persona_scope(self._capabilities.scope, persona)
         model_id = models.effective_id(request.model_id, persona.model)
         system_prompt, steering_digest = apply_steering(persona.system_prompt)
+        # Dormant-runtime laziness: the langchain SDK imports below must stay
+        # inside this build path (langgraph-legacy dependency-group).
+        from .langchain_frontend_tools import build_frontend_tools, frontend_digest
+        from .langchain_steering import SteeringContext
+        from .langchain_tools import build_langchain_tools
         cache_key = (
             request.agent_id, model_id, frontend_digest(request.frontend_tools),
             effective.policy_id, effective.digest, steering_digest,

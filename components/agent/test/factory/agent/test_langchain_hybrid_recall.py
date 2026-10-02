@@ -4,6 +4,9 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
+pytest.importorskip("langchain")
+pytest.importorskip("langgraph")
+pytest.importorskip("langchain_community")
 
 from factory.agent.runtime.adapters.langchain_hybrid_recall import (
     HybridRecallMCP, LangChainHybridRecallMiddleware,

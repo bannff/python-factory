@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import pytest
+pytest.importorskip("langchain")
+pytest.importorskip("langgraph")
+pytest.importorskip("langchain_community")
+
 from hypothesis import given, strategies as st
 
 from factory.agent.registry.defaults import AGENTS_TYPED

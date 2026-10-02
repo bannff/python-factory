@@ -15,6 +15,10 @@ import asyncio
 from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
+import pytest
+
+pytest.importorskip("langchain")
+
 from factory.agent.runtime.adapters.langchain_chat import LangChainChatAgent
 from factory.agent.runtime.adapters.langchain_runtime import LangChainAgentRuntime
 from factory.agent.runtime.adapters.strands_chat import StrandsChatAgent

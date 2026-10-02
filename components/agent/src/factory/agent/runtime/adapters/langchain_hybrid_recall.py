@@ -5,9 +5,6 @@ import asyncio
 import logging
 from typing import Any
 
-from langchain.agents.middleware import AgentMiddleware
-from langchain_core.messages import SystemMessage
-
 from factory.mcp_utils.interface import get_service
 
 from ..runtime_contracts import RuntimeInvocation
@@ -16,8 +13,22 @@ logger = logging.getLogger(__name__)
 _MAX_CHARS = 6000
 _MAX_HIT_CHARS = 800
 
+try:
+    # Real middleware base when the dormant langgraph-legacy group is
+    # installed; duck-typed fallback keeps group-less collection alive.
+    from langchain.agents.middleware import AgentMiddleware as _MiddlewareBase
+except ImportError:  # pragma: no cover - exercised only without the group
+    _MiddlewareBase = object  # type: ignore[misc,assignment]
 
-class LangChainHybridRecallMiddleware(AgentMiddleware):
+
+def _system_message(content: str) -> Any:
+    from langchain_core.messages import SystemMessage
+
+    return SystemMessage(content=content)
+
+
+class LangChainHybridRecallMiddleware(_MiddlewareBase):
+
     def __init__(self, port: Any) -> None:
         self._port = port
 
@@ -37,7 +48,7 @@ class LangChainHybridRecallMiddleware(AgentMiddleware):
         if not block:
             return None
         context.hybrid_node_ids.extend(node_ids)
-        return {"messages": [SystemMessage(content=block)]}
+        return {"messages": [_system_message(block)]}
 
 
 class HybridRecallMCP:

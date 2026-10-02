@@ -4,6 +4,9 @@ import hashlib
 import json
 
 import pytest
+pytest.importorskip("langchain")
+pytest.importorskip("langgraph")
+pytest.importorskip("langchain_community")
 
 from factory.agent.runtime.execution_manifest.artifact_models import (
     DefinitionArtifactRef, DefinitionDescriptor,

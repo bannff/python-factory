@@ -1,10 +1,10 @@
-"""Factories for the single LangChain/LangGraph production runtime."""
+"""Factories for the single production runtime (strands default)."""
 from __future__ import annotations
 
 from typing import Any
 
-DEFAULT_BACKEND = "langchain"
-DEFAULT_GRAPH_BACKEND = "langgraph"
+DEFAULT_BACKEND = "strands"
+DEFAULT_GRAPH_BACKEND = "strands"
 
 
 class AgentRuntimeFactory:
@@ -42,10 +42,13 @@ class AgentRuntimeFactory:
 
     @classmethod
     def get_available_backends(cls) -> list[str]:
-        return ["langchain", "langgraph"]
+        return ["langchain", "langgraph", "strands"]
 
 
 def get_default_runtime() -> tuple[Any, Any]:
     """Return the shared production Agent and bounded graph runtimes."""
-    from factory.agent.runtime.adapters import create_runtime_pair
-    return create_runtime_pair()
+    from factory.agent.runtime.adapters import (
+        StrandsAgentRuntime, StrandsGraphRuntime, _scoped_client,
+    )
+    agents = StrandsAgentRuntime(_scoped_client())
+    return agents, StrandsGraphRuntime(agents)

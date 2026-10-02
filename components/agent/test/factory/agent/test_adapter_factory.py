@@ -1,4 +1,4 @@
-"""Tests for current LangChain/LangGraph runtime factory selection."""
+"""Tests for runtime factory selection (strands default, langchain dormant)."""
 from __future__ import annotations
 
 import pytest
@@ -49,10 +49,16 @@ def test_memory_adapters_remain_explicit_test_doubles() -> None:
     assert isinstance(create_tool_loader("memory"), MemoryToolLoader)
 
 
-def test_default_adapters_are_current_lang_runtimes(native_runtime_seams: None) -> None:
-    assert isinstance(create_agent_adapter(), LangChainAgentRuntime)
-    assert isinstance(create_swarm_adapter(), LangGraphRuntime)
-    assert isinstance(create_graph_adapter(), LangGraphRuntime)
+def test_default_adapters_are_current_strands_runtimes(
+    native_runtime_seams: None,
+) -> None:
+    from factory.agent.runtime.adapters import (
+        StrandsAgentRuntime, StrandsGraphRuntime,
+    )
+
+    assert isinstance(create_agent_adapter(), StrandsAgentRuntime)
+    assert isinstance(create_swarm_adapter(), StrandsGraphRuntime)
+    assert isinstance(create_graph_adapter(), StrandsGraphRuntime)
 
 
 def test_invalid_adapter_type() -> None:
@@ -61,18 +67,34 @@ def test_invalid_adapter_type() -> None:
 
 
 def test_runtime_factory_defaults(native_runtime_seams: None) -> None:
-    assert DEFAULT_BACKEND == "langchain"
-    assert DEFAULT_GRAPH_BACKEND == "langgraph"
-    assert isinstance(AgentRuntimeFactory.create_agent_runtime(), LangChainAgentRuntime)
-    assert isinstance(AgentRuntimeFactory.create_swarm_runtime(), LangGraphRuntime)
-    assert isinstance(AgentRuntimeFactory.create_graph_runtime(), LangGraphRuntime)
-    assert AgentRuntimeFactory.get_available_backends() == ["langchain", "langgraph"]
+    from factory.agent.runtime.adapters import (
+        StrandsAgentRuntime, StrandsGraphRuntime,
+    )
+
+    assert DEFAULT_BACKEND == "strands"
+    assert DEFAULT_GRAPH_BACKEND == "strands"
+    assert isinstance(
+        AgentRuntimeFactory.create_agent_runtime(), StrandsAgentRuntime,
+    )
+    assert isinstance(
+        AgentRuntimeFactory.create_swarm_runtime(), StrandsGraphRuntime,
+    )
+    assert isinstance(
+        AgentRuntimeFactory.create_graph_runtime(), StrandsGraphRuntime,
+    )
+    assert AgentRuntimeFactory.get_available_backends() == [
+        "langchain", "langgraph", "strands",
+    ]
 
 
-def test_get_default_runtime_shares_langchain_with_graph(
+def test_get_default_runtime_shares_strands_agent_with_graph(
     native_runtime_seams: None,
 ) -> None:
+    from factory.agent.runtime.adapters import (
+        StrandsAgentRuntime, StrandsGraphRuntime,
+    )
+
     agent_runtime, graph_runtime = get_default_runtime()
-    assert isinstance(agent_runtime, LangChainAgentRuntime)
-    assert isinstance(graph_runtime, LangGraphRuntime)
+    assert isinstance(agent_runtime, StrandsAgentRuntime)
+    assert isinstance(graph_runtime, StrandsGraphRuntime)
     assert graph_runtime._agents is agent_runtime

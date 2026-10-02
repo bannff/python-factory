@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import pytest
+pytest.importorskip("langchain")
+pytest.importorskip("langgraph")
+pytest.importorskip("langchain_community")
 
 from factory.agent.runtime.adapters.langgraph_runtime import LangGraphRuntime
 from factory.agent.runtime.runtime_contracts import (

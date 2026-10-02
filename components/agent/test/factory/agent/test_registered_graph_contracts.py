@@ -4,6 +4,9 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
+pytest.importorskip("langchain")
+pytest.importorskip("langgraph")
+pytest.importorskip("langchain_community")
 
 
 def test_contract_facade_reexports_identical_classes() -> None:

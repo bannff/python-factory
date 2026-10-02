@@ -4,6 +4,9 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+pytest.importorskip("langchain")
+pytest.importorskip("langgraph")
+pytest.importorskip("langchain_community")
 from pydantic import ValidationError
 
 from factory.agent.mcp import skill_policy as mcp

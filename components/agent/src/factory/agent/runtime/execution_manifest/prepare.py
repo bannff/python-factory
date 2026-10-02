@@ -1,7 +1,6 @@
 """Public preparation boundary for immutable Agent execution manifests."""
 from __future__ import annotations
 
-from importlib.metadata import version
 from typing import Any
 
 from pydantic import JsonValue
@@ -47,6 +46,13 @@ def _node_bound(compiled: Any) -> int:
     return max(default, translated)
 
 
+def _langgraph_sdk_version() -> str:
+    """Dormant-runtime laziness: langgraph lives in langgraph-legacy."""
+    from importlib.metadata import version
+
+    return version("langgraph")
+
+
 def prepare_execution_manifest(
     config: Any, task: JsonValue, context: dict[str, Any], *,
     invocation_state: dict[str, Any] | None = None,
@@ -75,7 +81,7 @@ def prepare_execution_manifest(
         invocation=InvocationManifest(
             task=task, context=canonical_context,
             invocation_state=json_object(invocation_state or {}),
-        ), sdk_version=version("langgraph"), provenance=provenance,
+        ), sdk_version=_langgraph_sdk_version(), provenance=provenance,
     )
     return seal_manifest(manifest)
 

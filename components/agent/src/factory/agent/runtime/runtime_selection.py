@@ -38,12 +38,13 @@ def load_runtime_selection(path: str | Path | None = None) -> AgentRuntimeSelect
                 f"{'the path argument' if path is not None else 'AGENT_RUNTIME_CONFIG'}). "
                 "Point AGENT_RUNTIME_CONFIG at an existing readable YAML file, or "
                 "unset it to fall back to AGENT_RUNTIME_ADAPTER / the built-in "
-                "langchain-langgraph default."
+                "strands default (AGENT_RUNTIME_ADAPTER=langchain restores the "
+                "dormant langchain-langgraph adapter)."
             ) from exc
         return AgentRuntimeSelection.model_validate(yaml.safe_load(text))
     legacy = os.getenv("AGENT_RUNTIME_ADAPTER")
     return AgentRuntimeSelection(
-        runtime_adapter_id=legacy or "langchain-langgraph",
+        runtime_adapter_id=legacy or "strands",
     )
 
 
