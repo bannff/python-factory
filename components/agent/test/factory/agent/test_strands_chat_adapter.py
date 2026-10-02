@@ -4,11 +4,13 @@ Strands counterparts of the fake-``BaseChatModel`` LangChain adapter
 tests: approval resume placeholder behavior, frontend resume sentinel
 shape, cancel-running-turn, invoke basic. The LangChain adapter tests
 stay untouched and green — both runtimes coexist through phase 2.
-Shared fakes live in ``_strands_contract_fakes``.
+Shared fakes live in ``_strands_contract_fakes``; the phase-2 approval/
+steer rail fakes in ``_strands_rail_fakes``.
 """
 from __future__ import annotations
 
 import asyncio
+import json
 from typing import Any
 
 import pytest
