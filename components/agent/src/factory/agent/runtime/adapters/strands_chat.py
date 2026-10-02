@@ -1,4 +1,5 @@
-"""ChatAgentPort facade over the Strands runtime adapter."""
+"""ChatAgentPort facade over the Strands runtime adapter (durable
+sessions: ``RepositorySessionManager`` per thread over the SQL repo)."""
 from __future__ import annotations
 
 import asyncio
@@ -18,18 +19,17 @@ from ..personas import AGENT_ID_ENV, DEFAULT_AGENT_ID
 from ..runtime_contracts import RuntimeInvocation
 from .strands_agent_factory import bind_invocation, reset_invocation
 from .strands_frontend_stub import register_frontend_stubs, unregister_frontend_stubs
+from .strands_session_manager import build_session_manager
+from .strands_session_repository import SqlSessionRepository
 from .strands_stream import strands_event_tuples
 from .strands_thread_registry import StrandsThreadRegistry
 
 # Event kinds the phase-1 facade emits (the phase-2 interrupt rail adds
 # "interrupt" via the same dispatch table).
 _EVENTS: dict[str, type] = {
-    "text_delta": TextDeltaEvent,
-    "tool_call_delta": ToolCallDeltaEvent,
-    "tool_result": ToolResultEvent,
-    "reasoning_text": ReasoningTextEvent,
-    "state_delta": StateDeltaEvent,
-    "done": DoneEvent,
+    "text_delta": TextDeltaEvent, "tool_call_delta": ToolCallDeltaEvent,
+    "tool_result": ToolResultEvent, "reasoning_text": ReasoningTextEvent,
+    "state_delta": StateDeltaEvent, "done": DoneEvent,
 }
 
 
@@ -38,25 +38,24 @@ class StrandsChatAgent:
 
     ``StrandsThreadRegistry`` owns the per-thread agent cache and the
     live-turn lifecycle; capabilities are projected as native strands
-    tools by ``strands_agent_factory``.
+    tools by ``strands_agent_factory``; durable sessions ride the
+    strands ``RepositorySessionManager`` over ``SqlSessionRepository``.
     """
 
-    def __init__(
-        self, client: ScopedCapabilityClientPort, model_factory: Any,
-        model_id: str = "", memory_scope: str = "default",
-    ) -> None:
+    def __init__(self, client: ScopedCapabilityClientPort, model_factory: Any,
+                 model_id: str = "", memory_scope: str = "default") -> None:
         self._client = client
         self._model_factory = model_factory
         self._model_id = model_id
         self._memory_scope = memory_scope
         self._threads = StrandsThreadRegistry()
         self._tools: list[Any] | None = None
+        self._sessions = SqlSessionRepository()
 
     def _request(
-        self, thread_id: str, message: str, agent_id: str | None,
-        *, fe_tools: list[FrontendToolSpec] | None = None,
-        messages: list[dict[str, Any]] | None = None,
-        model_id: str | None = None,
+        self, thread_id: str, message: str, agent_id: str | None, *,
+        fe_tools: list[FrontendToolSpec] | None = None,
+        messages: list[dict[str, Any]] | None = None, model_id: str | None = None,
         tenant_id: str | None = None, owner_id: str | None = None,
         memory_mode: str | None = None,
     ) -> RuntimeInvocation:
@@ -88,20 +87,17 @@ class StrandsChatAgent:
             system_prompt, _digest = apply_steering(persona.system_prompt)
             builder = self._model_factory or build_strands_model
             return Agent(
-                agent_id=persona.id,
-                name=f"{persona.id}-{thread_id}",
-                system_prompt=system_prompt,
-                model=builder(self._model_id),
-                tools=list(self._tools),
-                callback_handler=None,
+                agent_id=persona.id, name=f"{persona.id}-{thread_id}",
+                system_prompt=system_prompt, model=builder(self._model_id),
+                tools=list(self._tools), callback_handler=None,
+                session_manager=build_session_manager(f"{persona.id}-{thread_id}"),
             )
 
         return await self._threads.get_or_build(thread_id, agent_id, build)
 
-    async def invoke(
-        self, thread_id: str, message: str,
-        tools: list[Any] | None = None, agent_id: str | None = None,
-    ) -> AgentResult:
+    async def invoke(self, thread_id: str, message: str,
+                     tools: list[Any] | None = None,
+                     agent_id: str | None = None) -> AgentResult:
         del tools
         agent = await self._agent_for(
             thread_id, agent_id or os.getenv(AGENT_ID_ENV, DEFAULT_AGENT_ID),
@@ -120,10 +116,8 @@ class StrandsChatAgent:
         self, thread_id: str, message: str,
         fe_tools: list[FrontendToolSpec] | None = None,
         messages: list[dict[str, Any]] | None = None,
-        agent_id: str | None = None,
-        model_id: str | None = None,
-        tenant_id: str | None = None,
-        owner_id: str | None = None,
+        agent_id: str | None = None, model_id: str | None = None,
+        tenant_id: str | None = None, owner_id: str | None = None,
         memory_mode: str | None = None,
     ) -> AsyncIterator[ChatStreamEvent]:
         request = self._request(
@@ -151,9 +145,9 @@ class StrandsChatAgent:
             self._threads.release(request.invocation_id)
 
     async def steer(
-        self, thread_id: str, send_id: str, message: str,
-        *, agent_id: str | None = None,
-        tenant_id: str | None = None, owner_id: str | None = None,
+        self, thread_id: str, send_id: str, message: str, *,
+        agent_id: str | None = None, tenant_id: str | None = None,
+        owner_id: str | None = None,
     ) -> Any | None:
         """Queued-guidance hook port lands with the phase-2 model-call hook."""
         del thread_id, send_id, message, agent_id, tenant_id, owner_id
@@ -164,34 +158,39 @@ class StrandsChatAgent:
         return await self._threads.cancel(thread_id)
 
     def close(self, thread_id: str) -> None:
-        """Drop the thread's cached agent; durable delete lands phase 2."""
+        """Drop the cached agent AND its durable session rows (all personas)."""
         self._threads.drop(thread_id)
+        suffix = f"-{thread_id}"
+        for session_id in self._sessions.session_ids():
+            if session_id.endswith(suffix):
+                self._sessions.delete_session(session_id)
 
-    async def fork_thread(
-        self, agent_id: str, source_thread_id: str, target_thread_id: str,
-    ) -> bool:
-        """Checkpoint-backed forks land in phase 2 (sqlite SessionManager)."""
-        del agent_id, source_thread_id, target_thread_id
-        return False
+    async def fork_thread(self, agent_id: str, source_thread_id: str,
+                          target_thread_id: str) -> bool:
+        """Copy a thread's durable transcript onto a new thread id under
+        the SAME persona. False when the source has no durable history."""
+        return self._sessions.fork_session(
+            f"{agent_id}-{source_thread_id}", f"{agent_id}-{target_thread_id}",
+        )
+
+    async def history(self, agent_id: str, thread_id: str) -> list[dict[str, Any]]:
+        """Return the durable transcript in AG-UI message shape."""
+        from .strands_history import session_messages_to_agui
+        return session_messages_to_agui(self._sessions, f"{agent_id}-{thread_id}")
 
     async def aclose(self) -> None:
         await self._threads.aclose()
 
 
 def _maybe_sentinel_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    """Keep the ``_frontend_pending`` sentinel payload byte-identical.
-
-    The FE stub tool returns the sentinel inside a JSON content block;
-    the AG-UI mapper routes the FE handler round-trip off exactly these
-    fields, so the union payload is the unwrapped sentinel dict.
-    """
+    """Keep the ``_frontend_pending`` sentinel payload byte-identical:
+    the AG-UI mapper routes the FE handler round-trip off these fields."""
     inner = payload.get("payload")
     if isinstance(inner, list) and len(inner) == 1:
         json_block = inner[0].get("json") if isinstance(inner[0], dict) else None
         if isinstance(json_block, dict) and json_block.get("_frontend_pending") is True:
             return {
-                "tool_call_id": payload["tool_call_id"],
-                "payload": json_block,
+                "tool_call_id": payload["tool_call_id"], "payload": json_block,
                 "is_error": False,
             }
     return payload
