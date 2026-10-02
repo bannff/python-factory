@@ -73,18 +73,30 @@ def test_lesson_run_kb_chain_survives_graph_reconstruction(tmp_path) -> None:
                 encode_node_id("kb", TENANT, OWNER, "doc-1"),
                 encode_node_id("workflow-run", TENANT, OWNER, RUN),
             }
-            deadline = time.monotonic() + 3
-            while not expected <= {entity.id for entity in graph.find_entities(limit=100)} \
-                    and time.monotonic() < deadline:
-                time.sleep(0.01)
+            # The projection chain (events_publish -> graph write) crosses an
+            # MCP invocation per hop and is polled, not awaited end-to-end.
+            # 3s proved flaky on CI runners once the graph suite entered the
+            # changed-brick selection; 30s keeps the poll semantics without
+            # timing out on slow runners.
+            deadline = time.monotonic() + 30
+            expected_edges = {"derived_from", "learned_in", "about_run"}
             request = NeighborhoodRequest(
                 (encode_node_id("lesson", TENANT, OWNER, lesson.lesson_id),),
                 TENANT, OWNER, max_depth=2,
             )
+
+            def _projected() -> bool:
+                observed_now = graph.get_neighborhood(request)
+                present_edges = {edge.type for edge in observed_now.relationships}
+                return expected <= {e.id for e in observed_now.entities} \
+                    and expected_edges <= present_edges
+
+            while not _projected() and time.monotonic() < deadline:
+                time.sleep(0.01)
             observed = graph.get_neighborhood(request)
             assert expected <= {entity.id for entity in observed.entities}
             edge_types = {edge.type for edge in observed.relationships}
-            assert {"derived_from", "learned_in", "about_run"} <= edge_types
+            assert expected_edges <= edge_types
             restored = PersistentNetworkXGraph().get_neighborhood(request)
             assert restored == observed
             assert "private KB body" not in str(observed)

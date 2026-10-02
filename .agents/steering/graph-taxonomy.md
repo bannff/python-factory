@@ -376,6 +376,42 @@ _invoke("graph_graph_find_entities", entity_type="EvalRun",
         properties={"suite_id": "s1"}, limit=100)
 ```
 
+## Domain Pack Registry (taxonomy extensions)
+
+Domain packs live in `components/graph/src/factory/graph/runtime/taxonomies/` — pure data
+(node types / relationship types / conventions) plus a `register()` call against the
+append-only `taxonomy_registry` (`register_extension` raises on collision; same-domain
+re-registration is always an error). Resolve a merged view with
+`resolve_domain_taxonomy(<domain>)`; the security domain always seeds the base.
+
+| Domain | Files | Public API |
+|--------|-------|-----------|
+| `can_failure` | `can_failure.py`, `can_failure_nodes.py`, `can_failure_relationships.py` | `factory.graph.interface.register_can_failure_taxonomy` |
+| `edge` | `edge.py`, `edge_nodes.py`, `edge_relationships.py` | `factory.graph.interface.register_edge_taxonomy` |
+
+### `edge` — mesh workflow coordination
+
+Vocabulary of the mesh-workflow design
+(`projects/companion_x/experiments/edge_models/edge-mesh-workflow-design/`): the registry is
+the source of truth for exact property lists and sha256 id derivations; this section indexes it.
+
+- **Nodes:** `EdgeDevice` (mesh member, `mesh_membership`), `EdgeWorkflow` (workflow
+  instance + payload↔registry version contract), `EdgeClaim` (coexisting content-addressed
+  leases, winner = lowest `claimant_device_id` among unexpired), `EdgeResult` (append-only
+  execution evidence + outbox intent docs), `EdgeTransition` (signed journal entry in a
+  content-addressed transitions map), `EdgeObservation` (sensor/model trigger fact).
+- **Relationships:** `EDGE_OBSERVED_ON`, `EDGE_TARGETS`, `EDGE_TRIGGERED_BY`,
+  `EDGE_CLAIMED_BY`, `EDGE_PRODUCED`, `EDGE_JOURNALED`, `EDGE_VERIFY_FOR` (C7
+  check-before-act predicate).
+- **Id conventions:** content-addressed per design.md §2 / edge-cases.md §C1 — e.g.
+  `wf_<sha256(target_device + action + blueprint_version + trigger_id)[:24]>`,
+  `claim-<sha256(workflow_id + claimant_device_id)>`; same-id/different-content is an
+  integrity error, never silent LWW.
+- **Epistemic status:** optional property convention on every node —
+  `harness-proven` | `sdk-live` | `convention` | `q1-gap`.
+- Auto-registered on MCP server surface alongside `can_failure`; exposed at
+  `graph://schemas/taxonomy/edge`.
+
 ## Naming Rules
 
 | Element | Convention | Examples |
