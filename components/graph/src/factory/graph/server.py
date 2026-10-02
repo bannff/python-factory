@@ -9,6 +9,7 @@ from .mcp._deterministic_meta import capabilities_for
 from .mcp.views import register as register_views
 from .runtime.runtime import GraphRuntime, get_runtime, reset_runtime as _reset_runtime
 from .runtime.taxonomies.can_failure import register as register_can_failure_taxonomy
+from .runtime.taxonomies.edge import register as register_edge_taxonomy
 from .runtime.taxonomy_registry import get_extensions
 
 
@@ -18,6 +19,8 @@ def _surface(runtime: GraphRuntime | None = None) -> GraphRuntime:
         runtime = GraphRuntime(config={"default_backend": get_infra("graph.backend", "persistent_networkx")})
     if "can_failure" not in get_extensions():
         register_can_failure_taxonomy()
+    if "edge" not in get_extensions():
+        register_edge_taxonomy()
     return runtime
 
 
