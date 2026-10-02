@@ -98,9 +98,12 @@ jobs:
         with:
           version: "0.12.0"
       - name: Install candidate dependencies
+        # langgraph-legacy group: the dormant LangChain adapter's deps —
+        # components/agent's strict suite includes LangChain-backed contract
+        # tests, and CI must keep the rollback route green (#89).
         run: |
           uv lock --check
-          uv sync --frozen
+          uv sync --frozen --group langgraph-legacy
           uv pip install --python .venv/bin/python --no-deps \
             -r config/core-test-requirements.txt
       - name: Prove complete core collection
@@ -178,9 +181,12 @@ jobs:
         with:
           version: "0.12.0"
       - name: Install candidate dependencies
+        # langgraph-legacy group: the dormant LangChain adapter's deps —
+        # components/agent's strict suite includes LangChain-backed contract
+        # tests, and CI must keep the rollback route green (#89).
         run: |
           uv lock --check
-          uv sync --frozen
+          uv sync --frozen --group langgraph-legacy
           uv pip install --python .venv/bin/python --no-deps \
             -r config/core-test-requirements.txt
       - name: Run strict control-plane suites
