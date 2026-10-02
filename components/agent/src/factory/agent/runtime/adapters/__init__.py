@@ -93,6 +93,40 @@ def _ensure_registry() -> None:
             graph=lambda: LangGraphRuntime(_langchain_runtime()),
             coordination=lambda: LangGraphRuntime(_langchain_runtime()),
         ))
+    if "strands" not in registered_runtime_adapters():
+        register_runtime_adapter(RuntimeAdapterFactory(
+            adapter_id="strands",
+            agent=_strands_phase_2_agent,
+            graph=_strands_phase_2_graph,
+            coordination=_strands_phase_2_coordination,
+            chat=_strands_chat,
+        ))
+
+
+def _strands_phase_2_agent() -> Any:
+    raise NotImplementedError("strands agent runtime lands in phase 2/3 (issue #89)")
+
+
+def _strands_phase_2_graph() -> Any:
+    raise NotImplementedError("strands graph runtime lands in phase 2/3 (issue #89)")
+
+
+def _strands_phase_2_coordination() -> Any:
+    raise NotImplementedError("strands coordination runtime lands in phase 2/3 (issue #89)")
+
+
+def _strands_chat() -> Any:
+    """Build the Strands chat agent: one strands.Agent per thread with
+    the SAME scoped capability seam the langchain runtime consumes."""
+    from .strands_chat import StrandsChatAgent
+    from .strands_model import build_strands_model
+
+    model_id = os.getenv(
+        "COMPANION_X_CHAT_MODEL", "us.anthropic.claude-sonnet-4-6",
+    )
+    return StrandsChatAgent(
+        _scoped_client(), build_strands_model, model_id=model_id,
+    )
 
 
 def _selected_adapter() -> Any:
@@ -114,7 +148,7 @@ def create_agent_adapter(adapter_type: str | None = None) -> Any:
     """Create the trusted configured runtime; memory is test-only."""
     if adapter_type == "memory":
         return MemoryAgentRuntime()
-    if adapter_type not in (None, "langchain", "langchain-langgraph"):
+    if adapter_type not in (None, "langchain", "langchain-langgraph", "strands"):
         raise ValueError("unknown agent runtime adapter")
     return _selected_adapter().agent()
 
@@ -123,7 +157,7 @@ def create_graph_adapter(adapter_type: str | None = None) -> Any:
     """Create bounded graph execution from trusted adapter selection."""
     if adapter_type == "memory":
         return MemoryGraphRuntime()
-    if adapter_type not in (None, "langgraph", "langchain-langgraph"):
+    if adapter_type not in (None, "langgraph", "langchain-langgraph", "strands"):
         raise ValueError("unknown graph runtime adapter")
     return _selected_adapter().graph()
 
@@ -132,7 +166,7 @@ def create_swarm_adapter(adapter_type: str | None = None) -> Any:
     """Create bounded coordination from trusted adapter selection."""
     if adapter_type == "memory":
         return MemorySwarmRuntime()
-    if adapter_type not in (None, "langgraph", "langchain-langgraph"):
+    if adapter_type not in (None, "langgraph", "langchain-langgraph", "strands"):
         raise ValueError("unknown coordination runtime adapter")
     return _selected_adapter().coordination()
 
@@ -148,6 +182,6 @@ def create_chat_agent(adapter_type: str | None = None) -> Any:
     """Create chat from trusted adapter selection; memory is test-only."""
     if adapter_type == "memory":
         return MemoryChatAgent()
-    if adapter_type not in (None, "langchain", "langchain-langgraph"):
+    if adapter_type not in (None, "langchain", "langchain-langgraph", "strands"):
         raise ValueError("unknown chat runtime adapter")
     return _selected_adapter().chat()
