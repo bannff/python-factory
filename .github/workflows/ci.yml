@@ -217,6 +217,12 @@ jobs:
   langgraph-legacy:
     if: github.event_name != 'push'
     runs-on: ubuntu-latest
+    env:
+      MCP_LOCAL_AUTH: "true"
+      # Deterministic test credential only; never a production or GitHub secret.
+      MCP_LOCAL_AUTH_TOKEN: "ci-local-auth-token-0123456789"
+      MCP_PERMISSIONS_CONFIG_DIR: config/mcp_permissions
+      TELEMETRY_REQUIRED: "0"
     steps:
       - uses: actions/checkout@v7
         with:
